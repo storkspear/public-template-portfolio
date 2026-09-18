@@ -1,0 +1,1171 @@
+/* admin 껍데기 스타일.
+ *
+ * ⚠ 이 파일은 편집기 CSS **뒤에** 실린다. 그래서 맨몸 태그 선택자(`button`·`input`·
+ *   `header`·`label`)를 쓰면 편집기 안까지 내려가 덮어쓴다 — 편집기에는 <button> 이
+ *   88개, <input> 5개, <header> 1개가 있다. 2026-09-14 에 이걸로 툴바가 통째로 깨졌다.
+ *   **모든 규칙은 `.adm` 안에 가둔다.** 편집기 화면(`.peHead`)만 예외로 제 클래스를 쓴다.
+ */
+:root{--bg:#fff;--fg:#0b0d10;--fg-2:#424952;--fg-3:#5c646f;--line:#e3e6ea;--line-2:#f0f2f4;--accent:#25436b;
+      --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+      --sans:-apple-system,BlinkMacSystemFont,system-ui,'Apple SD Gothic Neo',sans-serif;
+      --display:Paperlogy,-apple-system,system-ui,sans-serif}
+*{box-sizing:border-box}
+/* ⚠ editor-ui.css 가 `html, body, #root { height: 100% }` 를 건다. #root 높이가 100vh 로
+   잠기면 그 안의 `position:sticky` 는 **제 컨테이너 바닥까지만** 따라와서, 화면 한 장을
+   넘기는 순간 머리줄·툴바가 위로 빨려 올라간다. 편집기 CSS 뒤에 실리므로 여기서 푼다. */
+html,body,#root{height:auto;min-height:100%}
+body{margin:0;background:var(--bg);color:var(--fg)}
+
+.adm{font-family:var(--sans);font-size:15px;line-height:1.6;word-break:keep-all}
+.adm .wrap{max-width:1100px;margin:0 auto;padding:0 clamp(1.25rem,4vw,2rem)}
+/* 관리자 머리줄은 **검정**이다 — 공개 사이트(흰 종이)와 한눈에 갈려야 한다.
+   잘못된 화면에서 글을 고치는 일이 없도록, 색 하나로 「여기는 관리자」를 말한다. */
+.adm > header{position:sticky;top:0;z-index:20;background:#000;color:#fff}
+/* 머리줄은 아래 껍데기와 **같은 폭**을 쓴다 — 가운데로 모으면 이름이 메뉴 왼쪽 선과 어긋난다 */
+.adm > header .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;
+  max-width:none;padding-inline:clamp(1rem,2vw,1.4rem)}
+/* 이름 — 앞에 고양이 발자국. 글자와 같은 흰색이라 한 덩어리로 읽힌다 */
+.adm .brand{display:inline-flex;align-items:center;gap:.45rem;
+            font-weight:700;letter-spacing:-.02em;color:#fff}
+.adm .brand svg{flex:none;display:block}
+.adm .who{font-family:var(--mono);font-size:.78rem;color:rgba(255,255,255,.62)}
+.adm button,.wf button.primary{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line);
+            background:#fff;color:var(--fg);padding:.55rem 1.1rem;font-weight:600}
+.adm button:hover:not(:disabled){border-color:var(--fg-3)}
+/* 검정 머리줄 위의 단추 — 흰 테두리·투명 바탕 */
+.adm > header button{background:transparent;border-color:rgba(255,255,255,.34);color:#fff;border-radius:0}
+.adm > header button:hover:not(:disabled){border-color:#fff;background:rgba(255,255,255,.12)}
+/* 주된 행동 — 이 사이트의 어휘는 **직각 검정 사각형**이다(절 제목 앞의 바와 같은 결).
+   로그인도 글쓰기도 같은 도형이라, 「이 화면에서 할 일」이 늘 같은 모양으로 보인다.
+   남색(--accent)은 이제 초점 테두리와 번호 호버에만 쓴다. */
+.adm button.primary,.wf button.primary{background:#000;border-color:#000;color:#fff;border-radius:0}
+.adm button.primary:hover:not(:disabled),.wf button.primary:hover:not(:disabled){background:#1a1a1a;border-color:#1a1a1a}
+.adm button:disabled,.wf button.primary:disabled{opacity:.5;cursor:default}
+.adm input{font:inherit;width:100%;padding:.7rem .85rem;border:1px solid var(--line);
+           border-radius:9px;background:#fff;color:var(--fg)}
+.adm input:focus{outline:none;border-color:var(--accent)}
+.adm label{display:block;font-size:.82rem;color:var(--fg-3);margin:0 0 .35rem}
+.adm .field{margin:0 0 1rem}
+.adm .err{color:#b3261e;font-size:.88rem;margin:.6rem 0 0}
+.adm .hint{font-size:.8rem;color:var(--fg-3)}
+/* 로그인 — `display:grid` 가 [hidden] 을 이기지 않도록 조건부 렌더로 바꿨다 */
+.adm.login{display:grid;place-items:center;min-height:100vh}
+.adm.login .box{width:min(100%,340px);padding:0 1.5rem}
+/* 발자국은 글자 크기를 따라간다 — 머리줄(17px)보다 여기(23px)가 크다.
+   가운데가 아니라 **글자 밑선**에 맞춰야 이름과 한 줄로 앉는다. */
+.adm.login h1{display:flex;align-items:center;gap:.5rem;
+              font-size:1.5rem;margin:0 0 1.6rem;letter-spacing:-.03em}
+.adm.login h1 svg{flex:none;display:block}
+/* ── 목록 ──────────────────────────────────────────────
+   이 화면의 제목은 **하나**다 — 「글」(독자가 보는 그 목록). 초안은 절이 아니라
+   검정 머리줄에 붙은 **서랍**(.tray)이다. 접으면 44px 손잡이 한 줄만 남고, 펼치면
+   손잡이 아래로 초안 줄이 내려온다. 페이지(제목+목록)는 서랍 밑에서 늘 같은 여백으로 시작한다.
+
+   두 묶음이 **같은 종류**(1.6rem h2 + 목록)면 거리로만 갈라야 하고, 그러면 여백을
+   아무리 늘려도 부족하다. 종류를 다르게 하면 거리가 필요 없어진다. */
+
+/* 서랍 — 위 선은 검정 머리줄이 대신한다. 아래 헤어라인 하나가 서랍을 닫는다 */
+.adm .tray{border-bottom:1px solid var(--line)}
+/* 손잡이 — 줄 전체가 단추. 꺾쇠가 **지금 상태**를 그린다(› 접힘 · ˅ 펼침) — 눈과 같은 문법.
+   「접기/펼치기」처럼 다음 동작을 적으면 누를 때마다 뜻이 뒤집힌다. */
+.adm button.bar{display:grid;grid-template-columns:2.6rem minmax(0,1fr);gap:0 1rem;align-items:center;
+  width:100%;height:44px;margin:0;padding:0;border:0;border-radius:0;background:transparent;
+  font:inherit;text-align:left;color:var(--fg);cursor:pointer}
+.adm button.bar:hover{background:#f7f8f9}
+.adm button.bar:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.adm .chev{display:inline-flex;color:#5c646f}
+.adm .chev svg{display:block}
+.adm button.bar[aria-expanded="true"] .chev svg{transform:rotate(90deg)}
+@media (prefers-reduced-motion:no-preference){.adm .chev svg{transition:transform .15s}}
+/* 「초안」은 한글 — 산세. 개수만 모노(.cnt) */
+.adm .lb{display:flex;align-items:baseline;gap:.5rem;font-size:.9rem;font-weight:600;letter-spacing:-.01em}
+/* 서랍 안 마지막 줄의 아래선은 서랍 자신의 선이 맡는다 — 겹선 방지 */
+.adm .tray ul.list li:last-child{border-bottom:0}
+
+/* 제목 줄 — 서랍이 있든 없든, 열렸든 닫혔든 위 여백은 같다.
+   서랍과의 거리는 여백이 아니라 크기 차(14.4 → 25.6px)와 위치(머리줄 / 페이지)가 만든다. */
+.adm .head{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;
+  padding:clamp(2rem,5vh,3rem) 0 1.2rem}
+.adm .head h2{margin:0;font-size:1.6rem;letter-spacing:-.03em;display:flex;align-items:baseline;gap:.5rem}
+/* 개수는 제목의 일부가 아니라 곁다리 — 모노·작게. 숫자라 한글 폴백 걱정이 없다 */
+.adm .cnt{font-family:var(--mono);font-size:.82rem;font-weight:400;color:#5c646f}
+/* 글쓰기 — 제목 줄에 얹히는 단추라 제목(25.6px)보다 커 보이면 안 된다.
+   도형·색은 .primary 가 준다. 여기서는 세로 여백만 줄인다(42 → 37px). */
+.adm .head button.primary{padding:.38rem 1.1rem}
+
+/* 줄 — 척추는 하나. 첫 칸 2.6rem 은 「이 줄이 무엇인가」의 표식 자리:
+   꺾쇠(서랍)·연필(초안)·번호(발행). 제목은 셋 다 같은 x 에서 시작하고
+   날짜는 셋 다 같은 오른쪽 끝에 선다. 초안 줄이 짧은 것은 **없는 것**(주소·눈)이
+   없어서지, 작게 그려서가 아니다. */
+.adm ul.list{list-style:none;margin:0;padding:0}
+.adm ul.list li{border-top:1px solid var(--line)}
+.adm ul.list li:last-child{border-bottom:1px solid var(--line)}
+.adm .row{display:grid;grid-template-columns:2.6rem minmax(0,1fr) auto auto;gap:0 1rem;
+  align-items:center;padding:1rem 0;cursor:pointer}
+/* 초안도 발행도 같은 네 칸이다 — 조작 칸(.ops)이 비거나 채워질 뿐 */
+.adm .row.draft{grid-template-columns:2.6rem minmax(0,1fr) auto auto}
+.adm .row:hover{background:#f7f8f9}
+/* 숨긴 글 — **지운 것이 아니라 내려둔 것**이다. 취소선은 삭제로 읽히므로 바탕만 눕힌다 */
+.adm .row[data-hidden]{background:#f2f3f5}
+.adm .row[data-hidden]:hover{background:#eceef0}
+.adm .row[data-hidden] .ti{color:var(--fg-2)}
+/* 번호 — `--line` 색(1.2:1)은 사실상 안 보였다. 공개 목록 .b-no 와 같은 색·같은 호버 */
+.adm .no{font-family:var(--mono);font-size:.8rem;letter-spacing:.04em;color:#5c646f;font-variant-numeric:tabular-nums}
+.adm .row:hover .no{color:var(--accent)}
+/* 연필 — 검정. 황토색(#b08a2a)은 흰 바탕에서 3.22:1 로 아슬아슬했고,
+   무엇보다 이 화면에서 색으로 말하는 것은 빨강(지우기) 하나뿐이다 */
+.adm .pen{display:inline-flex;align-items:center;color:var(--fg)}
+.adm .pen svg{display:block}
+.adm .ti{font-weight:700;letter-spacing:-.02em}
+.adm .sl{font-family:var(--mono);font-size:.74rem;color:#5c646f;display:block;margin-top:.2rem}
+/* 나간 글과 **따로** 고치던 초안이 있다는 표시 — 제목 옆이라야 「이 글이」가 분명하다 */
+.adm .wip{margin-left:.5rem;font-size:.7rem;font-weight:600;color:#8a6d1f;
+  background:#fdf8e8;border:1px solid #e6d9b0;padding:.05rem .35rem}
+/* 오른쪽 끝 — 날짜. 날짜의 오른쪽 끝이 세 종류 줄에서 한 선에 선다 */
+.adm .meta{display:inline-flex;align-items:center;gap:.6rem;justify-self:end}
+.adm .dt{font-family:var(--mono);font-size:.78rem;color:#5c646f;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* 숨김/보임 — 눈. 글자가 아니라 **지금 상태의 그림**이다:
+   뜬 눈 = 지금 보인다 · 감은 눈 = 지금 숨어 있다. 누르면 바뀐다. */
+.adm .vis{display:inline-flex;align-items:center;justify-content:center;
+  width:32px;height:32px;padding:0;border:0;border-radius:0;
+  background:transparent;color:#5c646f;cursor:pointer}
+.adm .vis:hover:not(:disabled){background:#eceef0;color:var(--fg)}
+.adm .vis:disabled{opacity:.45;cursor:default}
+.adm .vis:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* 감은 눈은 물러나되 3:1 은 지킨다 — 옛 #8a9099 는 #f2f3f5 위에서 2.90:1 이라 미달이었다 */
+.adm .vis[aria-pressed="true"]{color:#7a828d}
+/* 조작 칸 — 오른쪽으로 붙는다. 맨 오른쪽이 늘 「지우기」라 세 종류 줄에서 같은 x 에 선다 */
+.adm .ops{display:inline-flex;align-items:center;gap:.1rem}
+/* 지우기 — 휴지통은 **폭이 안 변한다**(32px). 말은 줄 밑의 띠(.ask)가 한다.
+   `aria-expanded` 가 「묻는 중」을 그린다 — 눈·꺾쇠와 같은 문법.
+   ⚠ 채운 빨간 네모로 그렸더니 조용한 줄 위에서 혼자 소리쳤다. **빨강은 한 번만** 쓴다 —
+   실제로 되돌릴 수 없는 일을 하는 단추 하나에만. 나머지는 색이 아니라 자리로 말한다. */
+.adm .del{display:inline-flex;align-items:center;justify-content:center;
+  width:32px;height:32px;padding:0;border:0;border-radius:0;
+  background:transparent;color:#7a828d;cursor:pointer}
+.adm .del:hover:not(:disabled){color:#a3231b}
+.adm .del:disabled{opacity:.45;cursor:default}
+.adm .del:focus-visible{outline:2px solid #a3231b;outline-offset:-2px}
+.adm .del[aria-expanded="true"]{color:#a3231b}
+
+/* 묻는 줄은 호버색에 고정 — 아래 띠와 한 덩어리로 읽힌다 */
+.adm .row[data-asking]{background:#f7f8f9}
+.adm .row[data-hidden][data-asking]{background:#eceef0}
+
+/* 묻는 띠 — 줄 **밑에** 열린다(서랍과 같은 문법). 문장은 제목과 같은 x 에서 시작한다.
+   [지우기]는 다음 줄이라 방금 누른 자리(휴지통) 아래에 오지 않는다 — 연타가 삭제가 될 수 없다. */
+.adm .ask{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.4rem 1rem;
+  padding:.1rem 0 .85rem calc(2.6rem + 1rem);background:#f7f8f9;
+  font-size:.85rem;line-height:1.5}
+.adm .ask[data-hidden]{background:#eceef0}
+/* 작업 격자에서는 **카드 밑**에 열린다 — 줄용 왼쪽 들여쓰기(2.6rem+1rem)를 그대로 쓰면
+   좁은 칸에서 글이 오른쪽 구석으로 몰려 깨져 보인다(2026-09-18 사용자 지적).
+   카드 폭에 맞춰 글은 왼쪽부터, 단추는 아래 오른쪽에 둔다 */
+.adm .folders .ask{flex-direction:column;align-items:stretch;gap:.5rem;
+  margin-top:.5rem;padding:.6rem .7rem;border:1px solid var(--line);border-radius:2px}
+.adm .folders .ask-t{color:var(--fg);line-height:1.55}
+.adm .folders .ask-b{margin-left:0;justify-content:flex-end}
+/* 문장은 조용하다 — 굵은 빨강은 경고 스티커처럼 읽힌다. 무게는 꾸밈이 아니라 뜻이 진다 */
+.adm .ask-t{color:var(--fg-2)}
+.adm .ask-b{display:inline-flex;align-items:center;gap:.9rem;margin-left:auto}
+/* 취소 — 테두리 없는 글자. 상자 둘을 나란히 두면 옛날 대화상자가 된다 */
+.adm .ask-no{height:28px;padding:0;border:0;background:transparent;border-radius:0;
+  color:var(--fg-2);font-size:.85rem;font-weight:500;text-underline-offset:3px}
+.adm .ask-no:hover:not(:disabled){color:var(--fg);text-decoration:underline}
+/* 지우기 — 이 화면에서 **빨강을 쓰는 유일한 곳**. 평소엔 선만, 누르려 하면 채워진다 */
+.adm .ask-go{height:28px;padding:0 .75rem;border:1px solid #a3231b;border-radius:0;
+  background:transparent;color:#a3231b;font-size:.85rem;font-weight:600}
+.adm .ask-go:hover:not(:disabled){background:#a3231b;border-color:#a3231b;color:#fff}
+.adm .ask-b button:focus-visible{outline:2px solid #a3231b;outline-offset:2px}
+.adm .ask-b button:disabled{opacity:.5;cursor:default}
+@media (prefers-reduced-motion:no-preference){
+  .adm .ask{animation:askIn .18s cubic-bezier(.2,.9,.2,1)}
+  .adm .ask-go{transition:background-color .12s,color .12s}
+}
+@keyframes askIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+
+/* 지운 결과 — 토스트. **흐름 밖**이라 목록을 밀지 않는다.
+   ⚠ 목록 위에 `<p>` 로 끼우면 줄 하나가 더 생기면서 아래가 통째로 내려가,
+   정작 봐야 할 「무엇이 사라졌나」가 더 안 보인다.
+
+   자리는 **화면 구석**(오른쪽 아래) — 목록의 조작(눈·휴지통·날짜)이 오른쪽에 있어서
+   방금 누른 자리 가까이에 뜬다. 생김새는 검정 직각, 관리자 머리줄과 같은 물건이다.
+   글자는 꾸미지 않는다 — 토스트는 중요하지 않은 소식만 나른다. */
+.adm .toast{position:fixed;right:clamp(1.25rem,4vw,2rem);bottom:1.5rem;z-index:60;margin:0;
+  display:flex;align-items:center;gap:.75rem;max-width:min(24rem,calc(100vw - 2.5rem));
+  padding:.65rem .65rem .65rem .9rem;background:#000;color:#fff;border-radius:0;
+  font-size:.85rem;font-weight:500;line-height:1.45;letter-spacing:-.01em;
+  box-shadow:0 4px 16px rgba(0,0,0,.22)}
+.adm .toast-t{flex:1 1 auto;min-width:0}
+/* 저절로 사라져도 닫기는 둔다 — 직접 치우고 싶은 사람이 있다 */
+.adm .toast-x{flex:none;display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:24px;padding:0;border:0;border-radius:0;
+  background:transparent;color:rgba(255,255,255,.66);cursor:pointer}
+.adm .toast-x:hover{background:rgba(255,255,255,.14);color:#fff}
+.adm .toast-x:focus-visible{outline:2px solid #fff;outline-offset:-2px}
+@media (prefers-reduced-motion:no-preference){
+  .adm .toast{animation:toastIn .18s cubic-bezier(.2,.9,.2,1)}
+}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.adm .empty{padding:3rem 0;color:#5c646f;text-align:center}
+
+/* 폰 — 날짜를 제목 아래로 내린다(공개 목록의 860px 규칙과 같은 결). 표식 칸은 2.2rem */
+@media (max-width:640px){
+  .adm button.bar{grid-template-columns:2.2rem minmax(0,1fr);gap:0 .9rem}
+  .adm .row,.adm .row.draft{grid-template-columns:2.2rem minmax(0,1fr) auto;gap:0 .9rem}
+  .adm .row > :first-child{grid-row:1 / span 2}
+  .adm .row .ops{grid-column:3;grid-row:1 / span 2}
+  .adm .row .meta{grid-column:2;justify-self:start;margin-top:.3rem}
+  .adm .ask{padding-left:calc(2.2rem + .9rem)}
+}
+
+/* 글쓰기 — 편집기가 화면의 주인. 여기 규칙은 전부 제 클래스로만 건다.
+   색은 editor-ui.css 에서 가져왔다: 경계 #dedbd4 · 호버 #f4f3ef · 눌린 것 #1a1a1a · 반경 7px */
+/* 편집 화면의 머리줄 — 검정. 높이 52px(단추 36 + 위아래 8), 폰에서도 52px(단추 40 + 6).
+   높이는 ResizeObserver 가 재서 편집기 툴바의 stickyTop 으로 넘어간다.
+
+   **머리줄은 글이 아니라 껍데기다.** 그래서 물러나 있고, 닫힌 도형은 「발행」 하나뿐이다.
+   이 화면에서 채움(`.tb-btn.is-on`·`.wt button.is-on`)은 전부 「켜짐」을 뜻하므로,
+   늘 채워진 단추를 두면 바로 아래 「가운데폭/전체폭」 알약과 함께 토글 두 쌍으로 읽힌다. */
+.peHead{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:6px;
+        padding:8px clamp(10px,1.6vw,16px);background:#000;color:#fff;
+        font-family:var(--sans);-webkit-font-smoothing:antialiased}
+
+/* 진행 러너 — **위** 모서리. 아래 모서리는 흰 툴바와 붙어 안 보인다 */
+.peHead::before{content:'';position:absolute;left:0;top:0;height:2px;width:36%;
+        background:#fff;opacity:0;pointer-events:none}
+.peHead[aria-busy="true"]::before{opacity:.55}
+@media (prefers-reduced-motion:no-preference){
+  .peHead[aria-busy="true"]::before{opacity:1;animation:peRun 1.1s linear infinite}
+}
+@keyframes peRun{from{transform:translateX(-100%)}to{transform:translateX(280%)}}
+
+/* 단추 공통 — 직각. 테두리 자리를 투명으로 비워 둬야 발행과 높이가 같다 */
+.peHead .peBtn,.peAsk .peBtn{display:inline-flex;align-items:center;justify-content:center;flex:none;
+        height:36px;padding:0 12px;border:1px solid transparent;border-radius:0;
+        background:transparent;color:rgba(255,255,255,.72);cursor:pointer;
+        font:inherit;font-size:.86rem;font-weight:500;letter-spacing:-.01em;white-space:nowrap;
+        transition:background-color .12s,color .12s,border-color .12s}
+.peHead .peBtn:hover:not(:disabled),.peAsk .peBtn:hover:not(:disabled){background:rgba(255,255,255,.12);color:#fff}
+.peHead .peBtn:active:not(:disabled),.peAsk .peBtn:active:not(:disabled){background:rgba(255,255,255,.2);color:#fff}
+/* 비활성은 opacity 가 아니라 **명시 색**이다 — 반투명 위에 반투명을 겹치면 대비가 예측 불가다 */
+.peHead .peBtn:disabled,.peAsk .peBtn:disabled{color:rgba(255,255,255,.48);cursor:default}
+.peHead .peBtn:focus-visible,.peAsk .peBtn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.peHead .peBtn:focus:not(:focus-visible),.peAsk .peBtn:focus:not(:focus-visible){outline:none}
+
+.peHead .peBack{width:36px;padding:0;margin-right:2px}
+.peHead .peBack svg{display:block}
+
+/* 상태 칸 — 오른쪽 끝에서 단추에 붙는다. 숫자는 산세 + tabular-nums.
+   ⚠ 모노(JetBrains Mono)는 한글 글리프가 없어 「발행됨」이 딴 서체로 떨어진다 */
+.peHead .peStat{flex:1;min-width:0;margin-right:8px;text-align:right;
+        font-size:.78rem;line-height:1.3;color:rgba(255,255,255,.62);
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.peHead .peErr{color:#ff8f86}
+.peHead .peSee{display:inline-flex;align-items:center;gap:.25em;margin-left:.6em;
+        color:#fff;text-decoration:underline;text-underline-offset:3px}
+.peHead .peSee svg{width:.8em;height:.8em}
+.peHead .peSee:hover{text-decoration-thickness:2px}
+.peHead .peSee:focus-visible{outline:2px solid #fff;outline-offset:2px}
+
+/* 초안 저장 — 테두리 없는 글자. min-width 로 「저장 중」이 되어도 폭이 안 흔들린다 */
+.peHead .peDraft{min-width:84px;margin-right:4px}          /* + gap 6 = 발행과 10px */
+.peHead .peDraft[data-busy]{background:rgba(255,255,255,.12);color:#fff}
+/* 들고 있는 초안이 있으면 글자 앞에 정사각 하나 — 절 제목 앞 바와 같은 어휘 */
+.peHead .peDraft[data-dirty]::before{content:'';flex:none;width:6px;height:6px;
+        margin-right:7px;background:currentColor}
+
+/* 발행 — 머리줄에서 유일한 닫힌 도형. 채움은 **반응**(호버·누름·진행)에만 쓴다.
+   초안을 노리다 발행에 걸치면 흰 블록이 켜져서, 누르기 전에 안다. */
+.peHead .pePub,.peAsk .pePub{min-width:72px;border-color:#fff;color:#fff;font-weight:700}
+.peHead .pePub:hover:not(:disabled),.peAsk .pePub:hover:not(:disabled){background:#fff;color:#000}
+.peHead .pePub:active:not(:disabled),.peAsk .pePub:active:not(:disabled){background:#d9d9d9;color:#000}
+.peHead .pePub:disabled{border-color:rgba(255,255,255,.38);color:rgba(255,255,255,.48)}
+/* `[data-busy]` 가 `:disabled` **뒤**에 있어야 한다 — 특이도가 같아 뒤엣것이 이긴다.
+   도는 단추는 disabled 이면서 켜져 보여야 한다. */
+.peHead .pePub[data-busy]{background:#e8e8e8;border-color:#e8e8e8;color:#000}
+
+/* 폰 — 단추 40px(편집기 툴바의 폰 터치 타깃과 같다). 높이는 52px 그대로라
+   640px 경계에서 stickyTop 이 안 뛴다 */
+@media (max-width:640px){
+  .peHead{padding:6px 10px;gap:4px}
+  .peHead .peBtn,.peAsk .peBtn{height:40px;padding:0 10px}
+  .peHead .peBack{width:40px;margin-right:0}
+  .peHead .peDraft{min-width:80px}
+  .peHead .pePub{min-width:68px}
+  .peHead .peWhen{display:none}
+  /* 오류는 머리줄 **아래 띠**로 — 머리줄 높이를 안 바꿔서 툴바가 안 밀리고, 줄바꿈해 다 보인다 */
+  .peHead .peErr{position:absolute;left:0;right:0;top:100%;display:block;padding:8px 10px;
+        background:#000;border-top:1px solid rgba(255,255,255,.14);
+        text-align:left;white-space:normal}
+}
+
+.peMain{padding:0 clamp(1.6rem,3.2vw,2.75rem) 4rem}
+
+/* 편집 중인 제목도 발행면과 **같은 서체**로 — 라이브러리는 제목을 `font-family: var(--font-body)`
+   인라인으로 그리므로 그 변수만 덮는다. `bleed` 처럼 「소비자가 알려 주는 값」이다.
+   안 덮으면 편집기는 Pretendard, 발행은 Paperlogy 로 갈라진다. */
+.peMain .post-head { --font-body: var(--display); }
+
+/* 저장 안 한 채 나가려 할 때 — **모달을 안 쓴다.** 화면을 덮으면 무엇을 두고 나가는지
+   오히려 안 보인다(지우기 확인과 같은 판단). 머리줄 바로 아래 같은 검정 띠로 붙는다.
+   `top` 은 머리줄의 **잰 높이**를 JS 가 넣는다 — 숫자를 박으면 머리줄이 커지는 날 어긋난다. */
+.peAsk{position:sticky;z-index:29;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+       padding:8px clamp(10px,1.6vw,16px);background:#1a1a1a;color:#fff;
+       border-top:1px solid rgba(255,255,255,.14);
+       font-family:var(--sans);-webkit-font-smoothing:antialiased}
+/* 문장이 왼쪽 끝을 잡고 단추들을 오른쪽으로 민다 */
+.peAsk .peAskMsg{margin-right:auto;font-size:.86rem;font-weight:600;letter-spacing:-.01em}
+/* 띠 안의 단추는 머리줄보다 한 치수 작다 — 머리줄이 이 화면의 주인이고 띠는 물음이다 */
+.peAsk .peBtn{height:32px;font-size:.82rem}
+.peAsk .pePub{min-width:0;padding:0 14px}
+@media (max-width:640px){
+  /* 폰에서는 문장이 한 줄을 다 쓰고 단추가 아래로 내려온다 */
+  .peAsk .peAskMsg{flex:1 0 100%;margin:0 0 2px}
+}
+
+/* ── 기다림 ────────────────────────────────────────────────
+   어휘는 **둘뿐**이다: 검정 머리줄의 러너가 「지금 기다린다」를, 뼈대가 「무엇이 올지」를
+   말한다. 스피너는 안 쓴다 — 이 사이트 어디에도 없는 어휘다.
+   200ms 를 넘길 때만 그린다(`useSlow`) — 100ms 에 끝나는 응답에 띄우면 번쩍이기만 한다. */
+
+/* 관리자 머리줄의 러너 — 편집 머리줄(.peHead::before)과 **같은 물건**. keyframes 도 같다 */
+.adm > header::after{content:'';position:absolute;left:0;bottom:0;height:2px;width:36%;
+       background:#fff;opacity:0;pointer-events:none}
+.adm > header[aria-busy="true"]::after{opacity:.55}
+@media (prefers-reduced-motion:no-preference){
+  .adm > header[aria-busy="true"]::after{opacity:1;animation:peRun 1.1s linear infinite}
+}
+
+/* 뼈대 막대 — 색은 **이미 있는 토큰**이다. `--line`(#e3e6ea) 은 글자로는 1.2:1 이라
+   안 보이지만, 자리를 그리는 도형으로는 딱 맞는다. 새 색을 만들지 않는다. */
+.adm .skb,.peWait .skb,.wf .skb{display:block;background:var(--line);border-radius:2px}
+.peWait .skb,.wf .skb{background:#e3e6ea}        /* .adm 밖이라 토큰이 안 닿는다 */
+@media (prefers-reduced-motion:no-preference){
+  .adm .skb,.peWait .skb,.wf .skb{animation:skPulse 1.4s ease-in-out infinite}
+}
+/* 모션을 끈 사람에게는 맥동만 멈추고 회색 막대는 남는다 — 자리를 잡는 일은 그대로다 */
+@keyframes skPulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+/* 목록 뼈대 — 진짜 줄과 **같은 격자**를 쓴다(.row). 그래서 도착해도 높이가 안 바뀐다 */
+.adm .row.sk{cursor:default}
+.adm .skb-no{width:1.4rem;height:.8rem}
+.adm .skb-ti{height:1.05rem}
+.adm .skb-sl{width:7rem;height:.74rem;margin-top:.35rem;background:var(--line-2)}
+.adm .skb-dt{width:5rem;height:.78rem;justify-self:end}
+
+/* 글을 불러오는 동안 — 제목 자리와 본문 두 줄 */
+.peWait{max-width:44rem;margin:0 auto;padding:clamp(2.5rem,7vh,4rem) 1.25rem}
+.peWait .skb-h{width:min(100%,18rem);height:2.2rem}
+.peWait .skb-p{width:100%;height:1rem;margin-top:1.4rem}
+.peWait .skb-p.short{width:62%;margin-top:.7rem}
+
+/* 만료 재로그인 — 지금 화면 **위에** 덮는다. 편집기를 안 내리므로 쓰던 글이 그대로 남는다.
+   z-index 는 편집 머리줄(30)·확인 띠(29)·관리자 머리줄(20)보다 위. */
+.adm.login.over{position:fixed;inset:0;z-index:100;min-height:0;background:rgba(255,255,255,.94)}
+.adm.login .hint.relog{margin:-1rem 0 1.4rem;color:var(--fg-2);font-size:.88rem;line-height:1.5}
+
+/* ── 글 / 작업 ──────────────────────────────────────────────────────────
+   같은 화면이 둘을 맡는다. 무엇을 보는 중인지 한 줄로만 말한다 —
+   서랍이나 드롭다운으로 감추면 「작업이 어디 갔지」가 된다. */
+.adm .tabs{display:flex;gap:.25rem;margin:0 0 1.4rem;border-bottom:1px solid var(--line)}
+.adm .tabs button{padding:.55rem .9rem;border:0;border-bottom:2px solid transparent;border-radius:0;
+  background:none;color:var(--fg-3);font-size:.95rem;cursor:pointer}
+.adm .tabs button:hover{color:var(--fg)}
+/* 왼쪽 메뉴는 진짜 이동이라 `aria-current`, 「모양」 안의 묶음 탭은 이동이 아니라 `aria-selected` */
+.adm .tabs button[aria-current],
+.adm .tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--fg);font-weight:700}
+
+/* 작업 줄의 커버 — 제목만으로는 못 고른다. 없으면 **빈 자리를 지킨다**(줄이 들쭉날쭉하면
+   눈이 제목을 따라가다 걸린다). 줄의 격자에 칸을 하나 더 얹는다. */
+.adm .row:has(.thumb){grid-template-columns:2.6rem 3.4rem minmax(0,1fr) auto auto}
+.adm .thumb{width:3.4rem;height:2.4rem;overflow:hidden;border-radius:3px;background:#eceef0}
+.adm .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* 작업에 붙는 다섯 칸 — 본문 위에 한 줄로. 좁아지면 두 줄, 더 좁아지면 한 칸씩 내려간다 */
+.wkMeta{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:.7rem 1rem;
+  max-width:min(100% - 2rem,64rem);margin:1.4rem auto .4rem}
+.wkMeta label{display:flex;flex-direction:column;gap:.3rem;font-size:.82rem;color:var(--fg-3)}
+.wkMeta input{padding:.45rem .6rem;border:1px solid var(--line);border-radius:5px;
+  background:#fff;color:var(--fg);font:inherit;font-size:.92rem}
+.wkMeta input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+
+/* ── 「모양」 ────────────────────────────────────────────────────────────
+   왼쪽에서 고르고 오른쪽에서 본다. 미리보기는 **공개면과 같은 굽기**가 만든 진짜 화면이다. */
+/* 이 화면은 왼쪽 판과 오른쪽 미리보기가 화면을 꽉 채운다 — 머리줄도 같은 폭을 쓴다.
+   가운데 정렬된 `.wrap` 을 그대로 두면 머리줄만 안쪽으로 들어가 선이 어긋난다. */
+.lk .lkMain{display:grid;grid-template-columns:minmax(22rem,30rem) minmax(0,1fr);gap:0;
+  height:calc(100vh - 60px)}
+/* ⚠ 위쪽 여백이 **없다.** 패널이 위 여백을 들면 붙어 있는 갈피가 그만큼 내려가 오른쪽
+   미리보기 줄과 아랫선이 어긋나고, 그 틈으로 밑에서 올라오는 글이 지나간다
+   (2026-09-18 사용자 지적 두 번). 갈피 아래 간격은 `.adm .tabs` 의 margin-bottom 이 맡는다 */
+.lk .lkPanel{--lk-pad-x:clamp(1rem,2vw,1.8rem);overflow:auto;
+  padding:0 var(--lk-pad-x) 4rem;border-right:1px solid var(--line)}
+.lk .lkPanel h3{margin:1.6rem 0 .7rem;font-size:.95rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.lk .lkPanel h3:first-of-type{margin-top:.6rem}
+.lk .lkNote{margin:.6rem 0;padding:.5rem .7rem;border-radius:5px;background:#eef6ee;color:#245b2b;font-size:.88rem}
+
+.lk .lkChips{display:flex;flex-wrap:wrap;gap:.5rem}
+.lk .lkChip{display:inline-flex;align-items:center;gap:.45rem;padding:.4rem .75rem;font-size:.9rem}
+.lk .lkChip[aria-pressed="true"]{border-color:var(--fg);background:var(--fg);color:#fff}
+/* 프리셋 아이콘 — 콘텐츠 배경색 위에 콘텐츠폰트색 「가」. 실제로 바뀌는 두 색만 보인다 */
+.lk .lkSwatch{width:22px;height:22px;border-radius:3px;border:1px solid rgba(0,0,0,.18);display:inline-grid;
+  place-items:center;font-size:.8rem;font-weight:700;line-height:1}
+
+.lk .lkRow{display:flex;flex-wrap:wrap;gap:.9rem}
+/* 색 한 칸 — 라벨 / [색칸 · 값 · ↺] 두 줄. 예전엔 4.5rem 폭에 2.2rem 짜리 색판이라
+   한 줄에 두 칸밖에 못 들어갔다(2026-09-18 사용자 지적: 「컴포넌트가 쓸데없이 크다」) */
+.lk .lkColor{display:flex;flex-direction:column;gap:.25rem;font-size:.82rem;color:var(--fg-3);flex:0 0 auto}
+.lk .lkColor label{font-size:inherit;color:inherit;margin:0}
+.lk .lkColorRow{display:inline-flex;align-items:center;gap:.4rem;min-height:26px;white-space:nowrap}
+/* 「따르기」는 같은 줄에 산다 — 아래로 내리면 칸마다 키가 달라져 줄이 어긋난다 */
+.lk .lkColorRow .lkReset{margin-top:0}
+.lk .lkColor input[type=color]{
+  flex:none;width:26px;height:26px;padding:0;border:1px solid var(--line);border-radius:0;
+  background:none;cursor:pointer}
+.lk .lkColor output{font-family:var(--mono);font-size:.78rem;color:var(--fg-2);letter-spacing:-.01em}
+/* ↺ 적용된 색으로 — 적용본과 다를 때만 뜬다. 뜨고 사라지는 자리라 네모를 안 그린다 */
+.lk .lkColorBack{
+  flex:none;width:20px;height:20px;padding:0;border:0;border-radius:0;background:none;
+  color:var(--fg-3);font-size:.95rem;line-height:1;cursor:pointer}
+.lk .lkColorBack:hover{color:var(--fg);border:0;background:none}
+.lk .lkField{display:flex;flex-direction:column;gap:.3rem;font-size:.82rem;color:var(--fg-3);flex:1 1 12rem}
+.lk .lkField select,.lkField textarea{padding:.4rem .5rem;border:1px solid var(--line);border-radius:5px;
+  background:#fff;color:var(--fg);font:inherit;font-size:.9rem}
+.lk .lkField textarea{width:100%;box-sizing:border-box;font-family:var(--mono);font-size:.82rem;line-height:1.5;resize:vertical}
+.lk .lkField textarea:disabled{background:#f4f5f6;color:var(--fg-3)}
+.lk .lkHint{margin:.6rem 0 0;font-size:.84rem;color:var(--fg-3);line-height:1.55}
+.lk .lkHint.bad{color:#a4272b}
+
+.lk .lkOrder{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.lk .lkOrder li{display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:.65rem 0;border-bottom:1px solid var(--line)}
+.lk .lkOrderName{display:flex;flex-direction:column;gap:.15rem;font-size:.95rem}
+.lk .lkOrderName em{font-style:normal;font-size:.8rem;color:var(--fg-3)}
+.lk .lkOrderOps{display:flex;gap:.3rem}
+.lk .lkOrderOps button{padding:.25rem .55rem;font-size:.85rem}
+
+.lk .lkPick{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.lk .lkPick button{display:flex;flex-direction:column;gap:.25rem;align-items:flex-start;text-align:left;
+  padding:.7rem .8rem}
+.lk .lkPick button em{font-style:normal;font-size:.8rem;color:var(--fg-3);line-height:1.45}
+.lk .lkPick button[aria-pressed="true"]{border-color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
+.lk .lkPick button[aria-pressed="true"] em{color:var(--fg-2)}
+
+.lk .lkTokens{list-style:none;margin:.6rem 0 0;padding:0;font-size:.84rem;color:var(--fg-3);line-height:1.9}
+.lk .lkTokens code{font-family:var(--mono);color:var(--fg);background:#f2f3f5;padding:.05rem .3rem;border-radius:3px}
+/* 머리글 옆에 붙는 스위치 — 줄을 타면 「직접 / 만든 것 / 쓰기」로 쪼개져 읽히지 않는다 */
+.lk .lkToggle{display:inline-flex !important;align-items:center;gap:.35rem;white-space:nowrap;
+  font-size:.82rem;font-weight:400;color:var(--fg-3)}
+
+.lk .lkSave{display:flex;gap:.5rem;margin:1.6rem 0 0;padding-top:1rem;border-top:1px solid var(--line)}
+
+.lk .lkPreview{display:flex;flex-direction:column;background:#f4f5f6}
+/* ⚠ 왼쪽 갈피 줄(`.tabs`)과 **같은 높이**로 묶는다 — 둘이 나란히 서는데 46 vs 40 이라
+   가운데 선이 어긋나 보였다(2026-09-18 사용자 지적). 한 변수로 둘을 같이 움직인다 */
+.lk{--lk-bar: 2.9rem}
+.lk .lkPreviewBar{display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  height:var(--lk-bar);box-sizing:border-box;
+  padding:0 .9rem;border-bottom:1px solid var(--line);font-size:.85rem;color:var(--fg-3)}
+/* ⚠ 창을 **1240px 로 띄우고 줄여서** 담는다. 칸 폭 그대로 띄우면 화면 절반쯤이라
+   860px 아래로 떨어지고, 그러면 공개면 CSS 가 판을 버리고 폰처럼 쌓아 끌어서 옮기는
+   편집기가 늘 꺼져 있었다(2026-09-18 사용자 지적). 편집기의 `scale()` 은
+   `getBoundingClientRect` 로 재므로 줄인 배율까지 저절로 셈해진다. */
+.lk .lkPreviewWrap{flex:1;min-height:0;overflow:hidden;background:#fff;position:relative}
+.lk .lkPreview iframe{
+  position:absolute;top:0;left:0;border:0;background:#fff;
+  width:var(--lk-vw,100%);height:var(--lk-vh,100%);
+  transform:scale(var(--lk-k,1));transform-origin:top left}
+
+/* 좁은 화면 — 미리보기를 밑으로 내린다 */
+@media (max-width:1000px){
+  .lkMain{grid-template-columns:1fr;height:auto}
+  .lkPanel{border-right:0;border-bottom:1px solid var(--line)}
+  .lkPreviewWrap{height:70vh}
+}
+
+
+/* 「홈디자인」의 새 조각들 — 사이트 공통 묶음, 미끄럼자, 숫자 고르개 */
+.lk .lkWait{display:grid;place-items:center;height:60vh;color:var(--fg-3)}
+/* (여기 있던 폭 4.5rem · 높이 2.2rem 덮어쓰기는 걷어냈다 — 위에서 한 번에 정한다) */
+
+/* 두 갈래 고르개 — 「화면 끝까지 / 좁은 폭」처럼 뜻이 수치가 아니라 선택일 때 */
+.lk .lkPick.lkTwo{grid-template-columns:1fr 1fr}
+/* 두 갈래 고르개의 **힌트 자리를 두 줄로 고정**한다.
+   글자 길이에 따라 한 줄/두 줄이 갈리면 같은 일을 하는 단추가 자리마다 높이가 달랐다 —
+   폭 고르개만 해도 48·71·89px 로 제각각이었다(2026-09-17 사용자 지적).
+   도형이 들어가는 고르개(메뉴 자리 등)는 이미 훨씬 커서 이 최솟값에 안 걸린다. */
+.lk .lkPick.lkTwo button em{display:block;min-height:calc(2 * 1.45 * .8rem)}
+
+/* 미끄럼자 — 값이 라벨 안에 같이 선다. 끄는 동안 눈이 딴 데를 안 본다 */
+.lk .lkSlide{display:block;margin:.55rem 0}
+.lk .lkSlide span{display:flex;justify-content:space-between;font-size:.82rem;color:var(--fg-3)}
+.lk .lkSlide span b{font-family:var(--mono);font-weight:400;color:var(--fg)}
+.lk .lkSlide input[type=range]{width:100%;margin:.15rem 0 0;accent-color:var(--fg)}
+
+.lk .lkNums{display:flex;gap:.35rem}
+.lk .lkNums button{width:2.4rem;padding:.35rem 0;font-family:var(--mono)}
+.lk .lkNums button[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:#fff}
+
+.lk .lkSave{align-items:center}
+.lk .lkLive{flex:1;text-align:right;font-size:.78rem;color:var(--fg-3)}
+.lk .lkPreviewBar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 새 탭으로 여는 두 길은 **붙여서** 오른쪽 끝에 — space-between 이 넷을 흩으면
+   어느 것이 설명이고 어느 것이 누를 것인지 안 읽힌다 */
+/* 새 탭으로 여는 두 길 — 브라우저 기본 파란 밑줄이 그대로 나가 있었다(2026-09-18 사용자 지적).
+   관리자의 결(각진 모서리·먹빛·모노 숫자)에 맞춰 **작은 단추**로 세운다 */
+.lk .lkPreviewBar .lkOpen{flex:none;overflow:visible;display:inline-flex;align-items:center;gap:.4rem}
+.lk .lkPreviewBar .lkOpen a{
+  display:inline-flex;align-items:center;gap:.3rem;
+  padding:.3rem .55rem;border:1px solid var(--line);border-radius:0;
+  color:var(--fg-2);text-decoration:none;font-size:.78rem;line-height:1;white-space:nowrap;
+  transition:color .12s,border-color .12s,background-color .12s}
+.lk .lkPreviewBar .lkOpen a::after{content:'↗';font-size:.9em;color:var(--fg-3)}
+.lk .lkPreviewBar .lkOpen a:hover{color:var(--fg);border-color:var(--fg);background:var(--bg-2)}
+.lk .lkPreviewBar .lkOpen a:hover::after{color:inherit}
+.lk .lkPreviewBar .lkOpen a:focus-visible{outline:2px solid var(--fg);outline-offset:1px}
+
+/* ── 왼쪽 메뉴 ──────────────────────────────────────────────────────────
+   이 사이트에서 손댈 수 있는 것 셋이 한 줄에 선다. 머리줄에 단추로 흩어 두면
+   같은 무게의 일이 서로 다른 자리에 있어 무엇을 할 수 있는지가 한눈에 안 들어온다. */
+.adm .shell{display:grid;grid-template-columns:11.5rem minmax(0,1fr);align-items:start}
+.adm .side{position:sticky;top:60px;display:flex;flex-direction:column;
+  padding:1.4rem 0;border-right:1px solid var(--line);min-height:calc(100vh - 60px)}
+.adm .side button{border:0;border-radius:0;background:none;text-align:left;
+  padding:.6rem clamp(1rem,2vw,1.4rem);font-size:.95rem;color:var(--fg-3);
+  border-left:2px solid transparent}
+.adm .side button:hover:not(:disabled){color:var(--fg);background:#f7f8f9;border-color:transparent}
+.adm .side button[aria-current]{color:var(--fg);font-weight:700;border-left-color:var(--fg);background:none}
+/* 메뉴가 왼쪽 자리를 잡고, 목록은 **남은 자리의 가운데**에 선다 —
+   왼쪽에 붙여 두면 넓은 화면에서 오른쪽이 통째로 비어 화면이 한쪽으로 쏠린다 */
+/* ⚠ `margin-inline:auto` 만 주면 그리드 칸에서 **늘어나기가 꺼진다**(자동 여백이 stretch 를
+   이긴다) — 목록이 글자 폭으로 쪼그라든 채 가운데에 선다. `width:100%` 를 같이 줘야
+   칸을 채운 뒤 상한에서 멈추고, 남은 자리를 자동 여백이 반씩 나눈다. */
+.adm .shell > main.wrap{width:100%;margin-inline:auto;max-width:64rem;padding-block:1.6rem 4rem}
+.adm .shell > main.lkHost{min-width:0}
+/* ⚠ `shell` 은 두 칸 격자(사이드바 11.5rem + 본문)다. 왼쪽 메뉴가 없으면 `main` 이
+   첫째 자식이 되어 **사이드바 칸에 앉는다** — 넓은 화면에서 본문이 184px 로 쪼그라들어
+   왼쪽에 붙고, 모바일은 아래 미디어 쿼리가 한 칸으로 만들어 멀쩡하므로 **데스크톱에서만**
+   드러난다. 첫째 자식이 main 이면 두 칸을 다 쓰게 해 그 경우를 막는다. */
+.adm .shell > main:first-child{grid-column:1 / -1}
+
+@media (max-width:760px){
+  /* 좁으면 가로 줄로 눕는다 — 세로 메뉴가 화면 반을 먹는 것보다 낫다 */
+  .adm .shell{grid-template-columns:1fr}
+  .adm .side{position:static;flex-direction:row;min-height:0;padding:0;
+    border-right:0;border-bottom:1px solid var(--line);overflow-x:auto}
+  .adm .side button{border-left:0;border-bottom:2px solid transparent;white-space:nowrap}
+  .adm .side button[aria-current]{border-left-color:transparent;border-bottom-color:var(--fg)}
+  .adm .shell > main.wrap{padding-block:1.2rem 3rem}
+}
+
+/* ── 작업 폴더 ──────────────────────────────────────────────────────────
+   글쓰기 화면과 일부러 다르다. 그쪽은 「쓰는 자리」라 툴바가 주인공이지만
+   여기는 「고르는 자리」라 **그림이 화면의 전부**여야 한다. 제목 한 줄과 격자뿐. */
+/* ⚠ 이 화면은 `.adm` **밖**이다(`main.jsx` 가 `WorkFolder` 를 껍데기 없이 돌려준다).
+   `.adm` 이 깔아 주던 타이포가 하나도 안 와서 편집기 글꼴(Pretendard 16px)로 흘렀고
+   한글이 낱말 가운데서 끊겼다 — 여기서 제 손으로 깐다(`.peWait` 머리말과 같은 함정) */
+.wf{min-height:100vh;background:#fff;
+  font-family:var(--sans);font-size:15px;line-height:1.6;word-break:keep-all}
+.wfMain{max-width:64rem;margin:0 auto;padding:clamp(1.4rem,3vw,2.4rem) clamp(1.25rem,4vw,2rem) 4rem}
+
+/* 제목은 입력칸처럼 안 생겼다 — 테두리 대신 밑선 하나. 작업 이름이 화면의 머리다 */
+.wfTitle{display:block;width:100%;border:0;border-bottom:1px solid var(--line);border-radius:0;
+  padding:.4rem 0 .7rem;background:none;color:var(--fg);
+  font-family:var(--display);font-size:clamp(1.5rem,3.4vw,2.3rem);font-weight:400;letter-spacing:-.02em}
+/* ⚠ 곁글자에 `--line-2`(#f0f2f4) 를 쓰면 흰 바탕에서 **1.13:1** 이라 안 보인다.
+   이 파일이 두 번 못 박은 규칙인데 이 화면만 어겼다 — 곁글자는 `--fg-3` 이다 */
+.wfTitle::placeholder{color:var(--fg-3)}
+.wfTitle:focus-visible{outline:0;border-bottom-color:var(--fg)}
+
+/* 머리줄 — 목록 화면의 `.head` 와 같은 규약(양끝 정렬). 힌트를 숨겨도 단추가 안 움직인다 */
+.wfBar{display:flex;align-items:center;justify-content:space-between;gap:.9rem;
+  padding:1.1rem 0 1rem;font-size:.85rem;color:var(--fg-3)}
+/* ⚠ 두 곁말을 담는 칸이다. 레이아웃을 안 주면 두 `span` 이 그대로 붙어
+     「비어 있음끌어서 순서를…」 으로 읽힌다(2026-09-18 사용자 지적) */
+.wfSum{display:flex;align-items:baseline;gap:.55rem;min-width:0}
+/* 개수는 늘 모노다(`.cnt`·`.fo-sub` 와 같은 어휘) */
+.wfCnt{font-family:var(--mono);font-size:.8rem;color:var(--fg-2)}
+.wfHint{font-size:.8rem;color:var(--fg-3)}
+@media (max-width:640px){.wfHint{display:none}}
+/* 안 나가는 동안의 곁말 — 머리줄(검정) 안이라 흰 계열이다 */
+.wfOff{margin-left:.6rem;opacity:.72}
+
+/* 끌어다 놓는 빈 자리 — 빈 격자를 그리는 대신 무엇을 하면 되는지 한 줄로 말한다.
+   선은 이 사이트의 한 모양(실선 1px `--line`)이다 — 점선·10px·원오프 회색은 여기만 쓰던 것이었다 */
+.wfDrop{display:grid;place-items:center;width:100%;min-height:16rem;border:1px solid var(--line);
+  border-radius:8px;background:#f7f8f9;color:var(--fg-3);font-size:.95rem;cursor:pointer}
+.wfDrop:hover{border-color:var(--fg-3);color:var(--fg)}
+.wfDrop:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* 격자 — 비율을 자르지 않는다. 디자이너가 올린 판형이 그대로 보여야 고를 수 있다.
+   칸 크기·사이는 작업 목록(`.folders`)과 같게 둔다 — 같은 사진이 두 화면에서 같은 크기로 선다 */
+.wfGrid{list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(13rem,1fr));gap:1.2rem}
+.wfGrid li{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;
+  background:#f4f5f6;cursor:grab}
+.wfGrid li:active{cursor:grabbing}
+.wfGrid li[data-cover]{border-color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
+.wfGrid img{display:block;width:100%;height:auto}
+/* 차례·대표 딱지 — 왼쪽 위 한 줄. 조작 칩(오른쪽 위)과 마주 보고 안 겹친다 */
+.wfMark{position:absolute;top:.4rem;left:.5rem;display:flex;align-items:center;gap:.25rem}
+.wfNo{font-family:var(--mono);font-size:.7rem;
+  padding:.1rem .35rem;border-radius:3px;background:rgba(0,0,0,.6);color:#fff}
+/* 대표는 **뒤집어서** 말한다 — 흰 딱지 하나면 열두 칸 중 어느 것인지 멀리서도 보인다 */
+.wfTag{font-size:.7rem;line-height:1.5;padding:.1rem .35rem;border-radius:3px;
+  background:#fff;color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.wfOps{position:absolute;top:.35rem;right:.35rem;display:flex;gap:.25rem;opacity:0;transition:opacity .12s}
+/* 대표 칸만 칩을 늘 열어 두던 규칙은 뺐다 — 이제 「대표」 딱지가 그 말을 하므로
+   같은 뜻이 두 번 나오고, 대표 칸에만 빼기(×)가 늘 노출돼 있었다 */
+.wfGrid li:hover .wfOps,.wfGrid li:focus-within .wfOps{opacity:1}
+/* ⚠ 손가락에는 호버가 없다 — 이 줄이 없으면 태블릿에서 대표 지정도 빼기도 **못 누른다**.
+     작업 목록의 칩(`.fo-ops`)도 같은 함정이라 한자리에서 같이 연다 */
+@media (hover:none){.wfOps,.adm .fo-ops{opacity:1}}
+.wfOps button{display:grid;place-items:center;width:26px;height:26px;padding:0;border-radius:6px;
+  border:0;background:rgba(0,0,0,.6);color:#fff}
+.wfOps button:hover:not(:disabled){background:#000}
+.wfOps button[aria-pressed="true"]{background:#fff;color:#000}
+
+/* ── 포트폴리오 목록 = 폴더 카드 ────────────────────────────────────────
+   작업은 제목이 아니라 **그림으로 고른다.** 줄 목록에 썸네일을 끼우면
+   그림이 글자에 딸린 장식이 되는데, 여기서는 그림이 주인공이다. */
+.adm .folders{list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(13rem,1fr));gap:1.2rem}
+.adm .folders li{position:relative;cursor:grab}
+.adm .folders li:active{cursor:grabbing}
+.adm .fo{display:block;width:100%;padding:0;border:0;border-radius:0;background:none;text-align:left}
+.adm .fo-shot{display:block;aspect-ratio:4/3;overflow:hidden;border:1px solid var(--line);
+  border-radius:8px;background:#f4f5f6}
+.adm .fo-shot img{width:100%;height:100%;object-fit:cover;display:block}
+.adm .fo:hover .fo-shot{border-color:var(--fg-3)}
+.adm .fo-name{display:block;margin-top:.6rem;font-size:.95rem;color:var(--fg);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adm .fo-sub{display:block;margin-top:.15rem;font-size:.78rem;color:var(--fg-3);font-family:var(--mono)}
+/* 내려둔 작업 — 지운 게 아니라 내려둔 것이다. 취소선 대신 흐리게 */
+.adm .folders li[data-hidden] .fo-shot{opacity:.45}
+.adm .fo-ops{position:absolute;top:.4rem;right:.4rem;display:flex;gap:.25rem;opacity:0;transition:opacity .12s}
+.adm .folders li:hover .fo-ops,.adm .folders li:focus-within .fo-ops{opacity:1}
+.adm .fo-ops button{display:grid;place-items:center;width:28px;height:28px;padding:0;border-radius:6px;
+  border:0;background:rgba(255,255,255,.92);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.adm .fo-ops button:hover:not(:disabled){background:#fff}
+
+/* ── 공통 탭 ─────────────────────────────────────────────────────────────
+   색·글꼴·머리줄·목록 머리가 한 탭에 산다. 묶음 사이는 **굵은 선**으로 끊고,
+   묶음 안의 항목은 작은 제목(h4)으로 가른다 — 같은 크기로 늘어놓으면 어디서 무엇이
+   시작하는지가 안 보인다. */
+/* 갈피(공통·메인·포트폴리오·블로그)는 **패널을 내려도 늘 보인다** — 손잡이가 길어
+   내려가면 지금 어느 화면을 고치는지 알 수 없었다(2026-09-18 사용자 지적).
+   좌우로 패널 여백만큼 넓혀, 밑에서 올라오는 글이 갈피 옆으로 비치지 않게 한다 */
+/* 갈피 줄은 **오른쪽 미리보기 줄과 같은 키**여야 한다(`--lk-bar`) — 둘이 나란히 서므로
+   높이가 다르면 아랫선이 어긋난다. 위 여백을 여기 넣으면 그만큼 내려가 선이 안 맞는다 */
+.lk .lkPanel .tabs{height:var(--lk-bar);box-sizing:border-box;align-items:stretch;
+  position:sticky;top:0;z-index:6;background:var(--bg);
+  margin-inline:calc(-1 * var(--lk-pad-x));padding:0 var(--lk-pad-x)}
+.lk .lkPanel .tabs button{padding-block:0;display:inline-flex;align-items:center}
+.lk .lkPanel h3.lkGroup{margin-top:2.2rem;padding-top:1.3rem;border-top:2px solid var(--fg)}
+.lk .lkPanel h4{margin:1.1rem 0 .5rem;font-size:.82rem;font-weight:600;color:var(--fg-2)}
+.lk .lkRow{margin-top:.8rem;align-items:flex-end}
+.lk .lkField input[type=text]{padding:.45rem .55rem;border-radius:0;font-size:.92rem}
+
+/* 셋 중 하나 — 두 칸 격자에 넣으면 셋째가 혼자 한 줄을 차지해 무게가 틀어진다 */
+.lk .lkPick.lkThree{grid-template-columns:repeat(3,1fr)}
+.lk .lkPick.lkThree button{padding:.55rem .6rem}
+
+/* 이름 바꾸기 줄 — 보이기 칸과 이름 칸이 한 줄. 끄면 이름 칸이 흐려진다 */
+.lk .lkLink{display:flex;align-items:center;gap:.7rem;margin:.45rem 0}
+.lk .lkLink input[type=text]{flex:1;padding:.45rem .55rem;border-radius:0;font-size:.92rem}
+.lk .lkLink input[type=text]:disabled{background:#f4f5f6;color:var(--fg-3)}
+
+/**
+ * 레이아웃 도형 — 템플릿 카드 위에 판짜기 그림 하나.
+ * 이름만으로는 「헤드라인」과 「타이포 표지」가 무엇이 다른지 눌러 보기 전엔 모른다(2026-09-16 QA).
+ * 고른 카드에서는 도형도 진해진다 — 무엇을 골랐는지가 그림에서도 보인다.
+ */
+.lk .lkShapes button{padding-top:.75rem}
+.lk .lkShape{width:100%;height:auto;aspect-ratio:26/20;max-height:4.6rem;margin-bottom:.45rem;
+  background:#f6f7f8;border:1px solid var(--line)}
+.lk .lkShape rect[data-tone="1"]{fill:#9aa1aa}
+.lk .lkShape rect[data-tone="0"]{fill:#d7dbe0}
+/* 흰 면 — 헤더 띠·서랍 판처럼 바탕보다 밝은 자리 */
+.lk .lkShape rect[data-tone="2"]{fill:#fff;stroke:#c9ced4;stroke-width:.2}
+.lk .lkShapes button[aria-pressed="true"] .lkShape{background:#fff;border-color:var(--fg)}
+.lk .lkShapes button[aria-pressed="true"] .lkShape rect[data-tone="1"]{fill:var(--fg)}
+.lk .lkShapes button[aria-pressed="true"] .lkShape rect[data-tone="0"]{fill:#aeb4bb}
+
+/* 저장 줄 — **두 단추 모두 직각.** 「사이트에 반영」은 .primary(0), 「이전 판으로」는
+   기본 button(9px)이라 모서리가 갈려 있었다(2026-09-16 QA). 이 사이트의 행동 단추는 직각이다 */
+.lk .lkSave button{border-radius:0}
+
+/* 첫 묶음(공통헤더)은 탭 바로 밑이라 굵은 윗선이 필요 없다 — 선은 묶음 **사이**를 끊는 것이다 */
+.lk .lkPanel h3.lkGroup.lkFirst{margin-top:1rem;padding-top:0;border-top:0}
+.lk .lkPanel h3.lkGroup em{font-style:normal;font-size:.76rem;font-weight:400;color:var(--fg-3);
+  font-family:var(--mono);letter-spacing:.02em}
+.lk .lkPanel h4.lkSub{margin-top:.8rem;font-weight:400;color:var(--fg-3)}
+
+/* 꺼진 손잡이 — 값은 남아 있지만 지금은 뜻이 없다(버튼 테두리가 0 이면 모서리가 안 보인다) */
+.lk .lkSlide.is-off span{color:#b4bac2}
+.lk .lkSlide.is-off span b{color:#b4bac2}
+.lk .lkSlide input[type=range]:disabled{opacity:.4;cursor:not-allowed}
+
+/* 공통 탭 미리보기의 화면 고르개 — 공통 설정은 세 화면 전부에 걸리므로 골라서 본다 */
+.lk .lkPages{display:inline-flex;align-items:center;gap:.25rem;overflow:visible}
+.lk .lkPages button{padding:.2rem .6rem;font-size:.8rem;font-weight:500;border-radius:0;background:transparent}
+.lk .lkPages button[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:#fff}
+.lk .lkPages em{font-style:normal;margin-left:.6rem;color:var(--fg-3);white-space:nowrap}
+
+/**
+ * 글꼴 칸의 여는 버튼 — 메뉴는 에디터 것 그대로(body 로 포털돼 여기 규칙이 안 닿는다),
+ * **버튼만** 이 화면의 입력칸 모양으로 맞춘다.
+ * ⚠ `.adm button { background:#fff }` 가 에디터의 꺾쇠(background-image)를 지운다 — 다시 그린다.
+ */
+.lk .lkFontField{display:flex;flex-direction:column;gap:.3rem;font-size:.82rem;color:var(--fg-3);flex:1 1 12rem;min-width:0}
+.lk .lkFontField .tb-anchor{display:block}
+.lk .lkPicker{
+  display:flex;align-items:center;width:100%;height:2.35rem;min-width:0;
+  padding:0 2rem 0 .65rem;border:1px solid var(--line);border-radius:0;
+  font-size:.95rem;font-weight:400;color:var(--fg);text-align:left;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  background-color:#fff;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6' viewBox='0 0 9 6'%3E%3Cpath d='M1 1l3.5 3.5L8 1' fill='none' stroke='%238a8a8a' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right .7rem center;
+}
+.lk .lkPicker:hover{background-color:#fff}
+.lk .lkPicker.is-open{border-color:var(--fg)}
+.lk .lkPicker:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+/* 눈 단추 옆 글 — 체크칸 글과 같은 결로(작고 흐리게) */
+.lk .lkEyeRow span{font-size:.88rem;color:var(--fg-2)}
+.lk .lkLink .vis{flex:none;margin-left:-6px}
+/* 눈과 그 이름 사이 — 눈 단추 자체에 6px 여백이 있어 줄 간격(.7rem)을 더하면 너무 벌어진다 */
+.lk .lkEyeRow{gap:.1rem;margin-top:.15rem}
+/* 홈디자인의 눈은 작게 — 글 목록의 눈(20px)은 한 줄을 대표하는 조작이라 크고,
+   여기서는 입력칸 옆의 곁 조작이다. 단추도 같이 줄여 이름과의 사이가 벌어지지 않게 */
+.lk .vis{width:26px;height:26px}
+.lk .vis svg{width:16px;height:16px}
+.lk .lkLink .vis{margin-left:-5px}
+/* 눈이 붙은 줄은 **간격이 하나**다 — 타이틀 줄(눈 + 입력칸)과 갯수 줄(눈 + 글)의 간격이 달라
+   입력칸 왼쪽 선과 「콘텐츠 갯수 표시」의 첫 글자가 10px 어긋났다(2026-09-17 사용자 지적).
+   눈 단추 안쪽 여백이 이미 있어 줄 간격은 거의 0 으로 둔다 */
+.lk .lkLink{gap:.1rem}
+.lk .lkEyeRow{gap:.1rem}
+
+/* 공통헤더 색을 「본문 색 따르기」로 되돌리는 글자 단추 — 색 칸 밑에 작게 */
+.lk .lkReset{margin-top:.25rem;padding:0;border:0;border-radius:0;background:none;
+  font-size:.74rem;font-weight:400;color:var(--fg-3);text-decoration:underline;text-underline-offset:2px;
+  white-space:nowrap;cursor:pointer}
+.lk .lkReset:hover:not(:disabled){color:var(--fg);background:none;border:0}
+
+/* 목록 ↔ 상세 구분선 — **패널 끝에서 끝까지.** 패널 안쪽 여백만큼 음수 여백으로 밀어낸다.
+   여백 값은 패널과 같은 변수(--lk-pad-x)라 한쪽만 바뀌어 선이 모자라거나 넘치는 일이 없다 */
+.lk .lkRule{height:0;border:0;border-top:1px solid var(--line);
+  margin:2rem calc(-1 * var(--lk-pad-x)) 0}
+/* 맨 아래의 직접 올리기 — 구분선 밑에 **혼자** 서므로 한 칸 폭을 다 쓴다 */
+
+/**
+ * 구분선은 **한 모양**이다 — 1px 옅은 선, 패널 끝에서 끝까지(.lkRule 과 같은 규칙).
+ * 저장 줄 위 선은 패널 안쪽 여백만큼 들여 그어져 있었고, 공통 탭의 묶음 선은 2px 검정이라
+ * 선마다 생김새가 달랐다(2026-09-17 사용자 지적). 음수 여백으로 밀어내고 안쪽 여백은 되돌려 준다.
+ */
+.lk .lkSave{margin:1.6rem calc(-1 * var(--lk-pad-x)) 0;padding:1rem var(--lk-pad-x) 0;border-top:1px solid var(--line)}
+.lk .lkPanel h3.lkGroup{margin-inline:calc(-1 * var(--lk-pad-x));padding-inline:var(--lk-pad-x);
+  border-top:1px solid var(--line)}
+.lk .lkPanel h3.lkGroup.lkFirst{border-top:0}
+
+/* ── 만드는 방법 · 직접 디자인 안내 ───────────────────────────────────
+   「직접 디자인」을 고르면 아래 템플릿 손잡이는 **숨긴다**(고를 수 없는 것으로 스크롤만 길어진다).
+   값은 그대로 남아 「템플릿」으로 돌리면 고른 그대로 다시 나온다. */
+.lk .lkModes{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin:.2rem 0 .4rem}
+.lk .lkModes button{
+  display:flex;flex-direction:column;align-items:flex-start;gap:.25rem;
+  padding:.7rem .75rem;border:1px solid var(--line);background:#fff;text-align:left;cursor:pointer}
+.lk .lkModes button b{font-size:.92rem;font-weight:700}
+.lk .lkModes button span{font-size:.78rem;color:var(--fg-3);line-height:1.45}
+.lk .lkModes button[aria-checked=true]{border-color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
+
+/**
+ * 탭 띠와 그 아래의 경계 — **묶음 구분선보다 진하다.**
+ * 둘 다 1px 옅은 선이면 「탭이 바뀌는 자리」와 「묶음이 바뀌는 자리」가 구별되지 않는다.
+ * 고른 탭의 밑줄(2px --fg)은 그보다 진해 여전히 도드라진다.
+ */
+/* ⚠ 위로 끌어올리지 않는다 — 패널이 이제 위 여백을 안 든다(위 `.lkPanel` 머리말).
+   아래는 **20px** 을 띄운다: 붙어 있으면 탭을 누르고 나온 내용이 탭에 달라붙어 읽힌다
+   (2026-09-18 사용자 지적 — 그 전에는 `.4rem`(6px)이라 오히려 겹쳐 보였다) */
+.lk .lkPanel .tabs{margin:0 calc(-1 * var(--lk-pad-x)) 20px;padding-inline:var(--lk-pad-x);
+  border-bottom:2px solid var(--line)}
+/* 첫 내용의 제 여백은 지운다 — 위 20px 과 겹쳐 두 배로 벌어진다 */
+.lk .lkPanel .tabs + .lkHint.lkLead,
+.lk .lkPanel .tabs + .lkSub,
+.lk .lkPanel .tabs + h3,
+.lk .lkPanel .tabs + h4{margin-top:0}
+
+/**
+ * 탭 바로 밑의 머리칸 — 「공통헤더」 묶음이다.
+ *
+ * **아랫선을 이 칸이 직접 긋는다.** 다음에 오는 묶음의 윗선에 맡기면, 그 묶음이 없는
+ * 화면(블로그 — 「만드는 방법」이 없다)에서는 선이 통째로 사라진다. 다음 묶음의 윗선은
+ * 대신 지운다(두 줄이 겹치지 않게).
+ */
+.lk .lkTop{padding:1rem 0 1.1rem;margin-inline:calc(-1 * var(--lk-pad-x));
+  padding-inline:var(--lk-pad-x);border-bottom:1px solid var(--line)}
+/* `.lkFirst` 쪽이 명시도가 높아 그냥 `.lkTop h3.lkGroup` 으로는 안 덮인다 —
+   안 덮이면 이 칸의 윗여백과 h3 의 윗여백이 **둘 다** 들어가 공통 탭보다 한 칸 내려앉는다 */
+.lk .lkTop h3.lkGroup,
+.lk .lkTop h3.lkGroup.lkFirst{margin:0 0 .7rem;padding:0;border-top:0}
+.lk .lkTop + h3.lkGroup{margin-top:1.4rem;padding-top:0;border-top:0}
+/* 블로그에는 「만드는 방법」이 없어 이 자리에 묶음(fieldset)이 바로 온다 — 그 안의 첫 머리글도
+   **같은 높이**에서 시작해야 탭을 오갈 때 글줄이 튀지 않는다(2026-09-18 사용자 지적:
+   같은 「목록 폭」인데 포트폴리오는 22px, 블로그는 10px 에서 시작했다) */
+.lk .lkTop + .lkFs > h3:first-child{margin-top:1.4rem}
+.lk .lkChrome{align-items:flex-start;margin:0}
+.lk .lkChrome .lkHint{margin:0}
+
+/* 템플릿 손잡이 묶음 — fieldset 의 기본 테두리·여백만 지운다(직접 디자인이면 통째로 안 그린다) */
+.lk .lkFs{border:0;margin:0;padding:0;min-width:0}
+
+/* 어느 파일을 고치면 되는가 — 직접 디자인에서만 뜬다 */
+.lk .lkCode{margin:1rem 0 .4rem;padding:.9rem 1rem;background:var(--bg-2, #f7f8f9);border:1px solid var(--line)}
+.lk .lkCode > p{margin:0 0 .7rem;font-size:.88rem}
+.lk .lkCode dl{display:grid;grid-template-columns:auto 1fr;gap:.5rem .9rem;margin:0}
+.lk .lkCode dt{font-size:.8rem;font-weight:700;color:var(--fg-2);white-space:nowrap}
+.lk .lkCode dd{margin:0;font-size:.85rem;min-width:0}
+.lk .lkCode code{font-family:var(--mono);font-size:.84rem;word-break:break-all}
+/* 복사할 명령 한 줄 — 명령과 단추가 한 덩이. 명령이 길면 명령만 줄을 탄다 */
+.lk .lkCode .lkCmd{display:flex;align-items:flex-start;gap:.5rem}
+.lk .lkCode .lkCmd code{flex:1 1 auto;min-width:0;padding:.2rem .4rem;background:#fff;border:1px solid var(--line)}
+.lk .lkCode .lkCmd button{flex:none;padding:.2rem .55rem;font-size:.78rem}
+/* 「사용할 파일」 — 템플릿 카드와 같은 물건. 「만드는 방법」 바로 밑이라 위 여백만 맞춘다 */
+.lk .lkSources{margin-top:.2rem}
+.lk .lkCode em{display:block;margin-top:.15rem;font-style:normal;font-size:.78rem;color:var(--fg-3)}
+.lk .lkCode .lkHint{margin-top:.8rem}
+
+/* 「지금은 안 나갑니다」 — 목록 맨 위. 오류(err)가 아니라 **상태**라 빨강을 안 쓴다 */
+.adm .lsNote{
+  margin:0 0 1rem;padding:.7rem .9rem;font-size:.86rem;line-height:1.6;
+  color:var(--fg-2);background:var(--bg-2,#f7f8f9);border-left:3px solid var(--fg-3)}
+.adm .lsNote b{color:var(--fg);font-weight:700}
+
+/* 회색 띠 — 막힌 게 아니라 **알아 둘 것**이라 빨강(err)이 아니다.
+   `warn` 은 굽기의 귀띔, `band` 는 그냥 설명. 생김새는 하나로 맞춘다 */
+.lk .lkHint.warn,
+.lk .lkHint.band{
+  margin:.5rem 0 0;padding:.5rem .7rem;
+  color:var(--fg-2);background:var(--bg-2,#f7f8f9);border-left:3px solid var(--fg-3)}
+
+/* 저장 단추 — 아이콘과 이름이 같이 선다. 아이콘만 두었더니 ✓·↺ 가 무슨 일을 하는지
+   눌러 보기 전에 알 수 없었다(2026-09-17 사용자 지적) */
+.lk .lkSave button{display:inline-flex;align-items:center;gap:.4rem}
+.lk .lkSave button > svg{flex:none}
+/* 도는 중 — 아이콘 자리를 그대로 채운다. 단추가 줄었다 늘었다 하지 않게 크기가 같다 */
+.lk .lkSpin{display:block;width:15px;height:15px;border-radius:50%;
+  border:2px solid currentColor;border-top-color:transparent;animation:lkSpin .7s linear infinite}
+@keyframes lkSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.lk .lkSpin{animation-duration:2.4s}}
+
+/* 탭 맨 위에 서는 설명 — 탭 띠 바로 밑이라 위아래 여백을 제가 잡는다 */
+.lk .lkHint.lkLead{margin:1.1rem 0 0}
+.lk .lkHint.lkLead + h3.lkGroup{margin-top:1.4rem}
+
+/**
+ * 공통의 **2단계 갈피** — 1단계(`.tabs`)의 밑줄 띠와 달리 네모 칸으로 간다.
+ * 둘이 같은 모양이면 「탭이 바뀌는 자리」와 「그 안이 바뀌는 자리」가 구별되지 않는다.
+ *
+ * ⚠ `.tabs` 클래스를 재사용하면 안 된다: 그 클래스의 음수 위 여백(-1.4rem)이 둘째 줄까지
+ * 위로 끌어올려 1단계와 겹치고, 고정 높이(--lk-bar)를 또 먹으면 오른쪽 미리보기 줄과의
+ * 높이 맞춤이 깨진다(이 파일의 `.lkPanel .tabs` 머리말).
+ */
+/* 갈피 수를 안 박는다 — 갈피가 늘면 칸이 늘 뿐이다(셋에 박아 두면 넷째가 둘째 줄로 떨어지고
+   `:last-child` 의 테두리 지우기가 셋째에 안 걸려 선이 깨진다) */
+.lk .lkSub{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;margin:1.1rem 0 1.4rem;
+  border:1px solid var(--line)}
+.lk .lkSub button{padding:.5rem .4rem;border:0;border-right:1px solid var(--line);border-radius:0;
+  background:#fff;font:inherit;font-size:.86rem;color:var(--fg-3);cursor:pointer}
+.lk .lkSub button:last-child{border-right:0}
+.lk .lkSub button:hover:not([aria-selected="true"]){background:var(--bg-2,#f7f8f9);color:var(--fg)}
+.lk .lkSub button[aria-selected="true"]{background:var(--fg);color:#fff;font-weight:700}
+/* 갈피 이름이 곧 머리글이라 바로 밑의 `h4` 는 제 위 여백을 지운다 */
+.lk .lkSub + h4{margin-top:0}
+
+
+/* ── 메인 무대 편집 ──────────────────────────────────────────────────────
+   요소는 미리보기에서 끌어 옮긴다. 패널은 **보이기·고르기·숫자**만 맡는다. */
+
+/* 선택한 요소 — 피그마의 속성 칸처럼. 패널을 내려도 위에 붙어 있어야 숫자를 보며 끌 수 있다 */
+/* 목록 바로 밑에 붙어 어디부터가 「고르는 칸」인지 안 보였다(2026-09-18 사용자 지적) —
+   위에 굵은 선을 둘러 한 덩이로 떼어 낸다. 붙어 있는 자리는 갈피 바로 아래(`--lk-bar`) */
+.lk .lkSel{position:sticky;top:var(--lk-bar);z-index:5;margin:1rem calc(-1 * var(--lk-pad-x));
+  padding:.8rem var(--lk-pad-x) .7rem;background:#fff;
+  border-top:2px solid var(--fg);border-bottom:1px solid var(--line);
+  box-shadow:0 6px 12px -10px rgba(0,0,0,.25)}
+/* 무엇을 보고 있는 칸인지 한 줄로 — 선만으로는 「설정 창」인지 안 읽힌다 */
+.lk .lkSel::before{content:'선택한 요소';display:block;margin-bottom:.4rem;
+  font-size:.72rem;font-weight:700;letter-spacing:.02em;color:var(--fg-3)}
+.lk .lkSelHead{display:flex;align-items:center;justify-content:space-between;gap:.5rem;font-size:.9rem}
+.lk .lkSelText{flex:1;min-width:0;box-sizing:border-box;padding:.25rem .4rem;
+  border:1px solid transparent;border-radius:0;background:none;
+  font:inherit;font-size:.9rem;font-weight:700;line-height:1.45;color:var(--fg);
+  resize:vertical;field-sizing:content;max-height:6.5rem;overflow:auto}
+.lk .lkSelText::placeholder{font-weight:400;color:var(--fg-3)}
+.lk .lkSelText:hover{border-color:var(--line)}
+.lk .lkSelText:focus{outline:0;border-color:var(--fg);background:#fff}
+.lk .lkSelX{width:26px;height:26px;padding:0;border:0;border-radius:0;background:none;font-size:1.1rem;line-height:1;color:var(--fg-3)}
+.lk .lkSelX:hover:not(:disabled){background:#f2f3f5;color:var(--fg);border:0}
+.lk .lkAlign{display:flex;gap:.2rem;margin:.55rem 0 .5rem}
+.lk .lkAlign button{display:grid;place-items:center;width:30px;height:28px;padding:0;border-radius:0}
+.lk .lkAlign button:nth-child(4){margin-left:.5rem}
+.lk .lkAlign svg{width:16px;height:16px;fill:currentColor;stroke:currentColor;stroke-width:0}
+.lk .lkAlign path{stroke-width:1.2;stroke-linecap:square}
+/* 이름줄과 숫자칸 사이를 띄운다 — 붙어 있으면 이름이 칸의 라벨처럼 읽힌다(2026-09-18 사용자 지적) */
+.lk .lkNumRow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.4rem;margin-top:.7rem}
+.lk .lkSelHead + .lkAlign{margin-top:.6rem}
+.lk .lkNum{display:flex;align-items:center;gap:.35rem;height:2.1rem;padding:0 .45rem;
+  border:1px solid var(--line);background:#fff;font-size:.8rem;color:var(--fg-3)}
+.lk .lkNum:focus-within{border-color:var(--fg)}
+.lk .lkNum input{width:100%;min-width:0;border:0;padding:0;background:none;font:inherit;font-family:var(--mono);
+  font-size:.85rem;color:var(--fg);-moz-appearance:textfield}
+.lk .lkNum input:focus{outline:0}
+.lk .lkNum input::-webkit-inner-spin-button,.lk .lkNum input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.lk .lkNum.is-auto{background:#f7f8f9}
+.lk .lkNum output{font-family:var(--mono);font-size:.85rem;color:var(--fg-3)}
+.lk .lkSelTip{margin:.5rem 0 0;font-size:.74rem;line-height:1.5;color:var(--fg-3)}
+
+/* 요소 목록 — 눈 + 이름. 이름을 누르면 미리보기에서 그 요소를 고른다 */
+.lk .lkItems{list-style:none;margin:0;padding:0}
+.lk .lkItems li{display:flex;align-items:center;gap:.1rem}
+.lk .lkItems li .vis{margin-left:-5px}
+/* ⚠ **이름 단추에만 건다(`.lkItemName`).** 예전 선택자는 `li button:not(.vis)` 라
+   줄 안의 눈 아닌 **모든** 단추를 잡았다 — 사진 줄의 ↑↓ 까지 `flex:1`·`text-align:left`·
+   `--fg-2` 를 물려받고, 아래 규칙이 그걸 폭·테두리·색 하나씩 되돌리다 **`text-align` 을
+   빠뜨려** 화살표만 칸 왼쪽에 붙어 있었다(2026-09-18 사용자 지적).
+   되돌리기를 늘리는 대신 **처음부터 안 물려주는 쪽**으로 고친다. */
+/* 켜 둔 줄은 **본문색**이다 — `--fg-2` 로 두면 꺼 둔 줄과 구별이 안 돼 다 disabled 처럼 보였다
+   (2026-09-18 사용자 지적). 흐림은 `li.is-off` 한 자리에서만 준다 */
+.lk .lkItems li .lkItemName{flex:1;padding:.3rem .35rem;border:0;border-radius:0;background:none;
+  text-align:left;font-size:.88rem;color:var(--fg)}
+.lk .lkItems li .lkItemName:hover:not(:disabled){background:#f4f5f6;border:0}
+.lk .lkItems li .lkItemName:disabled{color:#b4bac2;background:none}
+/* ⚠ 흐림은 **줄**이 든다(`li.is-off`) — `:disabled` 에 기대면 글자 줄이 칸(`<span><input>`)이 된
+   뒤로 규칙이 죽는다. 같은 목록에서 로고 줄만 흐려져 두 줄이 달라 보였다(2026-09-18).
+   끈 요소도 **글자는 고칠 수 있어야** 하므로 `disabled` 는 걸지 않는다 — 흐림만 준다 */
+.lk .lkItems li.is-off .lkItemName,
+.lk .lkItems li.is-off .lkItemText{color:#b4bac2}
+.lk .lkItems li.is-off .lkItemText::placeholder{color:#c9ced5}
+.lk .lkItems li[aria-current] .lkItemName{color:var(--fg);font-weight:600;background:#eef6fe}
+
+/* 템플릿을 바꾸면 배치를 되돌리는지 묻는 줄 — 브라우저 확인창은 미리보기 조작을 막아 버린다 */
+/**
+ * 배치 되돌리기 확인 — **화면 가운데 팝업**이다.
+ *
+ * 패널 안에 끼워 두었더니 고르개 아래에 붙어, 화면 밖이면 누른 사람이 아무 일도 안
+ * 일어난 줄 안다(템플릿이 안 바뀌는 것으로 보인다). 묻는 말은 눈이 있는 자리에 떠야 한다.
+ */
+.lk .lkAsk{
+  position:fixed;inset:0;z-index:70;margin:0;padding:1.25rem;border:0;background:rgba(17,17,17,.42);
+  display:flex;align-items:center;justify-content:center}
+.lk .lkAsk > div:first-child{
+  width:min(26rem,100%);padding:1.25rem 1.35rem;background:#fff;border:1px solid var(--fg);
+  display:block}
+.lk .lkAsk p{margin:0 0 1rem;font-size:.9rem;line-height:1.65;color:var(--fg-2)}
+.lk .lkAsk .lkAskBtns{display:flex;gap:.45rem;justify-content:flex-end}
+.lk .lkAsk button{border-radius:0;padding:.45rem 1rem;font-size:.87rem}
+@media (prefers-reduced-motion:no-preference){
+  .lk .lkAsk{animation:lkAskIn .16s cubic-bezier(.2,.9,.2,1)}
+}
+@keyframes lkAskIn{from{opacity:0}to{opacity:1}}
+
+/* 미리보기 줄의 격자 켜기 */
+.lk .lkGridBtn{flex:none;padding:.15rem .6rem;font-size:.78rem;border-radius:0;background:transparent}
+.lk .lkGridBtn[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:#fff}
+/* 요소 목록의 곁말(「대표작 그림을 깔 때만 보입니다」) */
+.lk .lkItems li button em{font-style:normal;font-size:.76rem;color:var(--fg-3);font-weight:400}
+
+/* 커스텀 칸 — 닿는 곳이지 고르는 곳이 아니다. 켜지기 전에는 흐리게 두되 **보이게** 둔다:
+   숨기면 배치를 고쳤을 때 어디서 그 상태가 드러나는지 알 수 없다 */
+.lk .lkShapes button:disabled{opacity:.45;cursor:default}
+.lk .lkShapes button:disabled .lkShape rect{opacity:.7}
+
+/* ── 요소 목록 — 더하기 · 이름 · 빼기 ─────────────────────────────────
+   이름 자리에 **제가 쓴 글자**가 선다. 「큰 제목」 같은 이름표보다 무엇을 고르는지가 분명하다 */
+.lk .lkPanel h3 .lkAdd{margin-left:auto;display:inline-flex;gap:.3rem}
+.lk .lkAdd button{
+  width:1.6rem;height:1.6rem;padding:0;border:1px solid var(--line);background:#fff;
+  font:700 .82rem/1 var(--mono);border-radius:0;cursor:pointer}
+.lk .lkAdd button:hover:not(:disabled){border-color:var(--fg)}
+.lk .lkAdd button:disabled{opacity:.4;cursor:default}
+
+/* × 는 **맨 오른쪽 끝**에 붙인다. 이름 단추가 남은 자리를 다 먹으므로 둘의 경계가 분명하다 */
+.lk .lkItems li{display:flex;align-items:center;gap:.5rem}
+.lk .lkItems li > button.lkX{margin-left:auto}
+.lk .lkItems li{gap:.4rem}
+.lk .lkItemName{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:.45rem;text-align:left}
+.lk .lkItemName > i{
+  flex:none;width:1.05rem;height:1.05rem;display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--line);font:700 .66rem/1 var(--mono);font-style:normal;color:var(--fg-3)}
+/* 글자가 길면 줄이지 않고 **자른다** — 줄이면 줄 높이가 들쭉날쭉해진다 */
+.lk .lkItemName{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 누르는 자리와 보이는 자리를 **맞춘다** — 넓게 잡아 두면 옆 글자를 노리다 빼기를 누른다.
+   접근성 권고(24px)는 지키되, 그 크기가 그대로 보이는 네모여야 한다 */
+/* ⚠ `.lkItems li button:not(.vis){flex:1}` 이 먼저 있어 명시도를 맞춰야 이긴다 —
+   안 맞추면 × 가 남은 자리를 다 먹어 누르는 칸이 글자 폭만큼 넓어진다 */
+.lk .lkItems li button.lkX, .lk .lkX{
+  flex:none;width:24px;height:24px;padding:0;border:1px solid transparent;background:transparent;
+  display:inline-flex;align-items:center;justify-content:center;
+  color:var(--fg-3);font-size:.95rem;line-height:1;border-radius:0;cursor:pointer}
+.lk .lkX:hover{color:#a4272b;border-color:currentColor}
+.lk .lkX:focus-visible{outline:2px solid var(--fg);outline-offset:1px}
+
+/* ── 사진 ───────────────────────────────────────────────────────────
+   사진 더하기는 `<label>` 이 파일 고르개를 감싼 것이라 `<button>` 이 아니다 —
+   `.lkAdd button` 과 같은 네모를 손으로 맞춘다(배경 그림의 `.lkBgPick` 과 같은 수법) */
+.lk .lkAdd .lkAddPic{
+  position:relative;overflow:hidden;
+  width:1.6rem;height:1.6rem;border:1px solid var(--line);background:#fff;
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--fg)}
+.lk .lkAdd .lkAddPic:hover{border-color:var(--fg)}
+.lk .lkAdd .lkAddPic.is-off{opacity:.4;cursor:default}
+.lk .lkAdd .lkAddPic input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.lk .lkAdd .lkAddPic svg{width:15px;height:15px}
+.lk .lkAdd .lkAddPic .lkSpin{width:12px;height:12px}
+
+/* 사진 줄 — 눈(보이기)이 없다. 사진은 넣거나 빼거나지, 숨기는 것이 아니다.
+   대신 미리보기 판이 서서 **무엇을 지우는지** 보고 × 를 누를 수 있다 */
+.lk .lkItems li.lkShot{gap:.5rem;padding:.15rem 0}
+.lk .lkItems li.lkShot > img{
+  flex:none;width:28px;height:28px;object-fit:cover;background:#eef0f2;border:1px solid var(--line)}
+.lk .lkShotName{flex:1 1 auto;min-width:0;font-size:.84rem;color:var(--fg-2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ↑↓ 는 목록 차례의 것과 같은 네모 — 같은 일을 하는 단추는 같게 생겨야 한다.
+   ⚠ **색까지** 같아야 한다. 네모·크기·자리는 진작 같았는데 화살표만 `--fg-2` 로 흐렸다
+   (위 `.lkItems li button:not(.vis)` 가 물려준 색). 목록 것은 `--fg` 라, 나란히 놓으면
+   요소 쪽만 바래 보였다(2026-09-18 실측: rgb(66,73,82) vs rgb(11,13,16)).
+   꺼졌을 때도 **흐림 한 가지로만** 알린다 — 목록은 opacity 만 쓰는데 여기만 색까지 갈아
+   두 곳이 다른 방식으로 꺼졌다. */
+.lk .lkItems li.lkShot > button:not(.lkX){
+  flex:none;width:1.5rem;height:1.5rem;padding:0;border:1px solid var(--line);background:#fff;
+  color:var(--fg);font-size:.78rem;line-height:1;border-radius:0;cursor:pointer}
+/* ⚠ **틀은 안 흐린다 — 화살표 글자만 흐린다.** `opacity` 로 통째로 내리면 1px 짜리 옅은
+   테두리(#e3e6ea)가 같이 지워져 칸이 사라진 것처럼 보이고, 옆 목록과 생김새가 갈린다
+   (2026-09-18 사용자 지적: 「요소랑 목록 위아래버튼 생긴 게 다르잖아」).
+   요소의 이름 단추가 이미 쓰는 방식(`color:#b4bac2`)과 같다 */
+.lk .lkItems li.lkShot > button:not(.lkX):disabled{
+  cursor:default;background:#fff;color:#b4bac2}
+.lk .lkItems li.lkShot > button:not(.lkX):hover:not(:disabled){border-color:var(--fg);background:#fff}
+/* 화면에 아무것도 안 뜨는 상태를 말로 알린다 — 빈 목록은 고장과 구별이 안 된다 */
+.lk .lkItems li.lkEmpty{display:block;padding:.5rem .1rem;font-size:.82rem;color:var(--fg-3)}
+
+/* ── 목록 차례 ────────────────────────────────────────────────────── */
+.lk .lkSecs{list-style:none;margin:.2rem 0 0;padding:0}
+/* ⚠ 오른쪽에 **× 한 칸을 비워 둔다.** 요소의 사진줄은 [↑][↓][×] 인데 여기는 [↑][↓] 뿐이라,
+   비워 두지 않으면 두 목록의 ↑↓ 가 32px 어긋난 세로줄에 선다(2026-09-17 사용자 지적) */
+.lk .lkSecs li{display:flex;align-items:center;gap:.5rem;margin:.45rem 0;padding-right:calc(24px + .5rem)}
+.lk .lkSecs li > span{flex:1 1 auto;font-size:.88rem}
+/* ⚠ `:not(.vis)` 를 **적어 둔다.** 안 적으면 눈 단추까지 이 네모를 받아, 요소 목록의
+   테두리 없는 눈과 같은 부품이 두 곳에서 다르게 그려진다(2026-09-18 실측: 여기만 1px 테두리) */
+/* ↑↓ 는 목록과 메뉴 설정이 **같은 규칙을 쓴다.** 값을 베끼면 언젠가 갈라지고,
+   그게 2026-09-18 에 「요소와 목록의 단추가 다르다」로 지적받은 그 문제다.
+   메뉴 설정에서는 눈(`.vis`)과 아이콘 단추(`.lkIcoBtn`)를 빼야 한다 — 생김새가 다른 부품이다 */
+.lk .lkSecs button:not(.vis),
+.lk .lkLink button:not(.vis):not(.lkIcoBtn){
+  width:1.5rem;height:1.5rem;padding:0;border:1px solid var(--line);background:#fff;
+  color:var(--fg);font-size:.78rem;line-height:1;border-radius:0;cursor:pointer}
+.lk .lkSecs button:not(.vis):disabled,
+.lk .lkLink button:not(.vis):not(.lkIcoBtn):disabled{cursor:default;color:#b4bac2}
+/* 마우스를 올렸을 때도 같아야 한다 — 여기만 규칙이 없어 `.adm button:hover` 의
+   옅은 테두리(`--fg-3`)로 떨어졌고, 요소 쪽은 먹(`--fg`)이었다(2026-09-18 사용자 지적) */
+.lk .lkSecs button:not(.vis):hover:not(:disabled),
+.lk .lkLink button:not(.vis):not(.lkIcoBtn):hover:not(:disabled){border-color:var(--fg);background:#fff}
+/* ── 숨긴 줄 — 이름과 ↑↓ 를 흐린다 ───────────────────────────────────
+   ⚠ **`disabled` 를 걸지 않는다.** 꺼 둔 자리도 차례는 바꿀 수 있어야 한다 —
+   막으면 숨긴 절을 영영 못 옮긴다. 흐림은 눈 아이콘의 사선을 거드는 표시일 뿐이다.
+   색은 요소 목록이 이미 쓰는 것과 같다(`.lkItems li button:not(.vis):disabled`) */
+.lk .lkSecs li.is-off > span{color:#b4bac2}
+.lk .lkSecs li.is-off button:not(.vis){color:#b4bac2}
+
+
+
+
+/* (「기본 서체색」 네모 단추는 `lkReset` 밑줄 글자로 합쳤다 — 같은 뜻이 두 모양이었다) */
+
+/* 배경 그림 — 있으면 작은 판, 없으면 한 줄. 고르기는 파일 칸을 감춘 라벨이 받는다 */
+.lk .lkBg{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin:.8rem 0 .2rem}
+.lk .lkBgOn{display:inline-flex;align-items:center;gap:.5rem}
+.lk .lkBgOn img{width:3.2rem;height:2.1rem;object-fit:cover;border:1px solid var(--line);display:block}
+.lk .lkBgOn button,.lk .lkBgPick{
+  padding:.25rem .6rem;border:1px solid var(--line);border-radius:5px;background:#fff;
+  font-size:.8rem;line-height:1.5;cursor:pointer}
+.lk .lkBgPick:hover,.lk .lkBgOn button:hover{border-color:var(--fg)}
+.lk .lkBgPick input{display:none}
+.lk .lkBgOff{font-size:.84rem;color:var(--fg-3)}
+
+/* ── 푸터 ───────────────────────────────────────────────────────────
+   대부분은 있는 부품을 그대로 쓴다(`lkSlide`·`lkColor`·`lkItems`·`lkSel`).
+   여기 넷만 푸터에서 처음 생긴 것이다: 아이콘 더하기 고르개 · 목록의 로고 · 「주소 없음」 ·
+   판 머리의 로고. */
+/* 아이콘 더하기 — 옆의 `T` 단추와 **같은 키**로 서야 한 줄이 맞는다. 글꼴 칸이 쓰는
+   `lkPicker`(버튼+메뉴)를 그대로 쓰되 높이·글자만 이 줄에 맞춘다 */
+.lk .lkAdd .tb-anchor{display:inline-flex}
+.lk .lkAdd .lkAddIcon{
+  width:auto;height:1.6rem;padding:0 1.5rem 0 .45rem;
+  font:700 .74rem/1 var(--mono);color:var(--fg-2);
+  background-position:right .45rem center}
+.lk .lkAdd .lkAddIcon:hover{border-color:var(--fg)}
+/* 목록의 로고 — 글자 상자의 `T` 칸과 **같은 크기**라 두 줄이 나란히 선다 */
+.lk .lkItemName > i > svg{width:.72rem;height:.72rem;fill:currentColor;display:block}
+/* 주소가 비면 굽기가 안 그린다 — 목록에서 미리 말한다(곁말 규칙은 위 `li button em`) */
+.lk .lkItems li .lkItemName em{margin-left:auto;padding-left:.4rem}
+/* ── 목록에서 바로 고치는 이름 칸 ─────────────────────────────────
+   줄 생김새는 단추 때와 같게 두고, **칸일 뿐**이라는 것은 초점이 왔을 때만 보인다 */
+.lk .lkItems li .lkItemEdit{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:.45rem;
+  padding:.3rem .35rem}
+.lk .lkItemText{flex:1 1 auto;min-width:0;height:auto;padding:.12rem .2rem;border:1px solid transparent;
+  border-radius:3px;background:none;font-size:.88rem;line-height:1.5;color:var(--fg)}
+.lk .lkItemText::placeholder{color:#b4bac2}
+.lk .lkItemText:hover{border-color:var(--line)}
+.lk .lkItemText:focus{outline:0;border-color:var(--fg);background:#fff;color:var(--fg)}
+.lk .lkItems li[aria-current] .lkItemText{color:var(--fg);font-weight:600}
+/* ✓ 는 고친 뒤에만 뜬다 — 자리를 늘 차지하지 않게 칸 안쪽 끝에 붙인다 */
+.lk .lkItemOk{flex:none;width:1.5rem;height:1.5rem;padding:0;border:1px solid var(--fg);border-radius:3px;
+  background:var(--fg);color:#fff;font-size:.8rem;line-height:1;cursor:pointer}
+.lk .lkItemOk:hover{background:#000}
+/* 「주소 없음」·「글자 없음」 — 줄 끝(× 앞)에 흐리게 */
+.lk .lkItems li .lkItemWhy{flex:none;font-style:normal;font-size:.76rem;color:var(--fg-3)}
+
+/* 「선택한 요소」 머리 — 로고는 글자를 안 그리므로 칸 대신 무엇인지 적는다 */
+.lk .lkSelIcon{flex:1;min-width:0;display:flex;align-items:center;gap:.4rem;font-size:.9rem;font-weight:600}
+/* 글자 상자는 무엇을 고르고 있는지만 보인다 — 고치는 곳은 위 목록이다 */
+.lk .lkSelName{flex:1;min-width:0;font-size:.9rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lk .lkSelIcon svg{width:1rem;height:1rem;fill:currentColor;flex:none}
+
+/* ── 메뉴 아이콘 고르개 ─────────────────────────────────────────────────────
+   링크 줄(`.lkLink`)의 이름 칸 **오른쪽**에 단추 하나, 누르면 아래에 판이 열린다.
+   한 번에 하나만 열린다(`iconFor` 가 링크 키를 하나만 든다).
+   단추는 「아이콘」 벌일 때만 그려진다 — 다른 벌에서는 굽기가 도형을 안 내므로
+   골라 봐야 아무 일도 안 일어난다. 고르개가 거짓말을 하면 안 된다. */
+
+.lk .lkIcoBtn{flex:none;width:34px;height:34px;display:grid;place-items:center;
+  border:1px solid var(--line);border-radius:0;background:#fff;color:var(--fg);cursor:pointer;padding:0}
+.lk .lkIcoBtn:hover{border-color:var(--fg)}
+.lk .lkIcoBtn[aria-expanded="true"]{background:var(--fg);border-color:var(--fg);color:#fff}
+.lk .lkIcoBtn svg{width:18px;height:18px}
+.lk .lkIcoNone{font-size:11px;color:var(--fg-3)}
+.lk .lkIcoBtn[aria-expanded="true"] .lkIcoNone{color:#fff}
+
+.lk .lkIcoPop{border:1px solid var(--fg);padding:12px;margin:.1rem 0 .8rem;max-height:300px;overflow:auto}
+.lk .lkIcoPop h5{margin:10px 0 6px;font-size:11px;font-weight:700;color:var(--fg-3);letter-spacing:.02em}
+.lk .lkIcoPop h5:first-child{margin-top:0}
+.lk .lkIcoGrid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.lk .lkIcoGrid button{aspect-ratio:1;display:grid;place-items:center;padding:0;
+  border:1px solid var(--line);border-radius:0;background:#fff;color:var(--fg);cursor:pointer}
+.lk .lkIcoGrid button:hover{border-color:var(--fg)}
+.lk .lkIcoGrid button[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:#fff}
+.lk .lkIcoGrid svg{width:17px;height:17px}
+.lk .lkIcoPop .lkReset{margin-top:10px}
+
+/* 좁은 화면 — 여덟 칸은 안 들어간다 */
+@media (max-width: 1080px){
+  .lk .lkIcoGrid{grid-template-columns:repeat(6,1fr)}
+}
+
+/* 어느 페이지로 가는가 — 이름 아래 한 줄. 이름은 바꿀 수 있어도 **주소는 정해져 있다**.
+   눈 아이콘 폭만큼 들여써서 이름 칸과 왼쪽 선이 맞는다(들쭉날쭉하면 줄이 안 읽힌다) */
+.lk .lkLinkTo{margin:-.25rem 0 .55rem;padding-left:calc(26px + .7rem);font-size:.76rem;color:var(--fg-3)}
+.lk .lkLinkTo code{font-family:var(--mono,ui-monospace,monospace);font-size:.76rem}

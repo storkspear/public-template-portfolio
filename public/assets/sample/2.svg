@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" width="1200" height="1500" role="img" aria-label="견본 그림 2">
+  <rect width="1200" height="1500" fill="#e1e5e4"/>
+  <g fill="none" stroke="#a9b4b1" stroke-width="13"><rect x='330' y='430' width='540' height='650'/><path d='M330 755h540'/></g>
+  <text x="600" y="750" fill="#a9b4b1" fill-opacity=".55" font-family="system-ui,-apple-system,Segoe UI,sans-serif" font-weight="700" font-size="504" text-anchor="middle" dominant-baseline="central">2</text>
+</svg>

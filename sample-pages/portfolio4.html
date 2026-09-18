@@ -1,0 +1,130 @@
+<!--
+  포트폴리오 샘플 4 · 화보 기사 — 패션지의 화보 꼭지처럼. 작업 하나가 기사 한 편: 큰 번호, 제목, 리드문,
+  두 단 본문, 인용구, 크레딧, 그리고 한쪽 전체를 차지하는 화보 판.
+
+  관리자 「홈디자인 → 포트폴리오 → 직접 디자인 → 사용할 파일」에서 고르면 이 파일이 그대로 나갑니다.
+  **이 파일은 고치지 마세요** — 레포를 업데이트하면 바뀔 수 있습니다. 고쳐 쓰려면:
+
+      cp sample-pages/portfolio4.html pages/portfolio.html   # 복사한 뒤 pages/portfolio.html 을 고치고
+                                                             # 관리자에서 「내 파일」을 고릅니다
+
+  · 스타일은 아래 <style> 한 덩이에 다 있습니다(.p4- 접두). 화보 판 색은 article 마다 style="--c:…".
+  · 한 꼭지 더하기: <article class="p4-story"> 를 통째로 복사합니다. 짝수 꼭지는 화보 판이 왼쪽으로 갑니다.
+  · 그림: /assets/sample-pages/fluent/*.png — Microsoft Fluent Emoji 3D (MIT, 같은 폴더 LICENSE.txt · CREDITS.md). JS 는 없습니다.
+-->
+<link rel="stylesheet" href="/assets/fonts.css">
+<style>
+.p4 { --p4-ink: #121012; --p4-red: #d6002f; max-width: 1320px; margin: 0 auto; padding: clamp(2.5rem, 7vh, 4.5rem) clamp(1.25rem, 4vw, 2.5rem) clamp(4rem, 10vh, 6rem); color: var(--p4-ink); counter-reset: p4; }
+.p4-mast { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 1rem; padding-bottom: 1rem; border-bottom: 6px solid var(--p4-ink); }
+.p4-mast h1 { margin: 0; font-family: 'Nanum Myeongjo', 'Gowun Batang', serif; font-weight: 700; font-synthesis: none; font-size: clamp(2.8rem, 8vw, 6.8rem); line-height: 0.9; letter-spacing: -0.06em; }
+.p4-mast p { margin: 0; font-family: var(--sans); font-size: 0.9rem; text-align: right; line-height: 1.5; }
+.p4-mast p b { color: var(--p4-red); font-weight: 400; }
+
+.p4-story {
+  counter-increment: p4; display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(1.5rem, 4vw, 3.5rem);
+  padding: clamp(2.5rem, 6vh, 4rem) 0; border-bottom: 1px solid var(--p4-ink);
+}
+.p4-story:nth-of-type(even) .p4-plate { order: -1; }
+.p4-kicker { display: flex; align-items: baseline; gap: 1rem; font-family: var(--sans); font-size: 0.85rem; }
+.p4-kicker::before { content: counter(p4, decimal-leading-zero); font-family: var(--sans); font-weight: 860; font-synthesis: none; font-size: clamp(3.5rem, 7vw, 6rem); line-height: 0.8; letter-spacing: -0.06em; color: var(--p4-red); }
+.p4-story h2 { margin: 1.2rem 0 0; font-family: 'Nanum Myeongjo', 'Gowun Batang', serif; font-weight: 700; font-synthesis: none; font-size: clamp(2rem, 4.6vw, 3.8rem); line-height: 1.05; letter-spacing: -0.05em; }
+.p4-dek { margin: 1rem 0 0; max-width: 30em; font-family: 'Gowun Batang', 'Nanum Myeongjo', serif; font-size: clamp(1.02rem, 1.6vw, 1.25rem); line-height: 1.6; }
+/* 본문 두 단 — 첫 글자를 크게(드롭 캡) */
+.p4-body { margin-top: 1.6rem; columns: 2; column-gap: 1.8rem; column-rule: 1px solid #d9d6d2; font-size: 0.92rem; line-height: 1.75; color: #3b383d; }
+.p4-body p { margin: 0 0 0.9em; }
+.p4-body p:first-child::first-letter { float: left; margin: 0.08em 0.12em 0 0; font-family: 'Nanum Myeongjo', 'Gowun Batang', serif; font-weight: 700; font-size: 3.4em; line-height: 0.85; color: var(--p4-ink); }
+.p4-quote { margin: 1.6rem 0 0; padding: 1rem 0; border-top: 2px solid var(--p4-ink); border-bottom: 2px solid var(--p4-ink);
+  font-family: 'Black Han Sans', var(--sans); font-size: clamp(1.2rem, 2.4vw, 1.8rem); line-height: 1.25; letter-spacing: -0.03em; }
+.p4-quote::before { content: '“'; color: var(--p4-red); }
+.p4-quote::after { content: '”'; color: var(--p4-red); }
+.p4-credit { margin: 1.2rem 0 0; font-family: var(--sans); font-size: 0.8rem; color: #6c686f; line-height: 1.7; }
+.p4-credit b { color: var(--p4-ink); font-weight: 400; }
+
+.p4-plate { position: relative; margin: 0; display: grid; place-items: center; min-height: 480px; background: var(--c); overflow: hidden; align-self: stretch; }
+.p4-plate img.p4-hero { width: min(72%, 320px); height: auto; filter: drop-shadow(0 40px 34px rgba(0, 0, 0, 0.3)); transition: scale 0.6s var(--ease); }
+.p4-story:hover .p4-hero { scale: 1.06; }
+.p4-plate img.p4-acc { position: absolute; width: min(26%, 120px); height: auto; right: 8%; bottom: 10%; rotate: 12deg; filter: drop-shadow(0 16px 16px rgba(0, 0, 0, 0.25)); }
+.p4-plate figcaption { position: absolute; left: 1rem; bottom: 0.8rem; font-family: var(--sans); font-size: 0.74rem; writing-mode: vertical-rl; rotate: 180deg; }
+
+@media (max-width: 860px) {
+  .p4-mast { grid-template-columns: 1fr; }
+  .p4-mast p { text-align: left; }
+  .p4-story { grid-template-columns: 1fr; }
+  .p4-story .p4-plate, .p4-story:nth-of-type(even) .p4-plate { order: -1; min-height: 340px; }
+  .p4-body { columns: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .p4-plate img.p4-hero { transition: none; } }
+</style>
+
+<main class="p4">
+  <header class="p4-mast">
+    <h1>화보</h1>
+    <p>홍길동 스튜디오 매거진<br><b>ISSUE 07</b> · 이번 호 꼭지 셋</p>
+  </header>
+
+  <article class="p4-story">
+    <div>
+      <span class="p4-kicker">커버 스토리 · SS26</span>
+      <h2>부드러운 갑옷을 입는 법</h2>
+      <p class="p4-dek">실크와 메시를 겹쳐 몸을 감싸는 선을 만든 시즌. 한 벌로 출근과 저녁 약속, 주말 산책까지 세 장면을 건넜다.</p>
+      <div class="p4-body">
+        <p>이번 시즌의 출발점은 「부드러운데 단단해 보이는 옷」이었다. 슬립 드레스 위에 메시 톱을 한 겹 더하고, 허리선은 끈 하나로만 잡았다.</p>
+        <p>소품은 반짝이는 것만 골랐다. 스틸레토의 에나멜, 선글라스의 금속 테, 토트백의 광택이 한 컷 안에서 서로 빛을 주고받는다.</p>
+        <p>촬영은 흰 벽 앞에서 조명 하나로. 옷이 만드는 주름과 그림자가 배경이 되도록 소품을 최소로 줄였다.</p>
+      </div>
+      <p class="p4-quote">옷이 몸을 지키는 게 아니라, 기분을 지킨다</p>
+      <p class="p4-credit"><b>스타일링</b> 홍길동 · <b>포토</b> 스튜디오 촬영팀 · <b>룩</b> 12</p>
+    </div>
+    <figure class="p4-plate" style="--c:radial-gradient(90% 80% at 50% 40%,#f1f4ff,#a9b9ff)">
+      <img class="p4-hero" src="/assets/sample-pages/fluent/dress.png" alt="블루 슬립 드레스" width="256" height="256">
+      <img class="p4-acc" src="/assets/sample-pages/fluent/sunglasses.png" alt="" width="256" height="256">
+      <figcaption>LOOK 01 — 블루 슬립 드레스</figcaption>
+    </figure>
+  </article>
+
+  <article class="p4-story">
+    <div>
+      <span class="p4-kicker">뷰티 · SS25</span>
+      <h2>체리 한 입, 여름 한 컷</h2>
+      <p class="p4-dek">과일 가게의 빨강으로 만든 립 컬렉션 캠페인. 피크닉 담요 위에서 위를 올려다보며 찍었다.</p>
+      <div class="p4-body">
+        <p>립스틱 색을 정한 건 조색표가 아니라 시장이었다. 체리, 자두, 석류를 한 줄로 세워 놓고 가장 맑은 빨강을 골랐다.</p>
+        <p>모델의 입술 대신 소품이 주인공이 되도록, 립스틱을 과일 사이에 눕혀 두고 위에서 내려다보는 구도를 반복했다.</p>
+      </div>
+      <p class="p4-quote">빨강은 하나가 아니다. 먹고 싶은 빨강이 있다</p>
+      <p class="p4-credit"><b>기획·아트디렉션</b> 홍길동 · <b>클라이언트</b> 뷰티 브랜드 체리 · <b>스틸</b> 24</p>
+    </div>
+    <figure class="p4-plate" style="--c:radial-gradient(90% 80% at 50% 40%,#ffe9ec,#ff8fa3)">
+      <img class="p4-hero" src="/assets/sample-pages/fluent/lipstick.png" alt="체리 립스틱" width="256" height="256" loading="lazy">
+      <img class="p4-acc" src="/assets/sample-pages/fluent/cherries.png" alt="" width="256" height="256" loading="lazy">
+      <figcaption>STILL 07 — 체리 립</figcaption>
+    </figure>
+  </article>
+
+  <article class="p4-story">
+    <div>
+      <span class="p4-kicker">스트리트 · FW25</span>
+      <h2>새벽 여섯 시의 러너들</h2>
+      <p class="p4-dek">러닝화 드롭에 맞춘 도심 캠페인. 출근 전 빈 거리를 달리는 사람들의 옷을 스타일링했다.</p>
+      <div class="p4-body">
+        <p>기능성 소재는 광택을 죽이고, 대신 모자와 양말에 색을 몰았다. 멀리서 달려와도 누구인지 알아볼 수 있게.</p>
+        <p>러닝화는 새것처럼 보이지 않게 이틀 동안 신고 다녔다. 밑창에 묻은 먼지가 가장 좋은 소품이었다.</p>
+      </div>
+      <p class="p4-quote">가장 빠른 옷은 가장 가벼운 기분이다</p>
+      <p class="p4-credit"><b>스타일링</b> 홍길동 · <b>클라이언트</b> 스포츠 레이블 아머 · <b>로케이션</b> 3일</p>
+    </div>
+    <figure class="p4-plate" style="--c:radial-gradient(90% 80% at 50% 40%,#f4ffd6,#b6f24a)">
+      <img class="p4-hero" src="/assets/sample-pages/fluent/running_shoe.png" alt="에어 러너" width="256" height="256" loading="lazy">
+      <img class="p4-acc" src="/assets/sample-pages/fluent/socks.png" alt="" width="256" height="256" loading="lazy">
+      <figcaption>LOOK 05 — 에어 러너</figcaption>
+    </figure>
+  </article>
+</main>
+
+<section class="p-contact is-slim">
+  <div class="wrap">
+    <div class="p-contact-bot">
+      <p class="p-copy">© 2026 HONG GILDONG. All rights reserved.</p>
+    </div>
+  </div>
+</section>

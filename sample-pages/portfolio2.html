@@ -1,0 +1,127 @@
+<!--
+  포트폴리오 샘플 2 · 캠페인 — 캠페인 한 편이 화면 한 장. 색 벽 위에 거대한 윤곽 글자, 그 앞에 주인공 오브젝트,
+  옆에 크레딧. 캠페인마다 좌우가 엇갈린다.
+
+  관리자 「홈디자인 → 포트폴리오 → 직접 디자인 → 사용할 파일」에서 고르면 이 파일이 그대로 나갑니다.
+  **이 파일은 고치지 마세요** — 레포를 업데이트하면 바뀔 수 있습니다. 고쳐 쓰려면:
+
+      cp sample-pages/portfolio2.html pages/portfolio.html   # 복사한 뒤 pages/portfolio.html 을 고치고
+                                                             # 관리자에서 「내 파일」을 고릅니다
+
+  · 스타일은 아래 <style> 한 덩이에 다 있습니다(.p2- 접두). 캠페인 색은 section 마다 style="--bg:…;--fg:…".
+  · 한 편 더하기: <section class="p2-camp"> 를 통째로 복사합니다. 좌우는 짝수 번째에서 저절로 뒤집힙니다.
+  · 그림: /assets/sample-pages/fluent/*.png — Microsoft Fluent Emoji 3D (MIT, 같은 폴더 LICENSE.txt · CREDITS.md). JS 는 없습니다.
+-->
+<link rel="stylesheet" href="/assets/fonts.css">
+<style>
+.p2 { counter-reset: p2; }
+.p2-intro { max-width: 1320px; margin: 0 auto; padding: clamp(2.5rem, 7vh, 4.5rem) clamp(1.5rem, 4vw, 2.5rem) clamp(2rem, 5vh, 3rem);
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 1rem 2rem; }
+.p2-intro h1 { margin: 0; font-family: 'Black Han Sans', var(--sans); font-weight: 400; font-synthesis: none; font-size: clamp(2.2rem, 5vw, 3.8rem); letter-spacing: -0.05em; line-height: 1; }
+.p2-intro p { margin: 0; max-width: 24em; color: #5d5a66; }
+
+.p2-camp {
+  counter-increment: p2; position: relative; overflow: hidden; background: var(--bg); color: var(--fg);
+  min-height: min(88vh, 760px); display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: center;
+  padding: clamp(2.5rem, 7vh, 4rem) max(clamp(1.5rem, 4vw, 2.5rem), calc((100vw - 1320px) / 2));
+}
+/* 뒤에 깔리는 거대한 윤곽 글자 — 캠페인 이름이 벽지가 된다 */
+.p2-camp::before {
+  content: attr(data-word); position: absolute; left: -2vw; right: -2vw; top: 50%; translate: 0 -50%;
+  font-family: var(--sans); font-weight: 860; font-synthesis: none; font-size: clamp(6rem, 21vw, 20rem); line-height: 0.8; letter-spacing: -0.06em;
+  white-space: nowrap; text-align: center; color: transparent; -webkit-text-stroke: 2px color-mix(in srgb, var(--fg) 22%, transparent);
+  pointer-events: none;
+}
+.p2-hero { position: relative; z-index: 1; display: grid; place-items: center; }
+.p2-hero img.p2-main { width: clamp(180px, 26vw, 330px); height: auto; filter: drop-shadow(0 40px 36px rgba(0, 0, 0, 0.3)); rotate: var(--r, -8deg);
+  transition: rotate 0.6s var(--ease), scale 0.6s var(--ease); }
+.p2-camp:hover .p2-main { rotate: calc(var(--r, -8deg) * -1); scale: 1.05; }
+.p2-hero img.p2-side { position: absolute; width: clamp(70px, 9vw, 120px); height: auto; right: 16%; top: 4%; rotate: 14deg; filter: drop-shadow(0 18px 18px rgba(0, 0, 0, 0.25)); }
+
+.p2-copy { position: relative; z-index: 1; }
+.p2-copy .p2-no { font-family: 'Nanum Gothic Coding', var(--mono); font-size: 0.85rem; }
+.p2-copy .p2-no::before { content: 'CAMPAIGN ' counter(p2, decimal-leading-zero) ' / '; }
+.p2-copy h2 { margin: 0.8rem 0 0; font-family: 'Black Han Sans', var(--sans); font-weight: 400; font-size: clamp(2rem, 4.6vw, 3.6rem); line-height: 1.02; letter-spacing: -0.05em; }
+.p2-copy p { margin: 1rem 0 0; max-width: 22em; line-height: 1.7; opacity: 0.86; }
+.p2-credit { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; margin: 1.6rem 0 0; padding-top: 1rem; border-top: 2px solid currentColor; font-size: 0.9rem; }
+.p2-credit dt { font-family: 'Nanum Gothic Coding', var(--mono); font-size: 0.8rem; opacity: 0.75; padding-top: 0.1rem; }
+.p2-credit dd { margin: 0; }
+
+/* 짝수 번째는 좌우를 뒤집는다 — 스크롤하며 시선이 지그재그로 흐른다 */
+.p2-camp:nth-of-type(even) { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+.p2-camp:nth-of-type(even) .p2-hero { order: 2; }
+
+@media (max-width: 820px) {
+  .p2-camp, .p2-camp:nth-of-type(even) { grid-template-columns: 1fr; gap: 1.5rem; min-height: 0; }
+  .p2-camp:nth-of-type(even) .p2-hero { order: 0; }
+  .p2-hero { padding: 2rem 0; }
+}
+@media (prefers-reduced-motion: reduce) { .p2-hero img.p2-main { transition: none; } }
+</style>
+
+<main class="p2">
+  <header class="p2-intro">
+    <h1>캠페인 아카이브</h1>
+    <p>홍길동 스튜디오가 기획·스타일링한 캠페인입니다. 한 편씩 넘겨 보세요.</p>
+  </header>
+
+  <section class="p2-camp" data-word="CHERRY" style="--bg:#ff2e63;--fg:#fff">
+    <div class="p2-hero">
+      <img class="p2-main" src="/assets/sample-pages/fluent/lipstick.png" alt="" width="256" height="256" style="--r:-10deg">
+      <img class="p2-side" src="/assets/sample-pages/fluent/cherries.png" alt="" width="256" height="256">
+    </div>
+    <div class="p2-copy">
+      <span class="p2-no">SS26</span>
+      <h2>체리 립,<br>한 입 크기의 여름</h2>
+      <p>뷰티 브랜드와 함께한 립 컬렉션 캠페인. 과일 가게의 빨강을 그대로 가져왔습니다.</p>
+      <dl class="p2-credit"><dt>CLIENT</dt><dd>뷰티 브랜드 체리</dd><dt>ROLE</dt><dd>기획 · 스타일링 · 아트디렉션</dd><dt>SHOT</dt><dd>스튜디오 촬영 24컷</dd></dl>
+    </div>
+  </section>
+
+  <section class="p2-camp" data-word="ARMOR" style="--bg:#1d1bff;--fg:#e9ff5b">
+    <div class="p2-hero">
+      <img class="p2-main" src="/assets/sample-pages/fluent/running_shoe.png" alt="" width="256" height="256" style="--r:12deg">
+      <img class="p2-side" src="/assets/sample-pages/fluent/billed_cap.png" alt="" width="256" height="256" loading="lazy">
+    </div>
+    <div class="p2-copy">
+      <span class="p2-no">SS26</span>
+      <h2>소프트 아머,<br>달리는 옷</h2>
+      <p>러닝화 드롭에 맞춘 스트리트 캠페인. 새벽 도심을 무대로 가볍게 달리는 장면을 만들었습니다.</p>
+      <dl class="p2-credit"><dt>CLIENT</dt><dd>스포츠 레이블 아머</dd><dt>ROLE</dt><dd>스타일링 · 룩북</dd><dt>SHOT</dt><dd>야외 로케이션 3일</dd></dl>
+    </div>
+  </section>
+
+  <section class="p2-camp" data-word="DISCO" style="--bg:#141019;--fg:#ffd1f1">
+    <div class="p2-hero">
+      <img class="p2-main" src="/assets/sample-pages/fluent/mirror_ball.png" alt="" width="256" height="256" style="--r:0deg" loading="lazy">
+      <img class="p2-side" src="/assets/sample-pages/fluent/high-heeled_shoe.png" alt="" width="256" height="256" loading="lazy">
+    </div>
+    <div class="p2-copy">
+      <span class="p2-no">FW25</span>
+      <h2>밤의 체육관,<br>반짝이는 운동복</h2>
+      <p>파티웨어와 트레이닝복을 섞은 연말 캠페인. 미러볼 하나로 조명을 다 했습니다.</p>
+      <dl class="p2-credit"><dt>CLIENT</dt><dd>편집숍 나이트</dd><dt>ROLE</dt><dd>기획 · 세트 스타일링</dd><dt>SHOT</dt><dd>세트 촬영 · 숏폼 6편</dd></dl>
+    </div>
+  </section>
+
+  <section class="p2-camp" data-word="DENIM" style="--bg:#bfe3ff;--fg:#10204a">
+    <div class="p2-hero">
+      <img class="p2-main" src="/assets/sample-pages/fluent/jeans.png" alt="" width="256" height="256" style="--r:-6deg" loading="lazy">
+      <img class="p2-side" src="/assets/sample-pages/fluent/sunglasses.png" alt="" width="256" height="256" loading="lazy">
+    </div>
+    <div class="p2-copy">
+      <span class="p2-no">FW25</span>
+      <h2>라이트 데님,<br>빨래 끝난 오후</h2>
+      <p>세탁 가공 데님 라인의 룩북. 햇빛에 마른 빨래의 색을 기준으로 스타일링했습니다.</p>
+      <dl class="p2-credit"><dt>CLIENT</dt><dd>데님 레이블 블루데이</dd><dt>ROLE</dt><dd>룩북 스타일링</dd><dt>SHOT</dt><dd>룩 18컷</dd></dl>
+    </div>
+  </section>
+</main>
+
+<section class="p-contact is-slim">
+  <div class="wrap">
+    <div class="p-contact-bot">
+      <p class="p-copy">© 2026 HONG GILDONG. All rights reserved.</p>
+    </div>
+  </div>
+</section>

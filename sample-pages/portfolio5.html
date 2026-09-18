@@ -1,0 +1,104 @@
+<!--
+  포트폴리오 샘플 5 · 교정지 — 인쇄소에서 받는 교정지처럼 같은 크기의 종이에 한 점씩, 모서리에 재단선.
+  올리면 재단선이 별색으로 바뀌며 길어진다(색만이 아니라 선이 길어진다 — 별색이 먹색인 테마에서도 보이게).
+
+  관리자 「홈디자인 → 포트폴리오 → 직접 디자인 → 사용할 파일」에서 고르면 이 파일이 그대로 나갑니다.
+  **이 파일은 고치지 마세요** — 레포를 업데이트하면 바뀔 수 있습니다. 고쳐 쓰려면:
+
+      cp sample-pages/portfolio5.html pages/portfolio.html   # 복사한 뒤 pages/portfolio.html 을 고치고
+                                                             # 관리자에서 「내 파일」을 고릅니다
+
+  · 스타일은 아래 <style> 한 덩이에 다 있습니다(.p5- 접두). 재단선 길이는 --p5-mark, 종이 밖 여백은 --p5-bleed.
+  · 한 장 더하기: <li> 하나를 복사합니다. 쪽번호(p.01)는 CSS 가 셉니다.
+  · 그림: /assets/sample-pages/fluent/*.png — Microsoft Fluent Emoji 3D (MIT, 같은 폴더 LICENSE.txt · CREDITS.md).
+  · 직접 디자인인 동안에는 관리자에서 올린 작업물이 발행되지 않아 상세 페이지가 없습니다 — 장은 링크가 아닙니다.
+-->
+<link rel="stylesheet" href="/assets/fonts.css">
+<style>
+.p5 {
+  --p5-mark: 9px;
+  --p5-bleed: 12px;
+  --p5-ink: #8d8a84;
+  --p5-spot: #e4002b;
+  max-width: 1240px; margin: 0 auto; padding: clamp(2.5rem, 7vh, 4.5rem) clamp(1.5rem, 5vw, 2.5rem) clamp(4rem, 10vh, 6rem);
+  color: #1a1917; counter-reset: p5;
+}
+.p5-head { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 1.5rem; padding-bottom: 1.25rem; margin-bottom: clamp(2.5rem, 6vh, 3.5rem); border-bottom: 1px solid #d8d5cf; }
+.p5-head h1 { margin: 0; font-family: var(--sans); font-weight: 800; font-size: clamp(2rem, 4.4vw, 3rem); letter-spacing: -0.04em; line-height: 1.05; }
+.p5-head p { margin: 0.6rem 0 0; font-size: 0.92rem; color: #77746c; }
+/* 맞춤표(등록 표시)와 색 교정 막대 — 인쇄물이 판과 색을 맞추는 표시 */
+.p5-marks { display: flex; align-items: center; gap: 1rem; }
+.p5-reg { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #1a1917;
+  background: linear-gradient(#1a1917, #1a1917) center / 1px 100% no-repeat, linear-gradient(#1a1917, #1a1917) center / 100% 1px no-repeat;
+  box-shadow: inset 0 0 0 7px #fff, inset 0 0 0 8px #1a1917; }
+.p5-bar { display: flex; }
+.p5-bar i { width: 14px; height: 14px; background: var(--k); }
+
+.p5-sheets { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(2.5rem, 5vw, 3.5rem) clamp(1.75rem, 3.5vw, 3rem); }
+.p5-sheets li { counter-increment: p5; }
+.p5-sheets figure { margin: 0; }
+.p5-paper { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 5; background: var(--c, #f4f2ee); }
+.p5-paper img { width: 60%; height: auto; filter: drop-shadow(0 16px 16px rgba(0, 0, 0, 0.2)); }
+/* 재단선 여덟 가닥 — 종이 바깥 모서리에 가로·세로 한 쌍씩 */
+.p5-paper::before {
+  content: ''; position: absolute; inset: calc(-1 * var(--p5-bleed)); pointer-events: none;
+  --m: linear-gradient(var(--p5-ink), var(--p5-ink));
+  background:
+    var(--m) 0 var(--p5-bleed) / var(--p5-mark) 1px no-repeat,
+    var(--m) var(--p5-bleed) 0 / 1px var(--p5-mark) no-repeat,
+    var(--m) 100% var(--p5-bleed) / var(--p5-mark) 1px no-repeat,
+    var(--m) calc(100% - var(--p5-bleed)) 0 / 1px var(--p5-mark) no-repeat,
+    var(--m) 0 calc(100% - var(--p5-bleed)) / var(--p5-mark) 1px no-repeat,
+    var(--m) var(--p5-bleed) 100% / 1px var(--p5-mark) no-repeat,
+    var(--m) 100% calc(100% - var(--p5-bleed)) / var(--p5-mark) 1px no-repeat,
+    var(--m) calc(100% - var(--p5-bleed)) 100% / 1px var(--p5-mark) no-repeat;
+}
+.p5-sheets li:hover { --p5-ink: var(--p5-spot); --p5-mark: 12px; }
+.p5-cap { display: grid; grid-template-columns: auto 1fr; column-gap: 0.7rem; margin-top: calc(var(--p5-bleed) + 0.6rem); }
+.p5-cap::before { content: 'p.' counter(p5, decimal-leading-zero); grid-row: span 2; font-family: var(--mono); font-size: 0.76rem; color: #77746c; padding-top: 0.2rem; }
+.p5-cap b { font-weight: 700; font-size: 0.95rem; letter-spacing: -0.02em; }
+.p5-cap span { font-size: 0.82rem; color: #77746c; }
+
+@media (max-width: 1100px) { .p5-sheets { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .p5-sheets { grid-template-columns: repeat(2, minmax(0, 1fr)); } .p5-marks { display: none; } }
+</style>
+
+<main class="p5">
+  <div class="p5-head">
+    <div>
+      <h1>교정지</h1>
+      <p>여덟 장 · SS24—SS26 · 스타일링, 룩북, 캠페인</p>
+    </div>
+    <div class="p5-marks" aria-hidden="true">
+      <span class="p5-bar"><i style="--k:#00a0e9"></i><i style="--k:#e4007f"></i><i style="--k:#fff100"></i><i style="--k:#1a1917"></i></span>
+      <span class="p5-reg"></span>
+    </div>
+  </div>
+
+  <ul class="p5-sheets">
+    <li><figure><span class="p5-paper" style="--c:#e5eaf6"><img src="/assets/sample-pages/fluent/dress.png" alt="블루 슬립 드레스" width="256" height="256"></span>
+      <figcaption class="p5-cap"><b>블루 슬립 드레스</b><span>룩북 · SS26</span></figcaption></figure></li>
+    <li><figure><span class="p5-paper" style="--c:#f7e1e3"><img src="/assets/sample-pages/fluent/high-heeled_shoe.png" alt="레드 스틸레토" width="256" height="256"></span>
+      <figcaption class="p5-cap"><b>레드 스틸레토</b><span>캠페인 · SS26</span></figcaption></figure></li>
+    <li><figure><span class="p5-paper" style="--c:#efe8da"><img src="/assets/sample-pages/fluent/coat.png" alt="샌드 트렌치" width="256" height="256"></span>
+      <figcaption class="p5-cap"><b>샌드 트렌치</b><span>룩북 · FW25</span></figcaption></figure></li>
+    <li><figure><span class="p5-paper" style="--c:#e9e5f1"><img src="/assets/sample-pages/fluent/mirror_ball.png" alt="미러볼" width="256" height="256"></span>
+      <figcaption class="p5-cap"><b>밤의 체육관</b><span>세트 스타일링 · FW25</span></figcaption></figure></li>
+    <li><figure><span class="p5-paper" style="--c:#f6e0dc"><img src="/assets/sample-pages/fluent/lipstick.png" alt="체리 립스틱" width="256" height="256" loading="lazy"></span>
+      <figcaption class="p5-cap"><b>체리 립</b><span>뷰티 캠페인 · SS25</span></figcaption></figure></li>
+    <li><figure><span class="p5-paper" style="--c:#e2edf5"><img src="/assets/sample-pages/fluent/jeans.png" alt="라이트 데님" width="256" height="256" loading="lazy"></span>
+      <figcaption class="p5-cap"><b>라이트 데님</b><span>룩북 · FW24</span></figcaption></figure></li>
+    <li><figure><span class="p5-paper" style="--c:#f5e3ee"><img src="/assets/sample-pages/fluent/ballet_shoes.png" alt="발레 플랫" width="256" height="256" loading="lazy"></span>
+      <figcaption class="p5-cap"><b>핑크 발레 플랫</b><span>스타일링 · SS24</span></figcaption></figure></li>
+    <li><figure><span class="p5-paper" style="--c:#f3ecdc"><img src="/assets/sample-pages/fluent/womans_hat.png" alt="리본 라피아 햇" width="256" height="256" loading="lazy"></span>
+      <figcaption class="p5-cap"><b>리본 라피아 햇</b><span>룩북 · SS24</span></figcaption></figure></li>
+  </ul>
+</main>
+
+<section class="p-contact is-slim">
+  <div class="wrap">
+    <div class="p-contact-bot">
+      <p class="p-copy">© 2026 HONG GILDONG. All rights reserved.</p>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,49 @@
+/* 블로그 목록 — 사진 없이.
+ *
+ * **여기 사는 이유**: 목록은 이제 DB 에서 구워져 `blog-gen/` 에 산다. 규칙을 레포의
+ * `public/assets/site.css` 에만 두면, 그 파일을 push → git pull 하기 전까지 구운 목록이
+ * 스타일 없이 뜬다(2026-09-14 에 실제로 그렇게 깨졌다). 굽는 것과 그 옷은 같이 다닌다.
+ *
+ * 색·글꼴 변수는 site.css 의 `:root` 에서 온다 — 그쪽은 껍데기(머리줄·푸터)와 공유한다.
+ *
+ * 사진을 빼면 모든 행이 같은 무게가 되어 심심해진다. 사진이 하던 「눈이 걸리는 자리」를
+ * 활자 대비 · 리듬 · 호버 셋이 대신한다.
+ */
+/* 목록 머리(「글 / 5편」)는 여기 없다 — `templates/header.css` 의 `.lh` 가 갖는다.
+   작업 목록의 「작업 / 9편」과 **같은 부품**이라, 두 벌로 나눠 두면 크기가 갈린다
+   (실제로 1.6~2.1rem 과 1.9~3rem 으로 갈려 있었다 — 2026-09-16). */
+
+/* 목록의 줄 규칙은 여기 없다 — templates/blog.css 가 갈래(.bl-rows … .bl-lines)마다 따로 갖는다.
+   ⚠ 여기서 `.b-item` 으로 **모든 갈래에 한꺼번에** 걸면 안 된다 — 카드 격자에 가로선이
+   그어지고, 큰 제목에 2px 겹선이 서고, 썸네일은 좁은 폭에서 날짜가 밑으로 떨어진다.
+   마크업은 한 벌이므로 갈래를 가르는 것은 갈래 파일의 몫이다. */
+
+/* ── 글 머리 — 종이 위 ──
+   라이브러리가 제목을 `font-family: var(--font-body)` 인라인으로 그린다. 그 변수만
+   여기서 바꾼다 — `.prose` 는 형제라 본문(Pretendard)은 안 바뀐다.
+   안 바꾸면 목록은 Paperlogy 800, 글은 Pretendard 400 으로 **같은 제목이 서체가 달라진다.** */
+.b-post .post-head { --font-body: var(--display); border-bottom-color: var(--line); }
+.b-post .post-title { color: var(--fg); }        /* 작성자가 색을 고르면 인라인이 이긴다 */
+.b-post .post-head { margin-bottom: 2.5rem; }    /* 헤어라인 → 본문 40 */
+/* 배너가 없으면 머리 위 여백을 목록의 「글」과 같은 높이로. 제목의 padding-top 0.55rem 만큼 뺀다 */
+.b-post .post-head[data-banner='0'] { margin-top: calc(clamp(2.5rem, 6vh, 4rem) - 0.55rem); }
+
+/* 작성 일시 — 제목의 이웃. 정렬은 bake 가 제목 값에서 복사해 인라인으로 준다 */
+.b-when {
+  display: block; margin-top: .75rem;
+  font-family: var(--mono); font-size: .82rem; line-height: 1.6; letter-spacing: .04em;
+  color: var(--fg-3); font-variant-numeric: tabular-nums;
+}
+/* 본문 → 푸터 */
+.b-post .prose { padding-bottom: clamp(4rem, 8vh, 5rem); }
+
+/* 글이 몇 편 없으면 푸터가 화면 **중간**에 떠 있고 밑이 허옇게 빈다.
+   바닥으로 밀어 내린다. 배너의 `margin-inline: calc(50% - 50vw)` 는 flex 열 안에서도
+   그대로 동작한다(폭을 100vw 로 잡는 방식이라 부모 정렬과 무관하다). */
+body { min-height: 100vh; display: flex; flex-direction: column; }
+/* ⚠ `.wrap` 은 `margin: 0 auto` 를 들고 있다. 세로 flex 안에서 가로 auto 마진은
+   **늘어나기(stretch)를 막아** 상자가 글자 폭으로 쪼그라든다 — 목록이 화면 가운데
+   좁은 기둥이 됐다(2026-09-14). 폭을 100% 로 못 박아 되돌린다. */
+body > * { width: 100%; }
+body > main { flex: 1 0 auto; }
+body > .p-contact { flex: none; }

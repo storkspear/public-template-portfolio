@@ -1,0 +1,139 @@
+<!--
+  메인 샘플 1 · 드롭 — 새 시즌이 「떨어지는」 첫 화면. 크게 흐르는 띠, 굵은 한 문장, 둥둥 뜬 3D 오브젝트,
+  그 밑에 이번 드롭 세 점.
+
+  관리자 「홈디자인 → 메인 → 직접 디자인 → 사용할 파일」에서 고르면 이 파일이 그대로 나갑니다.
+  **이 파일은 고치지 마세요** — 레포를 업데이트하면 바뀔 수 있습니다. 고쳐 쓰려면:
+
+      cp sample-pages/main1.html pages/main.html     # 복사한 뒤 pages/main.html 을 고치고
+                                                     # 관리자에서 「내 파일」을 고릅니다
+
+  · 스타일은 아래 <style> 한 덩이에 다 있습니다(.m1- 접두). 색은 .m1 의 --m1-* 네 개로 바꿉니다.
+  · 그림: /assets/sample-pages/fluent/*.png — Microsoft Fluent Emoji 3D (MIT, 같은 폴더 LICENSE.txt · CREDITS.md).
+  · 움직임은 CSS 뿐이고, 「동작 줄이기」를 켠 방문자에게는 멈춥니다. JS 는 없습니다.
+-->
+<link rel="stylesheet" href="/assets/fonts.css">
+<style>
+.m1 {
+  --m1-hot: #ff2e88;
+  --m1-ink: #14121a;
+  --m1-paper: #f3f1ff;
+  --m1-volt: #3d2bff;
+  background: var(--m1-paper); color: var(--m1-ink); overflow: hidden;
+}
+/* 흐르는 띠 — 같은 문장을 두 번 이어 붙이고 절반만큼 민다(이음매가 안 보인다) */
+.m1-tape { background: var(--m1-ink); color: var(--m1-paper); overflow: hidden; white-space: nowrap; transform: rotate(-2deg); margin: 1.4rem -2rem 0; }
+.m1-tape div { display: inline-flex; animation: m1-run 22s linear infinite; }
+.m1-tape span { padding: 0.55rem 1.4rem; font-family: 'Nanum Gothic Coding', var(--mono); font-size: 0.95rem; letter-spacing: 0.04em; }
+.m1-tape span::after { content: '✺'; margin-left: 2.8rem; color: var(--m1-hot); }
+@keyframes m1-run { to { transform: translateX(-50%); } }
+
+.m1-hero {
+  position: relative; max-width: 1240px; margin: 0 auto; min-height: min(78vh, 720px);
+  padding: clamp(3rem, 9vh, 6rem) clamp(1.5rem, 5vw, 2.5rem) clamp(3rem, 8vh, 5rem);
+  display: grid; align-content: center;
+}
+.m1-kicker { position: relative; z-index: 2; margin: 0 0 1.6rem; font-family: 'Nanum Gothic Coding', var(--mono); font-size: 0.9rem; color: var(--m1-volt); }
+.m1-hero h1 {
+  position: relative; z-index: 2; margin: 0;
+  font-family: var(--sans); font-weight: 900; font-synthesis: none;
+  font-size: clamp(3.2rem, 10.5vw, 9.2rem); line-height: 1.02; letter-spacing: -0.05em;
+}
+.m1-hero h1 em { font-style: normal; color: var(--m1-hot); }
+.m1-hero p { position: relative; z-index: 2; margin: 1.8rem 0 0; max-width: 26em; font-size: 1.05rem; line-height: 1.7; }
+.m1-cta { position: relative; z-index: 2; display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 2rem; }
+.m1-cta a {
+  display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.9rem 1.5rem; border-radius: 999px;
+  font-weight: 700; text-decoration: none; border: 2px solid var(--m1-ink); transition: transform var(--t), box-shadow var(--t);
+}
+.m1-cta a:first-child { background: var(--m1-ink); color: var(--m1-paper); }
+/* 누를 곳은 **그림자가 붙어 떠오른다** — 스티커를 떼는 손맛 */
+.m1-cta a:hover, .m1-cta a:focus-visible { transform: translate(-3px, -3px); box-shadow: 4px 4px 0 var(--m1-hot); outline: none; }
+
+/* 떠 있는 오브젝트 — 자리·크기·기울기만 다르고 같은 움직임을 다른 박자로 탄다 */
+.m1-float { position: absolute; z-index: 1; width: var(--s); height: auto; left: var(--x); top: var(--y);
+  rotate: var(--r); filter: drop-shadow(0 22px 26px rgba(20, 18, 26, 0.22)); animation: m1-bob 6s ease-in-out infinite; animation-delay: var(--d); }
+@keyframes m1-bob { 50% { translate: 0 -14px; } }
+/* 뒤에 깔린 색 덩어리 — 오브젝트가 앉을 조명 */
+.m1-glow { position: absolute; z-index: 0; right: 4%; top: 16%; width: min(46vw, 560px); aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffd1ea, var(--m1-hot) 45%, var(--m1-volt) 100%); filter: blur(2px); opacity: 0.9; }
+
+/* 이번 드롭 */
+.m1-drop { background: var(--m1-ink); color: var(--m1-paper); padding: clamp(3rem, 9vh, 5.5rem) 0; }
+.m1-drop-in { max-width: 1240px; margin: 0 auto; padding: 0 clamp(1.5rem, 5vw, 2.5rem); }
+.m1-drop h2 { margin: 0 0 2rem; display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+  font-family: var(--sans); font-weight: 900; font-size: clamp(1.8rem, 4vw, 3rem); letter-spacing: -0.04em; }
+.m1-drop h2 a { font-family: 'Nanum Gothic Coding', var(--mono); font-size: 0.9rem; letter-spacing: 0; color: var(--m1-hot); text-decoration: none; }
+.m1-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+.m1-card { position: relative; display: block; text-decoration: none; color: inherit; border-radius: 28px; padding: 1.3rem; background: var(--bg); }
+.m1-card .m1-tile { display: grid; place-items: center; aspect-ratio: 1; border-radius: 20px; background: var(--c); overflow: hidden; }
+.m1-card img { width: 62%; height: auto; transition: transform 0.5s var(--ease); filter: drop-shadow(0 16px 18px rgba(0, 0, 0, 0.25)); }
+.m1-card:hover img, .m1-card:focus-visible img { transform: rotate(-10deg) scale(1.1); }
+.m1-card:focus-visible { outline: 3px solid var(--m1-hot); outline-offset: 3px; }
+.m1-card b { display: block; margin-top: 1rem; color: var(--m1-ink); font-size: 1.1rem; letter-spacing: -0.02em; }
+.m1-card span { color: #5b5670; font-size: 0.88rem; }
+.m1-tag { position: absolute; top: 2rem; left: 2rem; padding: 0.25rem 0.6rem; border-radius: 999px; background: var(--m1-ink); color: var(--m1-paper);
+  font-family: 'Nanum Gothic Coding', var(--mono); font-size: 0.78rem; }
+
+@media (max-width: 860px) {
+  /* 좁으면 오브젝트를 **제목 위 한 줄**로 몰아 글자를 안 가린다 */
+  .m1-hero { padding-top: 11rem; align-content: start; }
+  .m1-glow { width: 62vw; right: -12vw; top: 1.5rem; opacity: 0.8; }
+  .m1-float { --s: 88px !important; top: 2.2rem !important; }
+  .m1-float:nth-of-type(1) { left: 8% !important; }
+  .m1-float:nth-of-type(2) { left: 64% !important; top: 5.5rem !important; }
+  .m1-float:nth-of-type(3) { left: 36% !important; top: 4.5rem !important; }
+  .m1-float:nth-of-type(4) { left: 82% !important; --s: 48px !important; }
+  .m1-cards { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .m1-tape div, .m1-float { animation: none; } }
+</style>
+
+<main class="m1">
+  <div class="m1-tape" aria-hidden="true"><div>
+    <span>NEW DROP SS26</span><span>소프트 아머 컬렉션</span><span>9월 20일 오픈</span><span>NEW DROP SS26</span><span>소프트 아머 컬렉션</span><span>9월 20일 오픈</span>
+    <span>NEW DROP SS26</span><span>소프트 아머 컬렉션</span><span>9월 20일 오픈</span><span>NEW DROP SS26</span><span>소프트 아머 컬렉션</span><span>9월 20일 오픈</span>
+  </div></div>
+
+  <section class="m1-hero">
+    <span class="m1-glow" aria-hidden="true"></span>
+    <img class="m1-float" src="/assets/sample-pages/fluent/high-heeled_shoe.png" alt="" width="256" height="256" style="--s:210px;--x:58%;--y:12%;--r:-14deg;--d:0s">
+    <img class="m1-float" src="/assets/sample-pages/fluent/sunglasses.png" alt="" width="256" height="256" style="--s:150px;--x:80%;--y:52%;--r:12deg;--d:-2s">
+    <img class="m1-float" src="/assets/sample-pages/fluent/handbag.png" alt="" width="256" height="256" style="--s:170px;--x:56%;--y:60%;--r:8deg;--d:-4s">
+    <img class="m1-float" src="/assets/sample-pages/fluent/sparkles.png" alt="" width="256" height="256" style="--s:90px;--x:86%;--y:10%;--r:0deg;--d:-1s">
+
+    <p class="m1-kicker">✺ 홍길동 스튜디오 — 스타일링 · 룩북 · 캠페인</p>
+    <h1>입는 순간<br><em>장면</em>이 된다</h1>
+    <p>계절마다 한 벌의 이야기를 만듭니다. 옷과 소품, 사진과 공간까지 한 장면으로 묶어 보여 드립니다.</p>
+    <div class="m1-cta">
+      <a href="/portfolio/">룩북 보기</a>
+      <a href="/blog/">스튜디오 노트</a>
+    </div>
+  </section>
+
+  <section class="m1-drop">
+    <div class="m1-drop-in">
+      <h2>이번 드롭 <a href="/portfolio/">전체 보기 ↗</a></h2>
+      <ul class="m1-cards">
+        <li><a class="m1-card" href="/portfolio/"><span class="m1-tag">LOOK 01</span>
+          <span class="m1-tile" style="--c:linear-gradient(135deg,#ffe36e,#ff8fc7)"><img src="/assets/sample-pages/fluent/dress.png" alt="" width="256" height="256" loading="lazy"></span>
+          <b>블루 슬립 드레스</b><span>소프트 아머 · 실크 혼방</span></a></li>
+        <li><a class="m1-card" href="/portfolio/"><span class="m1-tag">LOOK 02</span>
+          <span class="m1-tile" style="--c:linear-gradient(135deg,#b8f5ff,#7a6bff)"><img src="/assets/sample-pages/fluent/running_shoe.png" alt="" width="256" height="256" loading="lazy"></span>
+          <b>에어 러너</b><span>소프트 아머 · 메시</span></a></li>
+        <li><a class="m1-card" href="/portfolio/"><span class="m1-tag">LOOK 03</span>
+          <span class="m1-tile" style="--c:linear-gradient(135deg,#ffc9a8,#ff2e88)"><img src="/assets/sample-pages/fluent/lipstick.png" alt="" width="256" height="256" loading="lazy"></span>
+          <b>체리 립 세트</b><span>뷰티 협업 · 캠페인</span></a></li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<section class="p-contact" id="contact">
+  <div class="wrap">
+    <a class="p-mail" href="mailto:hong@example.com">hong@example.com</a>
+    <div class="p-contact-bot">
+      <p class="p-copy">© 2026 HONG GILDONG. All rights reserved.</p>
+    </div>
+  </div>
+</section>

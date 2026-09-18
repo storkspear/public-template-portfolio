@@ -1,0 +1,109 @@
+<!--
+  포트폴리오 샘플 1 · 숍 그리드 — 셀렉트숍 신상품 판처럼. 분류 칩으로 거르고, 끝줄이 보이는 개수를 센다.
+  거르기와 세기는 **CSS 만으로** 한다(:has · counter) — 방문자에게 JS 0바이트.
+
+  관리자 「홈디자인 → 포트폴리오 → 직접 디자인 → 사용할 파일」에서 고르면 이 파일이 그대로 나갑니다.
+  **이 파일은 고치지 마세요** — 레포를 업데이트하면 바뀔 수 있습니다. 고쳐 쓰려면:
+
+      cp sample-pages/portfolio1.html pages/portfolio.html   # 복사한 뒤 pages/portfolio.html 을 고치고
+                                                             # 관리자에서 「내 파일」을 고릅니다
+
+  · 스타일은 아래 <style> 한 덩이에 다 있습니다(.p1- 접두).
+  · 한 칸 더하기: <li class="p1-item" data-k="분류"> 를 복사합니다. 분류 값은 칩(input id)과 짝입니다.
+  · 그림: /assets/sample-pages/fluent/*.png — Microsoft Fluent Emoji 3D (MIT, 같은 폴더 LICENSE.txt · CREDITS.md).
+  · 직접 디자인인 동안에는 관리자에서 올린 작업물이 발행되지 않아 상세 페이지가 없습니다 — 칸은 링크가 아닙니다.
+-->
+<link rel="stylesheet" href="/assets/fonts.css">
+<style>
+.p1 {
+  --p1-ink: #111016;
+  --p1-hot: #ff3d8b;
+  max-width: 1320px; margin: 0 auto; padding: clamp(2.5rem, 7vh, 4.5rem) clamp(1.25rem, 4vw, 2.5rem) clamp(4rem, 10vh, 6rem);
+  color: var(--p1-ink); counter-reset: p1;
+}
+.p1-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1.5rem 2rem; margin-bottom: clamp(1.75rem, 4vh, 2.75rem); }
+.p1-head h1 { margin: 0; font-family: var(--sans); font-weight: 900; font-synthesis: none; font-size: clamp(2.4rem, 6vw, 4.6rem); line-height: 0.95; letter-spacing: -0.05em; }
+.p1-head h1 sup { font-family: 'Nanum Gothic Coding', var(--mono); font-size: 0.9rem; letter-spacing: 0; color: var(--p1-hot); vertical-align: top; margin-left: 0.3rem; }
+/* 칩 — 진짜 라디오. 숨기되 Tab·방향키가 닿게 화면 밖으로만 뺀다 */
+.p1-chips { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0; padding: 0; border: 0; }
+.p1-chips legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.p1-chips input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.p1-chips label { cursor: pointer; padding: 0.5rem 1rem; border-radius: 999px; background: #f1f0f5; font-size: 0.92rem; font-weight: 700; transition: background var(--t), color var(--t), translate var(--t); }
+.p1-chips label:hover { translate: 0 -2px; }
+.p1-chips input:checked + label { background: var(--p1-ink); color: #fff; }
+.p1-chips input:focus-visible + label { outline: 2px solid var(--p1-hot); outline-offset: 2px; }
+
+.p1-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(1.75rem, 3vw, 2.5rem) clamp(0.9rem, 1.6vw, 1.25rem); }
+.p1-item { counter-increment: p1; }
+.p1-tile { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 5; border-radius: 18px; overflow: hidden; background: var(--c); }
+.p1-tile img { width: 58%; height: auto; filter: drop-shadow(0 18px 18px rgba(17, 16, 22, 0.22)); transition: transform 0.5s var(--ease); }
+.p1-item:hover .p1-tile img { transform: rotate(-8deg) scale(1.08); }
+.p1-new { position: absolute; top: 0.8rem; left: 0.8rem; padding: 0.2rem 0.55rem; border-radius: 6px; background: var(--p1-ink); color: #fff; font-family: 'Nanum Gothic Coding', var(--mono); font-size: 0.74rem; }
+.p1-new.is-hot { background: var(--p1-hot); }
+.p1-info { display: grid; grid-template-columns: 1fr auto; gap: 0.2rem 0.8rem; padding-top: 0.85rem; }
+.p1-info b { font-size: 1rem; letter-spacing: -0.02em; }
+.p1-info .p1-code { font-family: var(--mono); font-size: 0.76rem; color: #77737f; padding-top: 0.2rem; }
+.p1-info .p1-sub { grid-column: 1 / -1; font-size: 0.86rem; color: #5f5b69; }
+/* 색 견본 — 그 룩이 나온 색 */
+.p1-dots { grid-column: 1 / -1; display: flex; gap: 0.3rem; margin-top: 0.35rem; }
+.p1-dots i { width: 12px; height: 12px; border-radius: 50%; background: var(--d); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
+
+.p1:has(#p1-wear:checked) .p1-item:not([data-k='의류']),
+.p1:has(#p1-shoes:checked) .p1-item:not([data-k='신발']),
+.p1:has(#p1-acc:checked) .p1-item:not([data-k='소품']) { display: none; }
+.p1-end { margin: 2.5rem 0 0; font-family: 'Nanum Gothic Coding', var(--mono); font-size: 0.9rem; }
+.p1-end::before { content: '▶ 보이는 룩 ' counter(p1) '개'; }
+
+@media (max-width: 1000px) { .p1-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 680px) { .p1-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .p1-info .p1-code { display: none; } }
+@media (prefers-reduced-motion: reduce) { .p1-tile img, .p1-chips label { transition: none; } }
+</style>
+
+<main class="p1">
+  <div class="p1-head">
+    <h1>SS26 룩<sup>12 LOOKS</sup></h1>
+    <fieldset class="p1-chips">
+      <legend>분류로 거르기</legend>
+      <input type="radio" name="p1f" id="p1-all" checked><label for="p1-all">전체</label>
+      <input type="radio" name="p1f" id="p1-wear"><label for="p1-wear">의류</label>
+      <input type="radio" name="p1f" id="p1-shoes"><label for="p1-shoes">신발</label>
+      <input type="radio" name="p1f" id="p1-acc"><label for="p1-acc">소품</label>
+    </fieldset>
+  </div>
+
+  <ul class="p1-grid">
+    <li class="p1-item" data-k="의류"><span class="p1-tile" style="--c:linear-gradient(160deg,#dfe8ff,#9fb6ff)"><span class="p1-new is-hot">NEW</span><img src="/assets/sample-pages/fluent/dress.png" alt="블루 슬립 드레스" width="256" height="256"></span>
+      <span class="p1-info"><b>블루 슬립 드레스</b><span class="p1-code">SA-01</span><span class="p1-sub">실크 혼방 · 스타일링</span><span class="p1-dots"><i style="--d:#3c6bff"></i><i style="--d:#111016"></i></span></span></li>
+    <li class="p1-item" data-k="신발"><span class="p1-tile" style="--c:linear-gradient(160deg,#ffe0ec,#ff9cc2)"><span class="p1-new">NEW</span><img src="/assets/sample-pages/fluent/high-heeled_shoe.png" alt="레드 스틸레토" width="256" height="256"></span>
+      <span class="p1-info"><b>레드 스틸레토</b><span class="p1-code">SA-02</span><span class="p1-sub">페이턴트 · 캠페인</span><span class="p1-dots"><i style="--d:#e8264f"></i><i style="--d:#f3d2c1"></i></span></span></li>
+    <li class="p1-item" data-k="소품"><span class="p1-tile" style="--c:linear-gradient(160deg,#fff4c7,#ffcf4d)"><img src="/assets/sample-pages/fluent/sunglasses.png" alt="오벌 선글라스" width="256" height="256"></span>
+      <span class="p1-info"><b>오벌 선글라스</b><span class="p1-code">SA-03</span><span class="p1-sub">아세테이트 · 룩북</span><span class="p1-dots"><i style="--d:#3a2a6b"></i></span></span></li>
+    <li class="p1-item" data-k="의류"><span class="p1-tile" style="--c:linear-gradient(160deg,#f3eadc,#d9c2a0)"><img src="/assets/sample-pages/fluent/coat.png" alt="샌드 트렌치" width="256" height="256"></span>
+      <span class="p1-info"><b>샌드 트렌치</b><span class="p1-code">SA-04</span><span class="p1-sub">코튼 개버딘 · 룩북</span><span class="p1-dots"><i style="--d:#d9b98a"></i><i style="--d:#6b5a45"></i></span></span></li>
+    <li class="p1-item" data-k="신발"><span class="p1-tile" style="--c:linear-gradient(160deg,#e9e4ff,#b9a8ff)"><span class="p1-new is-hot">HOT</span><img src="/assets/sample-pages/fluent/running_shoe.png" alt="에어 러너" width="256" height="256" loading="lazy"></span>
+      <span class="p1-info"><b>에어 러너</b><span class="p1-code">SA-05</span><span class="p1-sub">메시 · 스트리트 캠페인</span><span class="p1-dots"><i style="--d:#a79bd6"></i><i style="--d:#ffffff"></i></span></span></li>
+    <li class="p1-item" data-k="소품"><span class="p1-tile" style="--c:linear-gradient(160deg,#ffe3f0,#ff7ab6)"><img src="/assets/sample-pages/fluent/purse.png" alt="핑크 프레임 파우치" width="256" height="256" loading="lazy"></span>
+      <span class="p1-info"><b>핑크 프레임 파우치</b><span class="p1-code">SA-06</span><span class="p1-sub">가죽 · 스타일링</span><span class="p1-dots"><i style="--d:#ff3d8b"></i></span></span></li>
+    <li class="p1-item" data-k="의류"><span class="p1-tile" style="--c:linear-gradient(160deg,#dcf6ff,#8ed2ff)"><img src="/assets/sample-pages/fluent/jeans.png" alt="라이트 와이드 데님" width="256" height="256" loading="lazy"></span>
+      <span class="p1-info"><b>라이트 와이드 데님</b><span class="p1-code">SA-07</span><span class="p1-sub">데님 · 룩북</span><span class="p1-dots"><i style="--d:#6aa9ff"></i><i style="--d:#243b6b"></i></span></span></li>
+    <li class="p1-item" data-k="신발"><span class="p1-tile" style="--c:linear-gradient(160deg,#ffe6d6,#ff9f7a)"><img src="/assets/sample-pages/fluent/womans_boot.png" alt="체리 앵클 부츠" width="256" height="256" loading="lazy"></span>
+      <span class="p1-info"><b>체리 앵클 부츠</b><span class="p1-code">SA-08</span><span class="p1-sub">스웨이드 · 캠페인</span><span class="p1-dots"><i style="--d:#e0394f"></i></span></span></li>
+    <li class="p1-item" data-k="의류"><span class="p1-tile" style="--c:linear-gradient(160deg,#eaffd9,#a8f06a)"><span class="p1-new">NEW</span><img src="/assets/sample-pages/fluent/t-shirt.png" alt="라임 저지 티" width="256" height="256" loading="lazy"></span>
+      <span class="p1-info"><b>라임 저지 티</b><span class="p1-code">SA-09</span><span class="p1-sub">코튼 · 스트리트 캠페인</span><span class="p1-dots"><i style="--d:#8ee05a"></i><i style="--d:#ffe36e"></i></span></span></li>
+    <li class="p1-item" data-k="소품"><span class="p1-tile" style="--c:linear-gradient(160deg,#fff0e0,#ffc98a)"><img src="/assets/sample-pages/fluent/womans_hat.png" alt="리본 라피아 햇" width="256" height="256" loading="lazy"></span>
+      <span class="p1-info"><b>리본 라피아 햇</b><span class="p1-code">SA-10</span><span class="p1-sub">라피아 · 룩북</span><span class="p1-dots"><i style="--d:#f2c38b"></i><i style="--d:#e0394f"></i></span></span></li>
+    <li class="p1-item" data-k="소품"><span class="p1-tile" style="--c:linear-gradient(160deg,#e3f2ff,#9fd0ff)"><img src="/assets/sample-pages/fluent/gem_stone.png" alt="블루 스톤 반지" width="256" height="256" loading="lazy"></span>
+      <span class="p1-info"><b>블루 스톤 주얼리</b><span class="p1-code">SA-11</span><span class="p1-sub">실버 · 캠페인</span><span class="p1-dots"><i style="--d:#4fb3ff"></i><i style="--d:#d9dde6"></i></span></span></li>
+    <li class="p1-item" data-k="신발"><span class="p1-tile" style="--c:linear-gradient(160deg,#ffe0f6,#f59ce0)"><img src="/assets/sample-pages/fluent/ballet_shoes.png" alt="발레 플랫" width="256" height="256" loading="lazy"></span>
+      <span class="p1-info"><b>핑크 발레 플랫</b><span class="p1-code">SA-12</span><span class="p1-sub">새틴 · 룩북</span><span class="p1-dots"><i style="--d:#f07cd0"></i></span></span></li>
+  </ul>
+  <p class="p1-end" aria-live="polite"></p>
+</main>
+
+<section class="p-contact is-slim">
+  <div class="wrap">
+    <div class="p-contact-bot">
+      <p class="p-copy">© 2026 HONG GILDONG. All rights reserved.</p>
+    </div>
+  </div>
+</section>

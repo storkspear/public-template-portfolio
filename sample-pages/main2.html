@@ -1,0 +1,101 @@
+<!--
+  메인 샘플 2 · 룩북 — 흰 벽의 쇼룸. 시즌 이름이 크게 서고, 룩이 옆으로 넘어가는 한 줄(스크롤로 넘긴다).
+  카드마다 조명색이 다르다.
+
+  관리자 「홈디자인 → 메인 → 직접 디자인 → 사용할 파일」에서 고르면 이 파일이 그대로 나갑니다.
+  **이 파일은 고치지 마세요** — 레포를 업데이트하면 바뀔 수 있습니다. 고쳐 쓰려면:
+
+      cp sample-pages/main2.html pages/main.html     # 복사한 뒤 pages/main.html 을 고치고
+                                                     # 관리자에서 「내 파일」을 고릅니다
+
+  · 스타일은 아래 <style> 한 덩이에 다 있습니다(.m2- 접두). 룩 카드의 조명색은 카드마다 style="--c:…".
+  · 옆으로 넘기기는 CSS scroll-snap — 트랙패드·터치·Shift+휠로 넘어갑니다. JS 는 없습니다.
+  · 그림: /assets/sample-pages/fluent/*.png — Microsoft Fluent Emoji 3D (MIT, 같은 폴더 LICENSE.txt · CREDITS.md).
+-->
+<link rel="stylesheet" href="/assets/fonts.css">
+<style>
+.m2 { --m2-ink: #0e0e10; --m2-line: #e6e6ea; background: #fff; color: var(--m2-ink); }
+.m2-top {
+  max-width: 1440px; margin: 0 auto; padding: clamp(2.5rem, 8vh, 5rem) clamp(1.5rem, 4vw, 3rem) 0;
+  display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 2rem;
+}
+.m2-season { margin: 0; font-family: var(--sans); font-size: 0.95rem; letter-spacing: -0.01em; }
+.m2-season b { display: inline-block; margin-right: 0.6rem; padding: 0.15rem 0.55rem; border: 1px solid var(--m2-ink); border-radius: 999px; font-weight: 400; }
+.m2-top h1 {
+  grid-column: 1 / -1; margin: 1.2rem 0 0;
+  font-family: var(--sans); font-weight: 860; font-synthesis: none;
+  font-size: clamp(3rem, 11.5vw, 11.5rem); line-height: 0.84; letter-spacing: -0.075em; white-space: nowrap;
+}
+/* 제목 끝의 가느다란 가로획 — 시즌 이름이 「계속된다」는 표시 */
+.m2-top h1::after { content: ''; display: inline-block; width: 0.9em; height: 0.07em; margin-left: 0.12em; vertical-align: 0.22em; background: var(--m2-ink); }
+.m2-note { margin: 0; max-width: 22em; font-size: 0.95rem; line-height: 1.7; color: #55555c; text-align: right; }
+
+.m2-rail {
+  display: flex; gap: clamp(0.8rem, 1.6vw, 1.4rem); overflow-x: auto; scroll-snap-type: x mandatory;
+  padding: clamp(2rem, 5vh, 3rem) clamp(1.5rem, 4vw, 3rem) 1.5rem; scroll-padding-inline: clamp(1.5rem, 4vw, 3rem);
+  scrollbar-width: thin; scrollbar-color: var(--m2-ink) transparent;
+}
+.m2-look { flex: 0 0 clamp(240px, 24vw, 340px); scroll-snap-align: start; text-decoration: none; color: inherit; }
+.m2-stage {
+  position: relative; display: grid; place-items: center; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 4px;
+  background: radial-gradient(120% 90% at 50% 18%, #fff 0%, var(--c) 58%, color-mix(in srgb, var(--c) 70%, #000) 100%);
+}
+/* 바닥 그림자 — 오브젝트가 무대에 **서 있다** */
+.m2-stage::after { content: ''; position: absolute; bottom: 17%; width: 46%; height: 5%; border-radius: 50%; background: rgba(0, 0, 0, 0.22); filter: blur(8px); }
+.m2-stage img { position: relative; z-index: 1; width: 64%; height: auto; margin-bottom: 12%; transition: translate 0.5s var(--ease); }
+.m2-look:hover .m2-stage img, .m2-look:focus-visible .m2-stage img { translate: 0 -10px; }
+.m2-look:focus-visible { outline: 2px solid var(--m2-ink); outline-offset: 4px; }
+.m2-no { position: absolute; top: 0.9rem; left: 1rem; z-index: 1; font-family: var(--sans); font-size: 0.82rem; }
+.m2-cap { display: flex; justify-content: space-between; gap: 1rem; padding: 0.8rem 0 0; border-top: 1px solid var(--m2-ink); margin-top: 0.9rem; font-size: 0.92rem; }
+.m2-cap span { color: #6b6b73; }
+
+.m2-foot { max-width: 1440px; margin: 0 auto; padding: 1.5rem clamp(1.5rem, 4vw, 3rem) clamp(3.5rem, 9vh, 6rem);
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; font-size: 0.95rem; border-top: 1px solid var(--m2-line); }
+.m2-foot a { text-decoration: none; border-bottom: 1px solid currentColor; }
+.m2-foot a:hover { opacity: 0.6; }
+
+@media (max-width: 760px) {
+  .m2-top { grid-template-columns: 1fr; }
+  .m2-note { text-align: left; }
+  .m2-look { flex-basis: 72vw; }
+}
+@media (prefers-reduced-motion: reduce) { .m2-stage img { transition: none; } }
+</style>
+
+<main class="m2">
+  <header class="m2-top">
+    <p class="m2-season"><b>SS26</b>홍길동 스튜디오 룩북 · 열두 룩</p>
+    <p class="m2-note">부드러운 소재로 만든 갑옷. 몸을 감싸는 선과 반짝이는 소품이 한 벌 안에서 만납니다.</p>
+    <h1>SOFT ARMOR</h1>
+  </header>
+
+  <div class="m2-rail" role="list" aria-label="룩">
+    <a class="m2-look" role="listitem" href="/portfolio/"><span class="m2-stage" style="--c:#c9d9ff"><span class="m2-no">01</span><img src="/assets/sample-pages/fluent/dress.png" alt="블루 슬립 드레스" width="256" height="256"></span>
+      <span class="m2-cap">블루 슬립 드레스 <span>실크</span></span></a>
+    <a class="m2-look" role="listitem" href="/portfolio/"><span class="m2-stage" style="--c:#ffc2d9"><span class="m2-no">02</span><img src="/assets/sample-pages/fluent/high-heeled_shoe.png" alt="레드 스틸레토" width="256" height="256"></span>
+      <span class="m2-cap">레드 스틸레토 <span>페이턴트</span></span></a>
+    <a class="m2-look" role="listitem" href="/portfolio/"><span class="m2-stage" style="--c:#e8dcc8"><span class="m2-no">03</span><img src="/assets/sample-pages/fluent/coat.png" alt="샌드 트렌치" width="256" height="256"></span>
+      <span class="m2-cap">샌드 트렌치 <span>코튼 개버딘</span></span></a>
+    <a class="m2-look" role="listitem" href="/portfolio/"><span class="m2-stage" style="--c:#d6ffd9"><span class="m2-no">04</span><img src="/assets/sample-pages/fluent/t-shirt.png" alt="라임 저지 티" width="256" height="256" loading="lazy"></span>
+      <span class="m2-cap">라임 저지 티 <span>코튼</span></span></a>
+    <a class="m2-look" role="listitem" href="/portfolio/"><span class="m2-stage" style="--c:#ffd9c2"><span class="m2-no">05</span><img src="/assets/sample-pages/fluent/womans_hat.png" alt="리본 버킷" width="256" height="256" loading="lazy"></span>
+      <span class="m2-cap">리본 라피아 햇 <span>라피아</span></span></a>
+    <a class="m2-look" role="listitem" href="/portfolio/"><span class="m2-stage" style="--c:#e2d4ff"><span class="m2-no">06</span><img src="/assets/sample-pages/fluent/purse.png" alt="핑크 클러치" width="256" height="256" loading="lazy"></span>
+      <span class="m2-cap">핑크 프레임 파우치 <span>가죽</span></span></a>
+    <a class="m2-look" role="listitem" href="/portfolio/"><span class="m2-stage" style="--c:#cfeaff"><span class="m2-no">07</span><img src="/assets/sample-pages/fluent/jeans.png" alt="라이트 데님" width="256" height="256" loading="lazy"></span>
+      <span class="m2-cap">라이트 와이드 데님 <span>데님</span></span></a>
+  </div>
+
+  <div class="m2-foot">
+    <span>옆으로 넘겨 보세요 — 열두 룩 중 일곱</span>
+    <a href="/portfolio/">룩북 전체 보기</a>
+  </div>
+</main>
+
+<section class="p-contact is-slim">
+  <div class="wrap">
+    <div class="p-contact-bot">
+      <p class="p-copy">© 2026 HONG GILDONG. All rights reserved.</p>
+    </div>
+  </div>
+</section>

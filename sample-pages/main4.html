@@ -1,0 +1,109 @@
+<!--
+  메인 샘플 4 · 매거진 커버 — 첫 화면이 패션지 표지 한 장. 커다란 제호가 뒤에 서고, 커버 스타(오브젝트)가 제호를
+  반쯤 가린다. 양옆에 표지 문구, 아래 구석에 호수·바코드.
+
+  관리자 「홈디자인 → 메인 → 직접 디자인 → 사용할 파일」에서 고르면 이 파일이 그대로 나갑니다.
+  **이 파일은 고치지 마세요** — 레포를 업데이트하면 바뀔 수 있습니다. 고쳐 쓰려면:
+
+      cp sample-pages/main4.html pages/main.html     # 복사한 뒤 pages/main.html 을 고치고
+                                                     # 관리자에서 「내 파일」을 고릅니다
+
+  · 스타일은 아래 <style> 한 덩이에 다 있습니다(.m4- 접두). 표지 색은 .m4 의 --m4-cover·--m4-ink.
+  · 제호(SOFT)는 글자 그대로 — 스튜디오 이름으로 바꾸면 크기가 폭에 맞춰 줄어듭니다(글자 수가 늘면 --m4-mast 를 줄이세요).
+  · 그림: /assets/sample-pages/fluent/*.png — Microsoft Fluent Emoji 3D (MIT, 같은 폴더 LICENSE.txt · CREDITS.md). JS 는 없습니다.
+-->
+<link rel="stylesheet" href="/assets/fonts.css">
+<style>
+.m4 {
+  --m4-cover: #ffd7e6;
+  --m4-ink: #0f0d12;
+  --m4-red: #e0002a;
+  --m4-mast: clamp(6rem, 25vw, 23rem);
+  background: #ece9e4; padding: clamp(1.5rem, 5vh, 3.5rem) clamp(1rem, 3vw, 2rem) clamp(3rem, 8vh, 5rem);
+}
+/* 표지 한 장 — 잡지 판형(230×300)의 비율, 화면이 낮으면 높이에 맞춘다 */
+.m4-cover {
+  position: relative; overflow: hidden; margin: 0 auto; color: var(--m4-ink);
+  width: min(100%, 1080px); aspect-ratio: 23 / 22;
+  background: radial-gradient(80% 70% at 55% 62%, #fff 0%, var(--m4-cover) 55%, color-mix(in srgb, var(--m4-cover) 70%, #b0306a) 100%);
+  box-shadow: 0 40px 70px -45px rgba(0, 0, 0, 0.6);
+}
+.m4-mast {
+  position: absolute; left: 0; right: 0; top: 2%; margin: 0; text-align: center;
+  font-family: var(--sans); font-weight: 860; font-synthesis: none;
+  font-size: var(--m4-mast); line-height: 0.8; letter-spacing: -0.075em; color: var(--m4-red);
+}
+.m4-issue { position: absolute; top: 3.2%; left: 4%; right: 4%; display: flex; justify-content: space-between;
+  font-family: var(--sans); font-size: clamp(0.7rem, 1.1vw, 0.9rem); letter-spacing: 0.02em; z-index: 2; }
+/* 커버 스타 — 제호 **앞**에 선다(제호를 반쯤 가리는 것이 표지의 문법) */
+.m4-star { position: absolute; z-index: 1; left: 50%; top: 20%; translate: -50% 0; width: min(46%, 470px); height: auto;
+  filter: drop-shadow(0 50px 40px rgba(80, 0, 40, 0.35)); }
+.m4-star2 { position: absolute; z-index: 1; width: min(15%, 150px); height: auto; left: 64%; top: 58%; rotate: 16deg; filter: drop-shadow(0 20px 20px rgba(80, 0, 40, 0.3)); }
+
+.m4-lines { position: absolute; z-index: 2; top: 34%; bottom: 14%; display: flex; flex-direction: column; justify-content: space-between; width: 26%; }
+.m4-left { left: 4%; }
+.m4-right { right: 4%; text-align: right; align-items: flex-end; }
+.m4-line { margin: 0; }
+.m4-line b { display: block; font-family: 'Black Han Sans', var(--sans); font-weight: 400; font-size: clamp(1rem, 2.6vw, 2.3rem); line-height: 1; letter-spacing: -0.04em; }
+.m4-line span { display: block; margin-top: 0.35em; font-size: clamp(0.7rem, 1.1vw, 0.95rem); line-height: 1.4; }
+.m4-line.is-red b { color: var(--m4-red); }
+.m4-line .m4-num { font-family: var(--sans); font-weight: 860; font-size: clamp(2.4rem, 6vw, 5.4rem); line-height: 0.8; letter-spacing: -0.06em; color: var(--m4-red); }
+.m4-sticker { display: inline-grid; place-items: center; width: clamp(64px, 9vw, 110px); aspect-ratio: 1; border-radius: 50%; background: var(--m4-ink); color: #fff;
+  font-family: 'Black Han Sans', var(--sans); font-size: clamp(0.7rem, 1.2vw, 1rem); line-height: 1.1; text-align: center; rotate: -14deg; }
+
+.m4-bottom { position: absolute; z-index: 2; left: 4%; right: 4%; bottom: 3.5%; display: flex; align-items: end; justify-content: space-between; gap: 1rem; }
+.m4-bottom a { font-family: 'Black Han Sans', var(--sans); font-size: clamp(0.9rem, 1.6vw, 1.3rem); text-decoration: none; border-bottom: 3px solid var(--m4-red); transition: color var(--t); }
+.m4-bottom a:hover, .m4-bottom a:focus-visible { color: var(--m4-red); outline: none; }
+/* 바코드 — 줄 굵기를 반복 그라데이션 두 겹으로 흩뜨린다 */
+.m4-code { display: grid; gap: 2px; justify-items: center; background: #fff; padding: 6px 8px 4px; font-family: var(--mono); font-size: 0.6rem; }
+.m4-code i { display: block; width: clamp(70px, 9vw, 104px); height: clamp(26px, 3.4vw, 40px);
+  background: repeating-linear-gradient(90deg, #000 0 2px, #fff 2px 3px, #000 3px 4px, #fff 4px 7px, #000 7px 10px, #fff 10px 11px),
+              repeating-linear-gradient(90deg, transparent 0 13px, #fff 13px 15px); background-blend-mode: lighten; }
+
+@media (max-width: 720px) {
+  .m4-cover { aspect-ratio: 3 / 4.8; }
+  .m4-issue span:first-child { display: none; }
+  .m4-mast { top: 5%; }
+  .m4-star { top: 17%; width: 70%; }
+  .m4-star2 { left: 68%; top: 47%; width: 22%; }
+  /* 표지 문구는 한쪽에 하나씩만 — 좁은 표지에 넷이면 스타를 가린다 */
+  .m4-lines { top: auto; bottom: 15%; width: 44%; justify-content: flex-end; }
+  .m4-left .m4-line:not(:first-child), .m4-right .m4-line:not(:nth-child(2)) { display: none; }
+  .m4-line b { font-size: 1.15rem; }
+  .m4-line span { font-size: 0.72rem; }
+}
+</style>
+
+<main class="m4">
+  <div class="m4-cover">
+    <div class="m4-issue"><span>홍길동 스튜디오 매거진</span><span>ISSUE 07 · SEPTEMBER 2026</span></div>
+    <h1 class="m4-mast">SOFT</h1>
+    <img class="m4-star" src="/assets/sample-pages/fluent/dress.png" alt="표지 — 블루 슬립 드레스" width="256" height="256">
+    <img class="m4-star2" src="/assets/sample-pages/fluent/high-heeled_shoe.png" alt="" width="256" height="256">
+
+    <div class="m4-lines m4-left">
+      <p class="m4-line is-red"><b>소프트 아머</b><span>부드러운 소재로 만든 갑옷, 이번 시즌 12룩</span></p>
+      <p class="m4-line"><span class="m4-num">12</span><span>한 벌로 세 장면을 만드는 스타일링</span></p>
+      <p class="m4-line"><b>밤의 체육관</b><span>미러볼 아래의 트레이닝복</span></p>
+    </div>
+    <div class="m4-lines m4-right">
+      <p class="m4-line"><span class="m4-sticker">SS26<br>독점<br>화보</span></p>
+      <p class="m4-line is-red"><b>체리 립의 여름</b><span>뷰티 캠페인 비하인드</span></p>
+      <p class="m4-line"><b>스타일리스트의 가방 속</b><span>촬영장에 꼭 챙기는 일곱 가지</span></p>
+    </div>
+
+    <div class="m4-bottom">
+      <a href="/portfolio/">이번 호 화보 보기</a>
+      <span class="m4-code" aria-hidden="true"><i></i>9 771234 567007</span>
+    </div>
+  </div>
+</main>
+
+<section class="p-contact" id="contact">
+  <div class="wrap">
+    <a class="p-mail" href="mailto:hong@example.com">hong@example.com</a>
+    <div class="p-contact-bot">
+      <p class="p-copy">© 2026 HONG GILDONG. All rights reserved.</p>
+    </div>
+  </div>
+</section>

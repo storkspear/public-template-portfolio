@@ -1,0 +1,136 @@
+<!--
+  메인 샘플 3 · 스티커 보드 — 무드보드를 그대로 첫 화면에. 오려 붙인 스티커, 손글씨 메모, 픽셀 라벨이
+  색 타일 위에 겹친다. 올리면 스티커가 들린다.
+
+  관리자 「홈디자인 → 메인 → 직접 디자인 → 사용할 파일」에서 고르면 이 파일이 그대로 나갑니다.
+  **이 파일은 고치지 마세요** — 레포를 업데이트하면 바뀔 수 있습니다. 고쳐 쓰려면:
+
+      cp sample-pages/main3.html pages/main.html     # 복사한 뒤 pages/main.html 을 고치고
+                                                     # 관리자에서 「내 파일」을 고릅니다
+
+  · 스타일은 아래 <style> 한 덩이에 다 있습니다(.m3- 접두). 타일 자리는 grid-template-areas 한 덩이.
+  · 스티커의 흰 테두리는 drop-shadow 네 겹으로 그립니다 — 그림 파일을 따로 안 만든다.
+  · 그림: /assets/sample-pages/fluent/*.png — Microsoft Fluent Emoji 3D (MIT, 같은 폴더 LICENSE.txt · CREDITS.md). JS 는 없습니다.
+-->
+<link rel="stylesheet" href="/assets/fonts.css">
+<style>
+.m3 {
+  --m3-bg: #fff6e9;
+  --m3-ink: #1b1530;
+  --m3-lime: #c8ff3d;
+  background: var(--m3-bg) radial-gradient(#e9dcc6 1px, transparent 1.2px) 0 0 / 18px 18px;
+  color: var(--m3-ink); padding: clamp(2rem, 6vh, 4rem) clamp(1rem, 3vw, 2rem) clamp(3rem, 8vh, 5rem);
+}
+.m3-board {
+  max-width: 1280px; margin: 0 auto; display: grid; gap: 14px;
+  grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-rows: minmax(120px, auto);
+  grid-template-areas:
+    "t t t t a a"
+    "t t t t b c"
+    "d e e f f c"
+    "d e e g g g";
+}
+.m3-tile { position: relative; border-radius: 26px; padding: 1.3rem; overflow: hidden; background: var(--c, #fff); }
+.m3-title { grid-area: t; background: var(--m3-ink); color: var(--m3-bg); display: grid; align-content: end; min-height: 380px; }
+.m3-title h1 { margin: 0; font-family: 'Black Han Sans', var(--sans); font-weight: 400; font-synthesis: none; font-size: clamp(2.6rem, 6.4vw, 6rem); line-height: 1.02; letter-spacing: -0.05em; }
+.m3-title h1 span { display: inline-block; padding: 0 0.15em; background: var(--m3-lime); color: var(--m3-ink); rotate: -3deg; border-radius: 10px; }
+.m3-title p { margin: 1rem 0 0; max-width: 30em; color: #cfc6e6; font-size: 1rem; line-height: 1.7; }
+.m3-pix { font-family: 'Nanum Gothic Coding', var(--mono); font-size: 0.82rem; letter-spacing: 0.02em; }
+.m3-title .m3-pix { position: absolute; top: 1.2rem; left: 1.3rem; color: var(--m3-lime); }
+
+.m3-a { grid-area: a; --c: #ff7ac8; }
+.m3-b { grid-area: b; --c: #7fd4ff; }
+.m3-c { grid-area: c; --c: var(--m3-lime); display: grid; place-items: center; }
+.m3-d { grid-area: d; --c: #fff; border: 2px dashed var(--m3-ink); }
+.m3-e { grid-area: e; --c: #ffd44d; display: grid; place-items: center; min-height: 260px; }
+.m3-f { grid-area: f; --c: #b79bff; }
+.m3-g { grid-area: g; --c: var(--m3-ink); color: var(--m3-bg); display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+
+/* 스티커 — 흰 테두리 네 방향 + 바닥 그림자. 오려 붙인 모양 */
+.m3-stk {
+  position: absolute; width: var(--s, 120px); height: auto;
+  left: var(--x, auto); top: var(--y, auto); right: var(--rx, auto); bottom: var(--by, auto);
+  rotate: var(--r, 0deg); transition: rotate 0.35s var(--ease), scale 0.35s var(--ease);
+  filter: drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff) drop-shadow(0 12px 10px rgba(27, 21, 48, 0.3));
+}
+/* 올리면 반대로 기울며 들린다 — 색이 아니라 각도와 크기가 바뀐다 */
+.m3-tile:hover .m3-stk { rotate: calc(var(--r, 0deg) * -1); scale: 1.08; }
+.m3-c .m3-stk, .m3-e .m3-stk { position: static; }
+
+/* 손글씨 메모 */
+.m3-hand { font-family: 'Nanum Pen Script', 'Gaegu', cursive; font-size: clamp(1.75rem, 2.9vw, 2.35rem); line-height: 1.05; }
+.m3-a .m3-hand { position: absolute; left: 1.2rem; bottom: 1rem; max-width: 9em; }
+.m3-d .m3-hand { margin: 0; }
+.m3-d ul { list-style: none; margin: 0.8rem 0 0; padding: 0; font-size: 0.92rem; line-height: 1.9; }
+.m3-d li::before { content: '☐ '; }
+.m3-d li.done::before { content: '☑ '; }
+.m3-d li.done { text-decoration: line-through; text-decoration-color: #ff7ac8; text-decoration-thickness: 2px; }
+.m3-f p { margin: 0; position: relative; z-index: 1; max-width: 10em; font-weight: 700; font-size: 1.1rem; line-height: 1.35; }
+.m3-g a {
+  display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1.3rem; border-radius: 999px;
+  background: var(--m3-lime); color: var(--m3-ink); font-weight: 700; text-decoration: none; transition: translate var(--t), box-shadow var(--t);
+}
+.m3-g a:hover, .m3-g a:focus-visible { translate: 0 -3px; outline: none; box-shadow: 0 6px 0 #ff7ac8; }
+.m3-g strong { font-family: 'Black Han Sans', var(--sans); font-weight: 400; font-size: clamp(1.3rem, 2.6vw, 2rem); letter-spacing: -0.03em; }
+
+@media (max-width: 900px) {
+  .m3-board { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "t t" "a b" "c e" "d f" "g g"; }
+  .m3-title { min-height: 340px; }
+  .m3-title .m3-stk { --s: 96px !important; }
+  .m3-e { min-height: 200px; }
+}
+@media (prefers-reduced-motion: reduce) { .m3-stk { transition: none; } }
+</style>
+
+<main class="m3">
+  <div class="m3-board">
+    <section class="m3-tile m3-title">
+      <span class="m3-pix">★ MOODBOARD / SS26</span>
+      <img class="m3-stk" src="/assets/sample-pages/fluent/mirror_ball.png" alt="" width="256" height="256" style="--s:150px;--rx:6%;--y:10%;--r:10deg">
+      <h1>오늘의 무드는<br><span>반짝 반항</span></h1>
+      <p>홍길동 스튜디오는 스타일링과 룩북, 캠페인을 만듭니다. 이번 시즌 보드를 그대로 걸어 둡니다.</p>
+    </section>
+
+    <div class="m3-tile m3-a">
+      <img class="m3-stk" src="/assets/sample-pages/fluent/kiss_mark.png" alt="" width="256" height="256" style="--s:110px;--rx:8%;--y:12%;--r:-12deg">
+      <span class="m3-hand">립은 무조건<br>체리색!!</span>
+    </div>
+    <div class="m3-tile m3-b">
+      <img class="m3-stk" src="/assets/sample-pages/fluent/sunglasses.png" alt="" width="256" height="256" style="--s:120px;--x:14%;--y:18%;--r:8deg">
+      <span class="m3-pix" style="position:absolute;right:1rem;bottom:0.9rem">SHADES.EXE</span>
+    </div>
+    <div class="m3-tile m3-c">
+      <img class="m3-stk" src="/assets/sample-pages/fluent/roller_skate.png" alt="" width="256" height="256" style="--s:min(150px,80%);--r:-8deg">
+    </div>
+    <div class="m3-tile m3-d">
+      <p class="m3-hand">촬영 체크리스트</p>
+      <ul>
+        <li class="done">스틸레토 두 켤레</li>
+        <li class="done">미러볼 조명</li>
+        <li>라임색 배경지</li>
+        <li>체리 립 · 네일</li>
+      </ul>
+    </div>
+    <div class="m3-tile m3-e">
+      <img class="m3-stk" src="/assets/sample-pages/fluent/high-heeled_shoe.png" alt="" width="256" height="256" style="--s:min(210px,70%);--r:-10deg">
+      <span class="m3-pix" style="position:absolute;left:1.2rem;top:1rem">LOOK 07 ✦</span>
+    </div>
+    <div class="m3-tile m3-f">
+      <p>반짝이는 건 전부 한 컷에 몰아넣기</p>
+      <img class="m3-stk" src="/assets/sample-pages/fluent/gem_stone.png" alt="" width="256" height="256" style="--s:90px;--rx:8%;--by:10%;--r:14deg">
+      <img class="m3-stk" src="/assets/sample-pages/fluent/sparkles.png" alt="" width="256" height="256" style="--s:64px;--rx:38%;--by:8%;--r:0deg">
+    </div>
+    <div class="m3-tile m3-g">
+      <strong>보드 속 룩, 전부 보러 가기</strong>
+      <a href="/portfolio/">룩북 열기 ↗</a>
+    </div>
+  </div>
+</main>
+
+<section class="p-contact is-slim">
+  <div class="wrap">
+    <div class="p-contact-bot">
+      <p class="p-copy">© 2026 HONG GILDONG. All rights reserved.</p>
+    </div>
+  </div>
+</section>

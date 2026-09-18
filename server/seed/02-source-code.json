@@ -1,0 +1,192 @@
+{
+  "title": "소스코드",
+  "width": "68rem",
+  "body": "<p>코드 블록은 도구줄의 <code>{ }</code> 소스코드에서 넣습니다. 언어를 고르면 그 언어의 규칙으로 색이 칠해집니다.</p><h2>색칠은 언제 계산되나</h2><p><strong>발행하는 순간입니다.</strong> 읽는 사람의 브라우저에서 돌지 않습니다 — 그래서 이 글에는 자바스크립트가 한 줄도 없습니다. 하이라이터를 받느라 글자가 늦게 칠해지는 일도 없습니다.</p><details data-theme=\"plain\" data-code=\"\" open=\"true\" data-lang=\"javascript\"><summary class=\"cb-bar\" contenteditable=\"false\"><span class=\"cb-dots\" aria-hidden=\"true\"><i></i><i></i><i></i></span><span class=\"cb-title\"></span><span class=\"cb-lang\">JavaScript</span><button class=\"cb-copy\" type=\"button\" data-copy=\"\">복사</button></summary><pre><code class=\"language-javascript\">// 발행 시점에 색이 칠해져 HTML 에 박힙니다.\nexport async function bake(pool) {\n  const { rows } = await pool.query(\n    'select slug, title, body from posts where published_at is not null')\n  for (const p of rows) {\n    await writeFile(`${OUT}/${p.slug}/index.html`, postPage(p))\n  }\n  return rows.length\n}</code></pre></details><h2>다른 언어도 됩니다</h2><details data-theme=\"plain\" data-code=\"\" open=\"true\" data-lang=\"sql\"><summary class=\"cb-bar\" contenteditable=\"false\"><span class=\"cb-dots\" aria-hidden=\"true\"><i></i><i></i><i></i></span><span class=\"cb-title\"></span><span class=\"cb-lang\">SQL</span><button class=\"cb-copy\" type=\"button\" data-copy=\"\">복사</button></summary><pre><code class=\"language-sql\">-- 글 하나가 어떤 사진을 쓰는지\nselect p.slug, a.attachment_id, a.file_path\n  from posts p\n  join post_attachments a on a.post_id = p.id\n where p.slug = $1\n order by a.attachment_id;</code></pre></details><details data-theme=\"plain\" data-code=\"\" open=\"true\" data-lang=\"bash\"><summary class=\"cb-bar\" contenteditable=\"false\"><span class=\"cb-dots\" aria-hidden=\"true\"><i></i><i></i><i></i></span><span class=\"cb-title\"></span><span class=\"cb-lang\">Bash</span><button class=\"cb-copy\" type=\"button\" data-copy=\"\">복사</button></summary><pre><code class=\"language-bash\">docker compose up -d --build\ndocker compose logs -f api</code></pre></details><h2>긴 줄은 어떻게 되나</h2><p>가로로 넘치면 그 블록만 좌우로 스크롤됩니다. 글 전체가 밀리지 않습니다.</p><details data-theme=\"plain\" data-code=\"\" open=\"true\" data-lang=\"python\"><summary class=\"cb-bar\" contenteditable=\"false\"><span class=\"cb-dots\" aria-hidden=\"true\"><i></i><i></i><i></i></span><span class=\"cb-title\"></span><span class=\"cb-lang\">Python</span><button class=\"cb-copy\" type=\"button\" data-copy=\"\">복사</button></summary><pre><code class=\"language-python\">def 아주_긴_함수_이름(첫번째_인자, 두번째_인자, 세번째_인자, 네번째_인자, 다섯번째_인자=None, *나머지, **키워드):\n    return 첫번째_인자</code></pre></details><p></p>",
+  "doc": {
+    "type": "doc",
+    "content": [
+      {
+        "type": "paragraph",
+        "attrs": {
+          "textAlign": null,
+          "lineHeight": null
+        },
+        "content": [
+          {
+            "text": "코드 블록은 도구줄의 ",
+            "type": "text"
+          },
+          {
+            "text": "{ }",
+            "type": "text",
+            "marks": [
+              {
+                "type": "code"
+              }
+            ]
+          },
+          {
+            "text": " 소스코드에서 넣습니다. 언어를 고르면 그 언어의 규칙으로 색이 칠해집니다.",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2,
+          "textAlign": null,
+          "lineHeight": null
+        },
+        "content": [
+          {
+            "text": "색칠은 언제 계산되나",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "attrs": {
+          "textAlign": null,
+          "lineHeight": null
+        },
+        "content": [
+          {
+            "text": "발행하는 순간입니다.",
+            "type": "text",
+            "marks": [
+              {
+                "type": "bold"
+              }
+            ]
+          },
+          {
+            "text": " 읽는 사람의 브라우저에서 돌지 않습니다 — 그래서 이 글에는 자바스크립트가 한 줄도 없습니다. 하이라이터를 받느라 글자가 늦게 칠해지는 일도 없습니다.",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "codeBlock",
+        "attrs": {
+          "notes": null,
+          "theme": "plain",
+          "title": null,
+          "language": "javascript",
+          "highlight": null
+        },
+        "content": [
+          {
+            "text": "// 발행 시점에 색이 칠해져 HTML 에 박힙니다.\nexport async function bake(pool) {\n  const { rows } = await pool.query(\n    'select slug, title, body from posts where published_at is not null')\n  for (const p of rows) {\n    await writeFile(`${OUT}/${p.slug}/index.html`, postPage(p))\n  }\n  return rows.length\n}",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2,
+          "textAlign": null,
+          "lineHeight": null
+        },
+        "content": [
+          {
+            "text": "다른 언어도 됩니다",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "codeBlock",
+        "attrs": {
+          "notes": null,
+          "theme": "plain",
+          "title": null,
+          "language": "sql",
+          "highlight": null
+        },
+        "content": [
+          {
+            "text": "-- 글 하나가 어떤 사진을 쓰는지\nselect p.slug, a.attachment_id, a.file_path\n  from posts p\n  join post_attachments a on a.post_id = p.id\n where p.slug = $1\n order by a.attachment_id;",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "codeBlock",
+        "attrs": {
+          "notes": null,
+          "theme": "plain",
+          "title": null,
+          "language": "bash",
+          "highlight": null
+        },
+        "content": [
+          {
+            "text": "docker compose up -d --build\ndocker compose logs -f api",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2,
+          "textAlign": null,
+          "lineHeight": null
+        },
+        "content": [
+          {
+            "text": "긴 줄은 어떻게 되나",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "attrs": {
+          "textAlign": null,
+          "lineHeight": null
+        },
+        "content": [
+          {
+            "text": "가로로 넘치면 그 블록만 좌우로 스크롤됩니다. 글 전체가 밀리지 않습니다.",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "codeBlock",
+        "attrs": {
+          "notes": null,
+          "theme": "plain",
+          "title": null,
+          "language": "python",
+          "highlight": null
+        },
+        "content": [
+          {
+            "text": "def 아주_긴_함수_이름(첫번째_인자, 두번째_인자, 세번째_인자, 네번째_인자, 다섯번째_인자=None, *나머지, **키워드):\n    return 첫번째_인자",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "attrs": {
+          "textAlign": null,
+          "lineHeight": null
+        }
+      }
+    ]
+  },
+  "title_doc": {
+    "font": null,
+    "size": 38,
+    "text": "소스코드",
+    "align": "left",
+    "color": null,
+    "banner": null
+  }
+}

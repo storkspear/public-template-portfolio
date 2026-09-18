@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.DS_Store
+.claude/
+*.log
+.env
+
+# 로컬 굽기 결과 + 로컬 업로드. 잃어도 되는 것이라 체크아웃 안에 둔다.
+# ⚠ 운영의 blog/ 는 반대다 — 사진 원본이 있어서 체크아웃 **밖**이어야 한다(git clean).
+.data/
+admin/dist/

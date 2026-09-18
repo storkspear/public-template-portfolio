@@ -1,0 +1,124 @@
+<!--
+  메인 샘플 5 · 펼침면 — 첫 화면이 책 한 권을 펼친 모양이다. 왼쪽 쪽에 소개, 오른쪽 쪽에 도판 한 점.
+  그 밑으로 「다음 펼침면」 세 권이 작업으로 이어진다. 편집디자인의 결 — 여백·쪽번호·제본선.
+
+  관리자 「홈디자인 → 메인 → 직접 디자인 → 사용할 파일」에서 고르면 이 파일이 그대로 나갑니다.
+  **이 파일은 고치지 마세요** — 레포를 업데이트하면 바뀔 수 있습니다. 고쳐 쓰려면:
+
+      cp sample-pages/main5.html pages/main.html     # 복사한 뒤 pages/main.html 을 고치고
+                                                     # 관리자에서 「내 파일」을 고릅니다
+
+  · 스타일은 아래 <style> 한 덩이에 다 있습니다(.m5- 접두). 판형 비율은 --m5-ratio 하나로 정합니다.
+  · 쪽번호(.m5-folio)는 글자 그대로입니다 — 원하는 숫자로 바꾸세요.
+  · 그림: /assets/sample-pages/fluent/*.png — Microsoft Fluent Emoji 3D (MIT, 같은 폴더 LICENSE.txt · CREDITS.md). JS 는 없습니다.
+-->
+<link rel="stylesheet" href="/assets/fonts.css">
+<style>
+.m5 {
+  /* 한 쪽의 판형 — 188×257. 펼침면은 이것 두 장 */
+  --m5-ratio: 188 / 257;
+  --m5-desk: #e4e1da;
+  --m5-plate: #f1d9d2;
+}
+.m5-desk { background: var(--m5-desk); padding: clamp(2rem, 6vh, 4.5rem) clamp(1rem, 4vw, 2.5rem) clamp(2.5rem, 7vh, 5rem); }
+.m5-spread {
+  position: relative; display: grid; grid-template-columns: 1fr 1fr;
+  width: min(100%, 1180px, calc((100vh - 170px) * 2 * 188 / 257)); margin: 0 auto;
+  box-shadow: 0 30px 60px -40px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+/* 제본선 — 가운데로 갈수록 종이가 말려 들어가는 그늘 */
+.m5-spread::after {
+  content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 9%; transform: translateX(-50%); pointer-events: none;
+  background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.07) 42%, rgba(0, 0, 0, 0.13) 50%, rgba(0, 0, 0, 0.05) 58%, transparent);
+}
+.m5-page { position: relative; aspect-ratio: var(--m5-ratio); background: #fbfaf7; display: flex; flex-direction: column; padding: 9% 10% 8%; color: #1a1917; }
+.m5-run { margin: 0; font-size: 0.74rem; color: #77746c; letter-spacing: 0.02em; }
+.m5-verso h1 { margin: auto 0 0; font-family: 'Gowun Batang', 'Nanum Myeongjo', serif; font-weight: 400; font-size: clamp(1.7rem, 3.4vw, 3.1rem); line-height: 1.22; letter-spacing: -0.035em; }
+.m5-lead { margin: 1.4em 0 0; max-width: 21em; font-size: clamp(0.88rem, 1.2vw, 1rem); line-height: 1.8; color: #4d4a44; }
+.m5-links { display: flex; gap: 1.5rem; margin: 1.8em 0 auto; font-size: 0.95rem; }
+.m5-links a { text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 0.15rem; }
+.m5-links a:hover { color: #b8322a; }
+.m5-folio { position: absolute; bottom: 4.5%; font-family: 'Gowun Batang', 'Nanum Myeongjo', serif; font-size: 0.82rem; color: #77746c; font-variant-numeric: tabular-nums; }
+.m5-verso .m5-folio { left: 10%; }
+.m5-recto .m5-folio { right: 10%; }
+/* 도판 — 색 판 위에 오브젝트 한 점, 인쇄물의 컬러 플레이트 */
+.m5-plate { flex: 1; min-height: 0; margin: 0; display: flex; flex-direction: column; }
+.m5-plate span { flex: 1; min-height: 0; display: grid; place-items: center; background: var(--m5-plate); }
+.m5-plate img { width: 62%; height: auto; filter: drop-shadow(0 26px 22px rgba(80, 30, 20, 0.28)); }
+.m5-plate figcaption { margin-top: 0.9em; font-size: 0.76rem; color: #77746c; }
+.m5-plate figcaption b { color: #b8322a; font-weight: 400; margin-right: 0.4em; }
+
+/* 다음 펼침면 — 작은 책 세 권 */
+.m5-next { max-width: 1240px; margin: 0 auto; padding: clamp(3rem, 8vh, 5rem) clamp(1.5rem, 5vw, 2.5rem) clamp(4rem, 10vh, 6rem); }
+.m5-next h2 { margin: 0 0 clamp(1.5rem, 3vh, 2rem); font-family: 'Gowun Batang', 'Nanum Myeongjo', serif; font-weight: 400; font-size: 1.35rem; letter-spacing: -0.02em; }
+.m5-books { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1.25rem, 3vw, 2.5rem); }
+.m5-books a { display: block; text-decoration: none; color: inherit; }
+.m5-mini { display: grid; grid-template-columns: 1fr 1fr; background: var(--m5-desk); padding: 7%; transition: padding 0.35s var(--ease); }
+.m5-mini > span { aspect-ratio: var(--m5-ratio); background: #fbfaf7; display: grid; place-items: center; overflow: hidden; }
+.m5-mini > span:first-child { align-content: end; justify-items: start; padding: 10%; font-family: 'Gowun Batang', 'Nanum Myeongjo', serif; font-size: clamp(0.8rem, 1.2vw, 1rem); line-height: 1.3; }
+.m5-mini > span:last-child { background: var(--c); }
+.m5-mini img { width: 70%; height: auto; }
+/* 올리면 책상이 좁아져 책이 **다가온다** — 크기가 바뀌지 색이 바뀌지 않는다 */
+.m5-books a:hover .m5-mini, .m5-books a:focus-visible .m5-mini { padding: 3%; }
+.m5-books a:focus-visible { outline: 2px solid #b8322a; outline-offset: 4px; }
+.m5-books p { margin: 0.75rem 0 0; display: flex; justify-content: space-between; gap: 1rem; font-size: 0.9rem; }
+.m5-books p span { color: #77746c; }
+
+@media (max-width: 760px) {
+  .m5-spread { grid-template-columns: 1fr; width: 100%; }
+  .m5-spread::after { display: none; }
+  .m5-page { aspect-ratio: auto; padding: 12% 9% 16%; }
+  .m5-verso h1 { margin-top: 3.5rem; }
+  .m5-links { margin-bottom: 2.5rem; }
+  .m5-recto .m5-plate span { min-height: 55vh; }
+  .m5-books { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .m5-mini { transition: none; } }
+</style>
+
+<main class="m5">
+  <div class="m5-desk">
+    <div class="m5-spread">
+      <section class="m5-page m5-verso">
+        <p class="m5-run">홍길동 스튜디오 작업집 — 스타일링</p>
+        <h1>한 벌의 옷에<br>한 편의 이야기를.</h1>
+        <p class="m5-lead">계절마다 옷과 소품, 사진과 공간을 한 장면으로 엮습니다. 룩북과 캠페인, 화보의 스타일링을 맡습니다.</p>
+        <nav class="m5-links" aria-label="바로 가기">
+          <a href="/portfolio/">작업 보기</a>
+          <a href="/blog/">스튜디오 노트</a>
+        </nav>
+        <span class="m5-folio">4</span>
+      </section>
+      <section class="m5-page m5-recto">
+        <figure class="m5-plate">
+          <span><img src="/assets/sample-pages/fluent/handbag.png" alt="도판 — 토트백" width="256" height="256"></span>
+          <figcaption><b>도판 1</b>소프트 아머 — 토트백, SS26</figcaption>
+        </figure>
+        <span class="m5-folio">5</span>
+      </section>
+    </div>
+  </div>
+
+  <section class="m5-next">
+    <h2>다음 펼침면</h2>
+    <ul class="m5-books">
+      <li><a href="/portfolio/">
+        <span class="m5-mini"><span>소프트<br>아머</span><span style="--c:#d7e1f7"><img src="/assets/sample-pages/fluent/dress.png" alt="" width="256" height="256" loading="lazy"></span></span>
+        <p>소프트 아머 <span>SS26</span></p></a></li>
+      <li><a href="/portfolio/">
+        <span class="m5-mini"><span>밤의<br>체육관</span><span style="--c:#e3dcef"><img src="/assets/sample-pages/fluent/mirror_ball.png" alt="" width="256" height="256" loading="lazy"></span></span>
+        <p>밤의 체육관 <span>FW25</span></p></a></li>
+      <li><a href="/portfolio/">
+        <span class="m5-mini"><span>체리<br>피크닉</span><span style="--c:#f6d6d2"><img src="/assets/sample-pages/fluent/cherries.png" alt="" width="256" height="256" loading="lazy"></span></span>
+        <p>체리 피크닉 <span>SS25</span></p></a></li>
+    </ul>
+  </section>
+</main>
+
+<section class="p-contact is-slim">
+  <div class="wrap">
+    <div class="p-contact-bot">
+      <p class="p-copy">© 2026 HONG GILDONG. All rights reserved.</p>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,599 @@
+{
+  "title": "글쓰기 기본",
+  "width": "68rem",
+  "body": "<p>이 글은 이 템플릿을 받은 사람이 <strong>지우고 제 글을 쓰기 위한</strong> 예시입니다. 관리자 화면에서 이 글을 열어 보면, 아래에 쓰인 것들이 각각 어느 단추에서 나오는지 바로 보입니다.</p><h2>글의 뼈대</h2><p>제목 아래 본문이 있고, 문단은 엔터로 나뉩니다. <em>기울임</em>과 <strong>굵게</strong>, <u>밑줄</u>은 위쪽 도구줄에 있습니다. 문장 안에 <code>인라인 코드</code>도 넣을 수 있습니다.</p><blockquote data-variant=\"bar\"><p>인용구는 남의 말을 옮길 때 씁니다. 도구줄의 「인용구」에서 모양을 고를 수 있습니다.</p></blockquote><h2>표</h2><p>표는 도구줄의 「표」에서 넣습니다. 미리 만들어 둔 모양 중에서 고르면 됩니다.</p><table data-preset=\"grid\" style=\"min-width: 50px;\"><colgroup><col style=\"min-width: 25px;\"><col style=\"min-width: 25px;\"></colgroup><tbody><tr><th colspan=\"1\" rowspan=\"1\"><p>넣는 것</p></th><th colspan=\"1\" rowspan=\"1\"><p>어디서</p></th></tr><tr><td colspan=\"1\" rowspan=\"1\"><p>사진</p></td><td colspan=\"1\" rowspan=\"1\"><p>도구줄 맨 왼쪽</p></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><p>표</p></td><td colspan=\"1\" rowspan=\"1\"><p>도구줄 「표」</p></td></tr><tr><td colspan=\"1\" rowspan=\"1\"><p>다이어그램</p></td><td colspan=\"1\" rowspan=\"1\"><p>도구줄 「다이어그램」</p></td></tr></tbody></table><h2>목록</h2><ul><li><p>글머리 기호 목록</p></li><li><p>항목을 여럿 늘어놓을 때</p></li></ul><ol><li><p>번호 목록</p></li><li><p>순서가 있을 때</p></li></ol><h2>이 글을 지우려면</h2><p>글 목록에서 지우면 됩니다. 예시 글은 <code>server/seed/</code> 의 JSON 에서 오고, <strong>처음 한 번만</strong> 심어집니다 — 지운 글이 다시 나타나지 않습니다.</p><aside data-tone=\"info\" data-callout=\"\"><p>강조박스입니다. 도구줄의 「강조박스」에서 색을 고를 수 있습니다 — 알림, 주의, 도움말처럼 결이 다른 말을 본문에서 떼어 놓을 때 씁니다.</p></aside><p></p>",
+  "doc": {
+    "type": "doc",
+    "content": [
+      {
+        "type": "paragraph",
+        "attrs": {
+          "textAlign": null,
+          "lineHeight": null
+        },
+        "content": [
+          {
+            "text": "이 글은 이 템플릿을 받은 사람이 ",
+            "type": "text"
+          },
+          {
+            "text": "지우고 제 글을 쓰기 위한",
+            "type": "text",
+            "marks": [
+              {
+                "type": "bold"
+              }
+            ]
+          },
+          {
+            "text": " 예시입니다. 관리자 화면에서 이 글을 열어 보면, 아래에 쓰인 것들이 각각 어느 단추에서 나오는지 바로 보입니다.",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2,
+          "textAlign": null,
+          "lineHeight": null
+        },
+        "content": [
+          {
+            "text": "글의 뼈대",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "attrs": {
+          "textAlign": null,
+          "lineHeight": null
+        },
+        "content": [
+          {
+            "text": "제목 아래 본문이 있고, 문단은 엔터로 나뉩니다. ",
+            "type": "text"
+          },
+          {
+            "text": "기울임",
+            "type": "text",
+            "marks": [
+              {
+                "type": "italic"
+              }
+            ]
+          },
+          {
+            "text": "과 ",
+            "type": "text"
+          },
+          {
+            "text": "굵게",
+            "type": "text",
+            "marks": [
+              {
+                "type": "bold"
+              }
+            ]
+          },
+          {
+            "text": ", ",
+            "type": "text"
+          },
+          {
+            "text": "밑줄",
+            "type": "text",
+            "marks": [
+              {
+                "type": "underline"
+              }
+            ]
+          },
+          {
+            "text": "은 위쪽 도구줄에 있습니다. 문장 안에 ",
+            "type": "text"
+          },
+          {
+            "text": "인라인 코드",
+            "type": "text",
+            "marks": [
+              {
+                "type": "code"
+              }
+            ]
+          },
+          {
+            "text": "도 넣을 수 있습니다.",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "blockquote",
+        "attrs": {
+          "variant": "bar"
+        },
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "textAlign": null,
+              "lineHeight": null
+            },
+            "content": [
+              {
+                "text": "인용구는 남의 말을 옮길 때 씁니다. 도구줄의 「인용구」에서 모양을 고를 수 있습니다.",
+                "type": "text"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2,
+          "textAlign": null,
+          "lineHeight": null
+        },
+        "content": [
+          {
+            "text": "표",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "attrs": {
+          "textAlign": null,
+          "lineHeight": null
+        },
+        "content": [
+          {
+            "text": "표는 도구줄의 「표」에서 넣습니다. 미리 만들어 둔 모양 중에서 고르면 됩니다.",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "table",
+        "attrs": {
+          "line": null,
+          "style": null,
+          "preset": "grid",
+          "radius": null
+        },
+        "content": [
+          {
+            "type": "tableRow",
+            "attrs": {
+              "height": null
+            },
+            "content": [
+              {
+                "type": "tableHeader",
+                "attrs": {
+                  "bg": null,
+                  "align": null,
+                  "colspan": 1,
+                  "rowspan": 1,
+                  "colwidth": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "textAlign": null,
+                      "lineHeight": null
+                    },
+                    "content": [
+                      {
+                        "text": "넣는 것",
+                        "type": "text"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableHeader",
+                "attrs": {
+                  "bg": null,
+                  "align": null,
+                  "colspan": 1,
+                  "rowspan": 1,
+                  "colwidth": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "textAlign": null,
+                      "lineHeight": null
+                    },
+                    "content": [
+                      {
+                        "text": "어디서",
+                        "type": "text"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "tableRow",
+            "attrs": {
+              "height": null
+            },
+            "content": [
+              {
+                "type": "tableCell",
+                "attrs": {
+                  "bg": null,
+                  "align": null,
+                  "colspan": 1,
+                  "rowspan": 1,
+                  "colwidth": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "textAlign": null,
+                      "lineHeight": null
+                    },
+                    "content": [
+                      {
+                        "text": "사진",
+                        "type": "text"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableCell",
+                "attrs": {
+                  "bg": null,
+                  "align": null,
+                  "colspan": 1,
+                  "rowspan": 1,
+                  "colwidth": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "textAlign": null,
+                      "lineHeight": null
+                    },
+                    "content": [
+                      {
+                        "text": "도구줄 맨 왼쪽",
+                        "type": "text"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "tableRow",
+            "attrs": {
+              "height": null
+            },
+            "content": [
+              {
+                "type": "tableCell",
+                "attrs": {
+                  "bg": null,
+                  "align": null,
+                  "colspan": 1,
+                  "rowspan": 1,
+                  "colwidth": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "textAlign": null,
+                      "lineHeight": null
+                    },
+                    "content": [
+                      {
+                        "text": "표",
+                        "type": "text"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableCell",
+                "attrs": {
+                  "bg": null,
+                  "align": null,
+                  "colspan": 1,
+                  "rowspan": 1,
+                  "colwidth": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "textAlign": null,
+                      "lineHeight": null
+                    },
+                    "content": [
+                      {
+                        "text": "도구줄 「표」",
+                        "type": "text"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "tableRow",
+            "attrs": {
+              "height": null
+            },
+            "content": [
+              {
+                "type": "tableCell",
+                "attrs": {
+                  "bg": null,
+                  "align": null,
+                  "colspan": 1,
+                  "rowspan": 1,
+                  "colwidth": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "textAlign": null,
+                      "lineHeight": null
+                    },
+                    "content": [
+                      {
+                        "text": "다이어그램",
+                        "type": "text"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "tableCell",
+                "attrs": {
+                  "bg": null,
+                  "align": null,
+                  "colspan": 1,
+                  "rowspan": 1,
+                  "colwidth": null
+                },
+                "content": [
+                  {
+                    "type": "paragraph",
+                    "attrs": {
+                      "textAlign": null,
+                      "lineHeight": null
+                    },
+                    "content": [
+                      {
+                        "text": "도구줄 「다이어그램」",
+                        "type": "text"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2,
+          "textAlign": null,
+          "lineHeight": null
+        },
+        "content": [
+          {
+            "text": "목록",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "bulletList",
+        "attrs": {
+          "marker": null
+        },
+        "content": [
+          {
+            "type": "listItem",
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "textAlign": null,
+                  "lineHeight": null
+                },
+                "content": [
+                  {
+                    "text": "글머리 기호 목록",
+                    "type": "text"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "listItem",
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "textAlign": null,
+                  "lineHeight": null
+                },
+                "content": [
+                  {
+                    "text": "항목을 여럿 늘어놓을 때",
+                    "type": "text"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "orderedList",
+        "attrs": {
+          "type": null,
+          "start": 1,
+          "marker": null
+        },
+        "content": [
+          {
+            "type": "listItem",
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "textAlign": null,
+                  "lineHeight": null
+                },
+                "content": [
+                  {
+                    "text": "번호 목록",
+                    "type": "text"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "listItem",
+            "content": [
+              {
+                "type": "paragraph",
+                "attrs": {
+                  "textAlign": null,
+                  "lineHeight": null
+                },
+                "content": [
+                  {
+                    "text": "순서가 있을 때",
+                    "type": "text"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "heading",
+        "attrs": {
+          "level": 2,
+          "textAlign": null,
+          "lineHeight": null
+        },
+        "content": [
+          {
+            "text": "이 글을 지우려면",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "attrs": {
+          "textAlign": null,
+          "lineHeight": null
+        },
+        "content": [
+          {
+            "text": "글 목록에서 지우면 됩니다. 예시 글은 ",
+            "type": "text"
+          },
+          {
+            "text": "server/seed/",
+            "type": "text",
+            "marks": [
+              {
+                "type": "code"
+              }
+            ]
+          },
+          {
+            "text": " 의 JSON 에서 오고, ",
+            "type": "text"
+          },
+          {
+            "text": "처음 한 번만",
+            "type": "text",
+            "marks": [
+              {
+                "type": "bold"
+              }
+            ]
+          },
+          {
+            "text": " 심어집니다 — 지운 글이 다시 나타나지 않습니다.",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "type": "callout",
+        "attrs": {
+          "tone": "info"
+        },
+        "content": [
+          {
+            "type": "paragraph",
+            "attrs": {
+              "textAlign": null,
+              "lineHeight": null
+            },
+            "content": [
+              {
+                "text": "강조박스입니다. 도구줄의 「강조박스」에서 색을 고를 수 있습니다 — 알림, 주의, 도움말처럼 결이 다른 말을 본문에서 떼어 놓을 때 씁니다.",
+                "type": "text"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "attrs": {
+          "textAlign": null,
+          "lineHeight": null
+        }
+      }
+    ]
+  },
+  "title_doc": {
+    "font": null,
+    "size": 38,
+    "text": "글쓰기 기본",
+    "align": "left",
+    "color": null,
+    "banner": null
+  }
+}

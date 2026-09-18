@@ -1,0 +1,407 @@
+/**
+ * 글 목록 열두 벌 — **마크업은 하나, 보여 주는 것만 다르다.**
+ * 규약: 갈래 규칙은 반드시 `.bl.bl-x` 로 시작한다(0,3,0). 바탕 `.bl .b-*`(0,2,0)과 같은 명시도로
+ * 두면 파일 순서로만 이겨 규칙을 옮기는 순간 조용히 뒤집힌다(제목만이 아니라 번호·날짜·요약·사진도).
+ * 색은 전부 테마 변수와 color-mix — 흰·베이지·검정·회색·직접 고른 색 어디서나 같은 논리로 선다.
+ * `--line-2` 는 쓰지 않는다: site.css 기본에서는 --line 보다 옅고 테마를 고르면 진해 방향이 뒤집힌다.
+ */
+
+/* ── 바탕 ──────────────────────────────────────────────────────────── */
+/**
+ * ⚠ **세로로 쌓는 카드는 `align-items: stretch` 를 적어 둔다.**
+ *
+ * `site.css` 의 `.b-item > a { align-items: baseline }` 이 여기까지 내려온다 — 그것이
+ * 기본 줄(번호·제목·날짜를 밑줄에 맞추는 것)의 모습이라 맞는 값이지만, 세로로 쌓는
+ * 카드에서는 **사진칸이 0 으로 쪼그라든다.** 같은 함정에 세 번 걸렸다(2026-09-18 실측:
+ * 참고서 카드 2px · 매거진 0x0 · 호수 0x0 — 매거진과 호수는 사진이 아예 안 보였다).
+ * 한 줄에 모아 둔다: 새 카드 갈래를 더할 때 여기 이름만 보태면 된다.
+ */
+.bl.bl-cards a,
+.bl.bl-issue a,
+.bl.bl-stack a,
+.bl.bl-magazine > li:first-child a { align-items: stretch; }
+
+.bl { list-style: none; margin: 0; padding: 0;
+  /* 굵기를 지어내지 않는다 — 한 벌짜리 글꼴(부크크명조·페이퍼로지·검은고딕)에 700 이 닿아도 번지지 않고
+     400 파일로 그려진다. 고른 뒤 글꼴을 바꿔도 안전하다 */
+  font-synthesis: none; }
+.bl a { display: block; text-decoration: none; color: inherit; }
+.bl a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.bl .b-shot, .bl .b-lede, .bl .b-read { display: none; }   /* 갈래가 켠다 */
+.bl .b-body { min-width: 0; }
+.bl .b-no { font-family: var(--mono); font-size: .8rem; color: var(--fg-3);
+  letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.bl .b-title { display: block; font-family: var(--display); font-weight: 400;
+  font-size: 1.3rem; letter-spacing: -.03em; line-height: 1.45; color: var(--fg);
+  word-break: keep-all; overflow-wrap: anywhere; }         /* 무공백 잡문 제목이 칸을 뚫지 않게 */
+.bl .b-lede { color: var(--fg-2); word-break: keep-all; overflow-wrap: anywhere; }
+.bl .b-date { font-family: var(--mono); font-size: .78rem; color: var(--fg-3);
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bl .b-read { font-family: var(--sans); font-size: .78rem; color: var(--fg-3);   /* 「3분」— 한글이라 모노 아님 */
+  white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bl .b-shot:empty { background: none; }
+.bl .b-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.bl > .b-year { padding: 2.25rem 0 .75rem; font-family: var(--mono); font-size: .82rem;
+  letter-spacing: .06em; color: var(--fg-3); font-variant-numeric: tabular-nums; }
+.bl > .b-year:first-child { padding-top: 0; }
+
+/* ── ⓪ 기본 rows — 처음부터 쓰던 번호 행 목록. 글꼴도 사이트 기본을 따른다 ──
+   값은 예전 「인덱스」와 같은 `rows` — 그 값으로 저장한 설정은 이 모양 그대로 나온다
+   번호·제목·날짜 한 줄씩, 행 사이 헤어라인. 호버는 옅은 띠 + 번호 별색 + 제목 밑줄(옛 모습 그대로) */
+.bl.bl-rows > li.b-item { border-top: 1px solid var(--line); }
+.bl.bl-rows > li.b-item:last-child { border-bottom: 1px solid var(--line); }
+.bl.bl-rows a { display: grid; grid-template-columns: 2.7rem minmax(0, 1fr) auto;
+  gap: 0 1.3rem; align-items: baseline;
+  padding: 1.125rem 0;                /* 18+30+18 = 66 = 머리줄 높이. 두 띠의 박자를 맞춘다 */
+  transition: background-color var(--t); }
+.bl.bl-rows a:hover { background: var(--bg-2); }
+.bl.bl-rows .b-no { font-size: .82rem; transition: color var(--t); }
+.bl.bl-rows a:hover .b-no { color: var(--accent); }
+.bl.bl-rows a:hover .b-title { text-decoration: underline; text-underline-offset: 4px; }
+.bl.bl-rows .b-date { font-size: .8rem; }
+@media (max-width: 860px) {
+  .bl.bl-rows a { grid-template-columns: 2.2rem minmax(0, 1fr); gap: 0 .9rem; padding: 1.05rem 0; }
+  .bl.bl-rows .b-date { grid-column: 2; margin-top: .4rem; }
+  .bl.bl-rows .b-title { font-size: 1.14rem; }
+}
+
+/* ── ① 장부 ledger — 번호·제목·날짜. 위 2px 머리선, 행 사이 헤어라인 ───────── */
+.bl.bl-ledger { border-top: 2px solid var(--fg); border-bottom: 1px solid var(--line); }
+/* ⚠ `.b-item` 만. 연도 라벨은 선을 안 갖는다 — 「라벨 밑에 다음 행의 윗선이 밑줄로 붙는다」 */
+.bl.bl-ledger > li.b-item + li.b-item,
+.bl.bl-ledger > li.b-year + li.b-item { border-top: 1px solid var(--line); }
+.bl.bl-ledger a { display: grid; grid-template-columns: 2.7rem minmax(0, 1fr) auto;
+  gap: 0 1.3rem; align-items: baseline;
+  padding: 1.125rem .75rem; margin-inline: -.75rem;        /* 띠가 글줄보다 12px 넓다 */
+  transition: background-color var(--t); }
+.bl.bl-ledger a:hover, .bl.bl-ledger a:focus-visible { background: var(--bg-2); }
+.bl.bl-ledger .b-no { position: relative; color: var(--fg); transition: color var(--t); }
+.bl.bl-ledger a:visited .b-no { color: var(--fg-3); }        /* 읽은 글 — Bear Blog */
+.bl.bl-ledger .b-no::after { content: '→'; content: '→' / ''; position: absolute; inset: 0; color: var(--accent);
+  opacity: 0; transform: translateX(-.35em); transition: opacity var(--t), transform var(--t); }
+.bl.bl-ledger a:hover .b-no, .bl.bl-ledger a:focus-visible .b-no { color: transparent; }
+.bl.bl-ledger a:hover .b-no::after, .bl.bl-ledger a:focus-visible .b-no::after { opacity: 1; transform: none; }
+.bl.bl-ledger .b-title { font-size: 1.2rem; letter-spacing: -.02em; line-height: 1.4; }
+.bl.bl-ledger > .b-year { padding: 2.25rem 0 .6rem; }
+.bl.bl-ledger > .b-year:first-child { padding-top: .9rem; }
+@media (max-width: 860px) {
+  .bl.bl-ledger a { grid-template-columns: 2.2rem minmax(0, 1fr); gap: 0 .9rem;
+    padding: 1rem .5rem; margin-inline: -.5rem; }
+  .bl.bl-ledger .b-date { grid-column: 2; margin-top: .35rem; }
+  .bl.bl-ledger .b-title { font-size: 1.1rem; }
+}
+
+/* ── ② 날짜 피드 feed — 큰 일·작은 월, 제목 한 줄, 읽는 시간, 화살표 ────────── */
+.bl.bl-feed { border-top: 1px solid var(--line); }
+.bl.bl-feed > li.b-item { border-bottom: 1px solid var(--line); }
+.bl.bl-feed a { display: grid; grid-template-columns: 3.6rem minmax(0, 1fr) auto 1.25rem;
+  column-gap: 1rem; align-items: center; padding: .7rem 0;
+  scroll-margin-top: 7rem; }            /* Tab 으로 옮겨 갈 때 머리줄·연도 라벨 밑에 가려지지 않게 */
+.bl.bl-feed .b-no, .bl.bl-feed .b-shot, .bl.bl-feed .b-lede { display: none; }
+/* 날짜 글자(2026.09.16)는 남기되 0 크기로 — 화면읽기는 읽고, 눈에는 아래 두 조각이 보인다 */
+.bl.bl-feed .b-date[data-d] { grid-column: 1; grid-row: 1; display: grid; justify-items: center;
+  font-size: 0; line-height: 1; }
+.bl.bl-feed .b-date[data-d]::before { content: attr(data-d); content: attr(data-d) / ''; font-family: var(--sans); font-weight: 700;
+  font-size: 1.35rem; letter-spacing: -.02em; color: var(--fg); font-variant-numeric: tabular-nums; }   /* 별색 아닌 글자색 */
+.bl.bl-feed .b-date[data-d]::after { content: attr(data-m) '월'; content: attr(data-m) '월' / ''; margin-top: .15rem;
+  font-family: var(--sans); font-size: .68rem; letter-spacing: .04em; color: var(--fg-3); }
+.bl.bl-feed .b-date:not([data-d]) { grid-column: 1; grid-row: 1; }   /* 옛 마크업 — 그냥 날짜 */
+.bl.bl-feed .b-body { grid-column: 2; grid-row: 1; }
+.bl.bl-feed .b-title { font-weight: 700; font-size: 1.05rem; line-height: 1.4; letter-spacing: -.02em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bl.bl-feed .b-read { display: block; grid-column: 3; grid-row: 1; }
+.bl.bl-feed a::after { content: '→'; content: '→' / ''; grid-column: 4; grid-row: 1; font-family: var(--mono); color: var(--fg);
+  opacity: 0; transform: translateX(-.6rem); transition: opacity var(--t), transform var(--t); }
+.bl.bl-feed a:hover::after, .bl.bl-feed a:focus-visible::after { opacity: 1; transform: none; }
+.bl.bl-feed a:hover .b-title, .bl.bl-feed a:focus-visible .b-title {
+  text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1.5px; }
+.bl.bl-feed a:visited .b-title { color: var(--fg-2); }
+.bl.bl-feed > .b-year { position: sticky; top: calc(var(--hd-h, 66px) + 1px); z-index: 1;   /* 머리줄 높이 + 아랫선 1 */
+  background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(6px);
+  padding: .8rem 0 .4rem; margin-top: 1.4rem; font-size: .8rem; }
+.bl.bl-feed > .b-year:first-child { margin-top: 0; }
+@media (max-width: 860px) {
+  .bl.bl-feed > .b-year { position: static; }   /* 메뉴가 두 줄로 접히면 머리줄 높이가 달라진다 */
+}
+@media (max-width: 640px) {
+  .bl.bl-feed a { grid-template-columns: 3rem minmax(0, 1fr) 1rem; column-gap: .75rem; }
+  .bl.bl-feed .b-read { display: none; }
+  .bl.bl-feed a::after { grid-column: 3; }
+}
+
+/* ── ③ 목차 lines — 제목 … 날짜. 점선 리더는 배경, 제목 바탕이 글자 뒤 점을 덮는다 ─── */
+/* 목록은 본문 폭 끝까지 — 다른 갈래와 같은 폭으로 선다 */
+.bl.bl-lines { --dot: color-mix(in srgb, var(--fg) 45%, var(--bg)); }
+.bl.bl-lines a { display: flex; align-items: baseline; align-items: last baseline; gap: .5rem; padding: .55rem 0; }
+.bl.bl-lines .b-no, .bl.bl-lines .b-shot, .bl.bl-lines .b-lede { display: none; }
+.bl.bl-lines .b-body { flex: 1; min-width: 0; padding-right: 1rem;
+  background-image: radial-gradient(circle, var(--dot) 1px, transparent 1.5px);
+  background-size: 6px 6px; background-repeat: repeat-x;
+  background-position: 0 calc(100% - .32em); }             /* 마지막 줄 베이스라인 높이 — 리디바탕 기준 값 */
+.bl.bl-lines .b-title { display: inline; font-size: 1.08rem; line-height: 1.55; letter-spacing: -.015em;
+  background: var(--bg); padding-right: .35rem;             /* 글자 뒤 점을 지운다 */
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  text-decoration: underline transparent; text-decoration-thickness: 1px; text-underline-offset: .45em;
+  transition: color var(--t), text-decoration-color var(--t), text-underline-offset var(--t); }
+.bl.bl-lines a:hover .b-title, .bl.bl-lines a:focus-visible .b-title {
+  text-decoration-color: currentColor; text-underline-offset: .14em; text-decoration-thickness: 1.5px; }
+.bl.bl-lines:has(a:hover) a:not(:hover) .b-title { color: var(--fg-3); }   /* Are.na — 나머지가 물러선다 */
+.bl.bl-lines a:visited .b-title { color: var(--fg-2); }
+.bl.bl-lines > .b-year { font-family: var(--display); font-size: 1rem; letter-spacing: 0; color: var(--fg);
+  padding: 1.6rem 0 .4rem; margin-bottom: .3rem; border-bottom: 1px solid var(--line); }
+.bl.bl-lines > .b-year:first-child { padding-top: 0; }
+
+/* ── ④ 이어쓰기 runin — 굵은 제목 + 첫 문장이 한 문단 ─────────────────────── */
+.bl.bl-runin { border-top: 1px solid var(--line); }   /* 본문 폭 끝까지 */
+.bl.bl-runin > li.b-item { border-bottom: 1px solid var(--line); }
+.bl.bl-runin a { display: block; padding: 1.15rem 0 1.25rem; font-family: var(--display);
+  font-size: 1.12rem; line-height: 1.7; letter-spacing: -.01em; color: var(--fg); transition: color var(--t); }
+.bl.bl-runin .b-no, .bl.bl-runin .b-shot, .bl.bl-runin .b-read { display: none; }
+.bl.bl-runin .b-body { display: inline; }
+.bl.bl-runin .b-title { display: inline; font: inherit; font-weight: 700; letter-spacing: inherit;
+  color: inherit; margin-right: .3em;
+  text-decoration: underline transparent; text-decoration-thickness: 1.5px; text-underline-offset: .18em;
+  transition: text-decoration-color var(--t); }
+.bl.bl-runin .b-lede { display: inline; font: inherit; color: var(--fg-2); }
+.bl.bl-runin .b-date { display: inline; margin-left: .6em; font-size: .74rem; vertical-align: .12em; }
+.bl.bl-runin a:hover .b-title, .bl.bl-runin a:focus-visible .b-title { text-decoration-color: currentColor; }
+.bl.bl-runin:has(a:hover) a:not(:hover),
+.bl.bl-runin:has(a:hover) a:not(:hover) .b-title,
+.bl.bl-runin:has(a:hover) a:not(:hover) .b-lede { color: var(--fg-3); }
+.bl.bl-runin a:visited .b-title { color: var(--fg-2); }
+.bl.bl-runin > .b-year { font-family: var(--display); font-size: .95rem; letter-spacing: 0;
+  color: var(--fg-3); padding: 1.8rem 0 .5rem; }
+
+/* ── ⑤ 표제 titles — 제목이 화면. 호버는 형광펜 ───────────────────────────── */
+.bl.bl-titles { border-bottom: 1px solid var(--line); --mk: color-mix(in srgb, var(--accent) 26%, transparent); }
+.bl.bl-titles > li.b-item { border-top: 1px solid var(--line); }
+.bl.bl-titles a { display: flex; align-items: baseline; gap: 1.5rem; padding: clamp(1.3rem, 3.5vh, 2.2rem) 0; }
+.bl.bl-titles .b-no, .bl.bl-titles .b-shot, .bl.bl-titles .b-lede { display: none; }
+.bl.bl-titles .b-body { flex: 1; text-wrap: balance; }
+.bl.bl-titles .b-title { display: inline; font-size: clamp(1.55rem, 4vw, 2.7rem); line-height: 1.22;
+  letter-spacing: -.025em;
+  background-image: linear-gradient(var(--mk), var(--mk)); background-repeat: no-repeat;
+  background-position: 0 92%; background-size: 0 .38em;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  transition: background-size .32s var(--ease); }
+.bl.bl-titles a:hover .b-title, .bl.bl-titles a:focus-visible .b-title { background-size: 100% .38em; }
+@media (max-width: 640px) {
+  .bl.bl-titles a { flex-direction: column; align-items: flex-start; gap: .5rem; }
+}
+
+/* ── ⑥ 에세이 stack — 선 없이, 날짜 → 굵은 제목 → 첫 문장. 오래될수록 옅다 ──── */
+.bl.bl-stack { display: flex; flex-direction: column; gap: clamp(2rem, 5vh, 3rem); }
+.bl.bl-stack a { display: flex; flex-direction: column; }
+.bl.bl-stack .b-no, .bl.bl-stack .b-shot, .bl.bl-stack .b-read { display: none; }
+.bl.bl-stack .b-date { order: 1; margin-bottom: .5rem; }
+.bl.bl-stack .b-body { order: 2; text-wrap: balance; }
+.bl.bl-stack .b-title { font-size: clamp(1.6rem, 3.6vw, 2.3rem); line-height: 1.22; letter-spacing: 0;
+  text-decoration: underline transparent; text-decoration-thickness: 2px; text-underline-offset: .45em;
+  transition: color var(--t), text-decoration-color var(--t), text-underline-offset var(--t); }
+.bl.bl-stack .b-lede { display: block; margin-top: .6rem; font-size: 1.02rem; line-height: 1.7; max-width: 40em; }
+.bl.bl-stack > li:nth-child(2) .b-title { color: color-mix(in srgb, var(--fg) 92%, var(--bg)); }
+.bl.bl-stack > li:nth-child(3) .b-title { color: color-mix(in srgb, var(--fg) 84%, var(--bg)); }
+.bl.bl-stack > li:nth-child(4) .b-title { color: color-mix(in srgb, var(--fg) 78%, var(--bg)); }
+.bl.bl-stack > li:nth-child(n+5) .b-title { color: var(--fg-2); }
+/* 호버는 nth 규칙 **뒤에** — 같은 명시도(0,4,1)라 순서로 이긴다 */
+.bl.bl-stack > li a:hover .b-title, .bl.bl-stack > li a:focus-visible .b-title {
+  color: var(--fg); text-decoration-color: currentColor; text-underline-offset: .1em; }
+
+/* ── ⑦ 사진 행 thumb — 날짜 → 제목 → 요약, 줄 끝에 4:3 ──────────────────────── */
+.bl.bl-thumb { border-bottom: 1px solid var(--line); }
+.bl.bl-thumb > li.b-item { border-top: 1px solid var(--line); }
+.bl.bl-thumb a { display: grid; grid-template-columns: minmax(0, 1fr) 7rem; grid-template-rows: auto auto;
+  column-gap: 1.75rem; align-items: start; padding: 1.1rem 0;
+  box-shadow: inset 0 0 0 0 var(--fg); transition: box-shadow var(--t); }
+.bl.bl-thumb a:hover { box-shadow: inset 0 2px 0 0 var(--fg); }    /* 윗선이 두꺼워진다 — 시프트 0 */
+.bl.bl-thumb .b-no { display: none; }
+.bl.bl-thumb .b-date { grid-column: 1; grid-row: 1; font-size: .72rem; letter-spacing: .08em; margin-bottom: .45rem; }
+.bl.bl-thumb .b-body { grid-column: 1; grid-row: 2; }
+.bl.bl-thumb .b-shot { grid-column: 2; grid-row: 1 / 3; display: block; aspect-ratio: 4 / 3;
+  overflow: hidden; background: var(--bg-2); }
+.bl.bl-thumb .b-shot:empty { background: none; }                 /* 표지 없는 글 — 칸은 지키되 회색 상자는 세우지 않는다 */
+.bl.bl-thumb .b-shot img { transition: transform .35s var(--ease); }
+.bl.bl-thumb a:hover .b-shot img { transform: scale(1.04); }
+/* 표지가 **하나도** 없으면 오른쪽 칸을 접는다. 하나라도 있으면 빈 칸을 남겨 제목 열 폭을 맞춘다 */
+.bl.bl-thumb:not(:has(.b-shot img)) a { grid-template-columns: minmax(0, 1fr); }
+.bl.bl-thumb:not(:has(.b-shot img)) .b-shot { display: none; }
+.bl.bl-thumb .b-title { font-weight: 700; font-size: 1.18rem; line-height: 1.38; letter-spacing: -.02em; }
+.bl.bl-thumb .b-lede { display: block; margin-top: .3rem; font-size: .9rem; line-height: 1.6; max-width: 44em; }
+.bl.bl-thumb a:visited .b-title { color: var(--fg-2); }
+@media (max-width: 640px) {
+  .bl.bl-thumb a { grid-template-columns: minmax(0, 1fr) 5rem; column-gap: 1rem; }
+  .bl.bl-thumb .b-lede { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+}
+
+/* ── ⑧ 매거진 magazine — 피처 하나 + 2단. 경계는 둘째 글의 윗선 하나 ─────────── */
+.bl.bl-magazine { display: grid; grid-template-columns: 1fr 1fr; column-gap: 2.5rem; border-bottom: 1px solid var(--line); }
+.bl.bl-magazine .b-no, .bl.bl-magazine .b-read { display: none; }
+.bl.bl-magazine > li:first-child { grid-column: 1 / -1; margin-bottom: clamp(1.5rem, 4vh, 2.5rem); }
+.bl.bl-magazine > li:first-child a { display: flex; flex-direction: column; }
+.bl.bl-magazine > li:first-child .b-shot { display: block; aspect-ratio: 21 / 9; overflow: hidden;
+  background: var(--bg-2); margin-bottom: 1.25rem; }
+.bl.bl-magazine > li:first-child .b-shot:empty { display: none; }   /* 빈 회색 상자를 세우지 않는다 */
+.bl.bl-magazine > li:first-child .b-shot img { transition: transform .5s var(--ease); }
+.bl.bl-magazine > li:first-child a:hover .b-shot img { transform: scale(1.02); }
+.bl.bl-magazine > li:first-child .b-date { order: 1; margin-bottom: .55rem;
+  font-family: var(--display); font-size: .95rem; letter-spacing: 0; }
+.bl.bl-magazine > li:first-child .b-date[data-y] { font-size: 0; }
+.bl.bl-magazine > li:first-child .b-date[data-y]::before {
+  content: attr(data-y) '년 ' attr(data-m) '월 ' attr(data-d) '일';
+  content: attr(data-y) '년 ' attr(data-m) '월 ' attr(data-d) '일' / ''; font-size: .95rem; }   /* 글자는 이미 읽힌다 — 두 번 읽지 않게 */
+.bl.bl-magazine > li:first-child .b-body { order: 2; max-width: 30em; text-wrap: balance; }
+.bl.bl-magazine > li:first-child .b-title { font-weight: 700; font-size: clamp(1.8rem, 4.5vw, 3rem);
+  line-height: 1.18; letter-spacing: -.025em;
+  text-decoration: underline transparent; text-decoration-thickness: 2px; text-underline-offset: .5em;
+  transition: text-decoration-color var(--t), text-underline-offset var(--t); }
+.bl.bl-magazine > li:first-child a:hover .b-title, .bl.bl-magazine > li:first-child a:focus-visible .b-title {
+  text-decoration-color: currentColor; text-underline-offset: .12em; }
+.bl.bl-magazine > li:first-child .b-lede { display: block; margin-top: .75rem; font-size: 1.05rem;
+  line-height: 1.65; max-width: 38em; }
+.bl.bl-magazine > li + li { border-top: 1px solid var(--line); }
+.bl.bl-magazine > li + li a { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .25rem 1rem;
+  align-items: baseline; padding: .95rem 0 1.05rem; }
+.bl.bl-magazine > li + li .b-body { grid-column: 1; grid-row: 1; }
+.bl.bl-magazine > li + li .b-date { grid-column: 2; grid-row: 1; }
+.bl.bl-magazine > li + li .b-title { font-weight: 700; font-size: 1.1rem; line-height: 1.38; letter-spacing: -.02em;
+  text-decoration: underline transparent; text-decoration-thickness: 1.5px; text-underline-offset: .4em;
+  transition: text-decoration-color var(--t), text-underline-offset var(--t); }
+.bl.bl-magazine > li + li a:hover .b-title, .bl.bl-magazine > li + li a:focus-visible .b-title {
+  text-decoration-color: currentColor; text-underline-offset: .14em; }
+.bl.bl-magazine > li + li .b-lede { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden; margin-top: .25rem; font-size: .88rem; line-height: 1.55; }
+@media (max-width: 720px) { .bl.bl-magazine { grid-template-columns: 1fr; } }
+
+/* ── ⑨ 참고서 카드 cards — 1px + 4px 먹선, 각진 모서리, 모서리 번호표, 호버 반전 ── */
+/* ⚠ **`auto-fit` 이다.** `auto-fill` 은 글이 없어도 칸을 만들어, 글 3편에 칸 4개가 서면
+   카드가 **좁아지면서 왼쪽으로 몰리고 오른쪽에 빈 칸 하나가 통째로 남는다**
+   (2026-09-18 실측: 본문 폭 1240 에서 오른쪽 295px · 1800 에서 870px). `auto-fit` 은
+   빈 칸을 접어 남은 글이 줄을 꽉 채운다. `min(100%, …)` 은 아주 좁은 칸에서 넘치지 않게. */
+.bl.bl-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14.5rem), 1fr)); gap: 1.25rem; }
+.bl.bl-cards > li { display: flex; }
+/* ⚠ 가로 여백은 **카드가 아니라 글자가** 갖는다. 카드에 주고 사진을 음수 margin 으로
+   당겨 채우는 수법은 세로 flex 칸에서 **폭만 늘고 왼쪽 자리는 안 당겨져**, 사진이
+   통째로 15px 밀려 오른쪽 테두리를 넘었다(2026-09-18 사용자 지적 · 실측 +16/+14px).
+   여백을 글자 쪽으로 옮기면 사진은 손댈 것 없이 저절로 카드 폭을 쓴다. */
+.bl.bl-cards a { position: relative; display: flex; flex-direction: column; width: 100%;
+  border: 1px solid var(--fg); border-top-width: 4px; padding: 0 0 .95rem;
+  color: var(--fg); background: var(--bg);
+  transition: background-color var(--t), color var(--t); }
+.bl.bl-cards a > :not(.b-shot):not(.b-no) { padding-inline: .95rem; }
+.bl.bl-cards a:hover { background: var(--fg); color: var(--bg); }   /* 반전 — 다크에서도 대칭 */
+.bl.bl-cards a:focus-visible { outline-offset: 3px; }
+.bl.bl-cards a:has(.b-shot:empty) { padding-top: 1.75rem; }          /* 번호표 자리 */
+.bl.bl-cards .b-no { position: absolute; top: 0; right: 0; padding: .15rem .5rem .1rem;
+  background: var(--fg); color: var(--bg); font-size: .72rem; letter-spacing: .06em;
+  transition: background-color var(--t), color var(--t); }
+.bl.bl-cards a:hover .b-no { background: var(--bg); color: var(--fg); }
+.bl.bl-cards .b-shot { display: block; aspect-ratio: 3 / 2; overflow: hidden; background: var(--bg-2);
+  margin: 0 0 .85rem; border-bottom: 1px solid var(--fg); }              /* 카드 안쪽 끝까지 */
+.bl.bl-cards .b-shot:empty { display: none; }
+.bl.bl-cards .b-body { margin-top: auto; }                             /* 제목은 카드 바닥 — 표지 유무와 무관하게 한 선 */
+.bl.bl-cards .b-title { color: inherit; font-weight: 700; font-size: 1.05rem; line-height: 1.35; letter-spacing: -.02em; }
+.bl.bl-cards .b-lede { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+  margin-top: .4rem; font-size: .84rem; line-height: 1.55; color: var(--fg-2); }
+.bl.bl-cards .b-date { margin-top: .7rem; color: var(--fg-3); }
+/* 반전 상태 — 섞은 색은 테마 대비 하한(4.5:1)에서 3:1 아래로 떨어진다. 종이색 그대로 쓴다 */
+.bl.bl-cards a:hover .b-lede, .bl.bl-cards a:hover .b-date { color: var(--bg); }
+.bl.bl-cards .b-date::after { content: '→'; content: '→' / ''; display: inline-block; width: 1.4em; text-align: right;
+  opacity: 0; transform: translateX(-.3em); transition: opacity var(--t), transform var(--t); }
+.bl.bl-cards a:hover .b-date::after, .bl.bl-cards a:focus-visible .b-date::after { opacity: 1; transform: none; }
+@media (max-width: 640px) {
+  .bl.bl-cards { grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: .9rem; }
+}
+
+/* ── ⑩ 외곽선 카드 outline — 글만. 별색 기운 얇은 테두리, 날짜 + 번호 칩, 읽는 시간 ── */
+.bl.bl-outline { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 1rem; }
+.bl.bl-outline > li { display: flex; }
+.bl.bl-outline a { --ol: color-mix(in srgb, var(--accent) 32%, var(--line));
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr auto;
+  grid-template-areas: 'date no' 'body body' 'read read';
+  width: 100%; padding: 1.05rem 1.2rem 1rem; border: 1px solid var(--ol); border-radius: 12px;
+  transition: border-color var(--t), box-shadow var(--t); }
+.bl.bl-outline a:hover { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.bl.bl-outline a:focus-visible { outline-offset: 2px; }
+.bl.bl-outline .b-shot, .bl.bl-outline .b-shot:empty { display: none; }   /* 글만 담는 카드 */
+.bl.bl-outline .b-date { grid-area: date; align-self: center; }
+.bl.bl-outline .b-no { grid-area: no; justify-self: end; padding: .1rem .55rem; border: 1px solid var(--ol);
+  border-radius: 999px; font-size: .7rem; letter-spacing: .06em; color: var(--fg-2);
+  transition: background-color var(--t), color var(--t), border-color var(--t); }
+.bl.bl-outline a:hover .b-no { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+.bl.bl-outline .b-body { grid-area: body; margin-top: .7rem; }
+.bl.bl-outline .b-title { font-weight: 700; font-size: 1.12rem; line-height: 1.38; letter-spacing: -.02em; }
+.bl.bl-outline .b-lede { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+  margin-top: .4rem; font-size: .88rem; line-height: 1.6; }
+.bl.bl-outline .b-read { display: block; grid-area: read; margin-top: 1rem; padding-top: .6rem;
+  border-top: 1px dashed var(--ol); }
+.bl.bl-outline .b-read::before { content: '읽는 데 '; }
+
+/* ── ⑪ 호수 issue — 「No.01」 윤곽선 숫자가 표지. 호버에 채워진다 ──────────────── */
+.bl.bl-issue { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: 2.25rem 2rem; }
+.bl.bl-issue > li { display: flex; }
+.bl.bl-issue a { display: flex; flex-direction: column; width: 100%; border-top: 1px solid var(--fg); padding-top: .75rem; }
+.bl.bl-issue .b-no { font-family: var(--display);                /* 표제 글꼴(페이퍼로지 800)의 윤곽 — 구름체(Cloudsofa)는 장난감 같아 뺐다 */
+  font-weight: 400; font-size: clamp(3.4rem, 8vw, 5.4rem); line-height: .92; letter-spacing: -.02em;
+  color: transparent; -webkit-text-stroke: 1.5px var(--fg); transition: color var(--t); }
+.bl.bl-issue .b-no::before { content: 'No.'; display: inline-block; margin: .55em .2em 0 0;
+  font-family: var(--mono); font-size: .24em; letter-spacing: .06em; vertical-align: top; color: var(--fg-3); -webkit-text-stroke: 0; }
+.bl.bl-issue a:hover .b-no, .bl.bl-issue a:focus-visible .b-no { color: var(--fg); }
+.bl.bl-issue .b-shot { display: block; aspect-ratio: 4 / 3; overflow: hidden; margin-top: .9rem; background: var(--bg-2); }
+.bl.bl-issue .b-shot:empty { display: none; }
+.bl.bl-issue .b-body { margin-top: .9rem; text-wrap: balance; }
+.bl.bl-issue .b-title { font-size: 1.3rem; line-height: 1.3; letter-spacing: -.02em; }
+.bl.bl-issue .b-lede { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+  margin-top: .45rem; font-size: .9rem; line-height: 1.6; }
+.bl.bl-issue .b-date { margin-top: auto; padding-top: 1rem; }
+.bl.bl-issue a:visited .b-title { color: var(--fg-2); }
+@media (max-width: 640px) {
+  .bl.bl-issue { gap: 1.75rem 1.25rem; }
+  .bl.bl-issue .b-no { font-size: 3rem; }
+}
+
+/* ── 움직임을 줄여 달라는 기기 — 전환·확대 전부 끈다(상태는 즉시 바뀐다) ─────────── */
+@media (prefers-reduced-motion: reduce) {
+  .bl a, .bl a *, .bl a::before, .bl a::after, .bl .b-no::after, .bl .b-date::after { transition: none !important; }
+  .bl a:hover img, .bl a:hover::after, .bl a:hover .b-no::after, .bl a:hover .b-date::after { transform: none !important; }
+}
+
+/* ── 상세는 목록과 **한 벌** ──────────────────────────────────────────
+   규칙은 전부 `.b-post.bp-x` 로 시작한다 — blog.css 의 `.b-post .post-head`(0,2,0)와 같은 명시도면
+   링크 순서로만 이겨 선 색이 뒤집힐 수 있다
+   제목의 인라인(글꼴·크기·정렬·색)은 절대 덮지 않는다 — 「보이는 대로 저장된다」가 갈래보다 먼저다.
+   만지는 것: 머리의 선·여백·날짜의 결·첫 문단·날짜의 자리(위/아래). 배너에 모서리를 주지 않는다. */
+
+/* 장부·참고서·호수 — 목록의 먹선이 머리에도 선다 */
+.b-post.bp-ledger .post-head { border-bottom: 2px solid var(--fg); }
+.b-post.bp-cards .post-head { border-bottom-color: var(--fg); }
+.b-post.bp-cards .post-head[data-banner='0'] { border-top: 4px solid var(--fg); padding-top: 1rem; }
+.b-post.bp-issue .post-head[data-banner='0'] { border-top: 1px solid var(--fg); padding-top: 1.2rem; border-bottom: 0; }
+
+/* 날짜가 제목 **위**에 서는 셋(사진 행·날짜 피드·에세이) — Craig Mod. DOM 은 그대로, order 만 */
+.b-post.bp-thumb .post-head, .b-post.bp-feed .post-head, .b-post.bp-stack .post-head { display: flex; flex-direction: column; }
+.b-post.bp-thumb .post-cover, .b-post.bp-feed .post-cover, .b-post.bp-stack .post-cover { order: 0; }
+.b-post.bp-thumb .b-when, .b-post.bp-feed .b-when, .b-post.bp-stack .b-when { order: 1; margin: 0 0 .35rem; }
+.b-post.bp-thumb .post-title, .b-post.bp-feed .post-title, .b-post.bp-stack .post-title { order: 2; }
+.b-post.bp-thumb .b-when { font-size: .72rem; letter-spacing: .08em; }
+.b-post.bp-feed .b-when { font-family: var(--sans); font-weight: 700; font-synthesis: none; font-size: .85rem; letter-spacing: 0; color: var(--fg-2); }
+.b-post.bp-stack .post-head { border-bottom: 0; }
+.b-post.bp-stack .b-when { font-family: var(--sans); letter-spacing: 0; }
+
+/* 큰 활자 셋 — 자간만 거들고, 첫 문단을 살짝 키운다(lead) */
+.b-post.bp-titles .post-title, .b-post.bp-magazine .post-title { letter-spacing: -.025em; }
+.b-post.bp-titles .b-when, .b-post.bp-runin .b-when { font-family: var(--display); font-size: .92rem; letter-spacing: 0; }
+.b-post.bp-titles .prose-body > p:first-child:not([data-pull-quote]),
+.b-post.bp-magazine .prose-body > p:first-child:not([data-pull-quote]),
+.b-post.bp-stack .prose-body > p:first-child:not([data-pull-quote]) { font-size: 1.1em; line-height: 1.72; }   /* 큰 인용은 편집기 크기 그대로 */
+
+/* 목차 — 머리 마감도 점선. 이어쓰기 — 선 없이 문단이 바로 잇는다 */
+.b-post.bp-lines .post-title { letter-spacing: -.02em; }
+.b-post.bp-lines .post-head { border-bottom: 0; padding-bottom: 1.6rem;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--fg) 45%, var(--bg)) 1px, transparent 1.5px);
+  background-size: 6px 6px; background-repeat: repeat-x; background-position: 0 100%; }
+.b-post.bp-runin .post-head { border-bottom: 0; padding-bottom: .6rem; }
+
+/* 외곽선 — 배너가 없을 때만 머리를 카드로 감싼다(배너는 화면 끝까지 흐르는 상자라 둥근 틀에 못 넣는다) */
+.b-post.bp-outline .post-head[data-banner='0'] { border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line));
+  border-radius: 12px; padding: 1.4rem 1.5rem 1.3rem; }
+.b-post.bp-outline .post-head[data-banner='1'] { border-bottom-color: color-mix(in srgb, var(--accent) 32%, var(--line)); }

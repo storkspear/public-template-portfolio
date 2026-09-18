@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="새싹">
+  <style>
+    /* 어두운 탭에서 검정은 사라진다. 눈에 보이는 쪽(밝은 탭)은 검정 그대로 두고,
+       어두운 탭에서만 흰색으로 뒤집는다. */
+    .s { fill: none; stroke: #0b0d10; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round }
+    @media (prefers-color-scheme: dark) { .s { stroke: #ffffff } }
+  </style>
+  <!-- 첫 화면의 새싹과 같은 모양이다. 내 것으로 바꿀 때는 이 파일만 갈아 끼우면 된다 —
+       굽기가 모든 화면의 <link rel="icon"> 에 이 주소를 넣는다. -->
+  <g class="s">
+    <!-- 줄기 -->
+    <path d="M32 56V30"/>
+    <!-- 왼쪽 떡잎 -->
+    <path d="M32 32C24 30 18 24 15.5 15.5 24 18 30 24 32 32Z"/>
+    <!-- 오른쪽 떡잎 -->
+    <path d="M32 30c2-9 9-15 17.5-17.5C47 21 41 28 32 30Z"/>
+  </g>
+</svg>

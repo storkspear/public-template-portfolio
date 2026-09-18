@@ -1,0 +1,14 @@
+# 빌드 컨텍스트를 작게 — 없으면 node_modules 와 글꼴 11MB 가 매번 도커로 넘어갑니다.
+node_modules
+**/node_modules
+admin/dist
+.git
+.env
+.data
+*.log
+.DS_Store
+.claude
+
+# public/ 은 **마운트**로 들어가므로 이미지에 넣을 필요가 없습니다.
+# (글꼴 121벌이 여기 있어서, 빼면 컨텍스트가 11MB 줄어듭니다)
+public

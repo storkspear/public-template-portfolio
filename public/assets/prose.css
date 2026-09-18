@@ -1,0 +1,1010 @@
+/* ─────────────────────────────────────────────────────────────
+   글 본문 타이포 — 에디터와 발행 결과가 "같은 파일"을 쓴다.
+   이 CSS 가 나중에 에디터 라이브러리로 빠지고, 공개 사이트도 이걸 import 한다.
+   (지금 색·크기는 잠정치입니다. 디자인은 0-A 시안에서 정합니다.)
+   ───────────────────────────────────────────────────────────── */
+/* 본문 글꼴 — 「기본서체」의 실체. 떠 있는 메뉴도 읽어야 하므로 :root 에 둔다. */
+:root {
+  /* 첫 번째가 우리가 들고 온 파일이다 — 기기에 뭐가 깔렸든 편집면과 발행면이 같아진다. */
+  --font-body: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
+               'Apple SD Gothic Neo', system-ui, sans-serif;
+}
+
+.prose {
+  --ink:        #1a1a1a;
+  --ink-soft:   #5b5b5b;
+  --ink-faint:  #8a8a8a;
+  --rule:       #e6e4de;
+  /* 표 격자용 — 본문 구분선(--rule)보다 진하다. 옅은 색으로는 파선·점선이 실선과 구별되지 않는다 */
+  --rule-table: #cfcabd;
+  --quote-line: #d5d5d5;   /* 인용 상자 테두리 — 네이버와 같은 톤 */
+  --quote-fold: #c9c9c9;   /* 포스트잇 접힌 면 */
+  --paper:      #ffffff;
+  --accent:     #2563eb;
+
+  --note-bg:    #f2f5fb;  --note-bar:  #7c9fd6;
+  --tip-bg:     #f1f7f2;  --tip-bar:   #6fae7d;
+  --warn-bg:    #fdf5ef;  --warn-bar:  #d99a5b;
+
+  --measure:    var(--measure-override, 38rem);   /* 본문 폭 — 시연에서 실시간 조절 */
+  --step:       var(--step-override, 1.0625rem);   /* 유동으로 바꿀 수 있게 */
+  --leading:    1.72;   /* 1.85 는 한글 본문엔 너무 벌어진다 */
+
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--font-body);
+  font-size: var(--step);
+  line-height: var(--leading);
+  word-break: keep-all;         /* 한글 어절 단위 줄바꿈 */
+  overflow-wrap: anywhere;
+}
+
+/* 편집 화면과 발행 화면이 "같은 구조"여야 한다 — 둘 다 .prose > .prose-body > 블록.
+   구조가 어긋나면 폭·여백 규칙이 다른 층에 걸려 두 화면이 달라진다. */
+.prose-body > * { max-width: var(--measure); margin-inline: auto; }
+
+/* NodeView 래퍼는 편집 화면에만 존재한다(react-renderer). 그대로 두면 이 래퍼가
+   % 폭의 기준(containing block)이 되어, 발행 화면(래퍼 없음)과 폭이 달라진다.
+   가운데 정렬 레이아웃에서 이미지 70% 가 편집 806px / 발행 1251px 로 갈렸다.
+   래퍼를 투명하게 만들어 양쪽이 같은 기준을 쓰게 한다.
+   (display:contents 는 안 쓴다 — getBoundingClientRect 가 0 이 되어 드래그 산식과
+    selectednode 외곽선이 깨진다.) */
+.prose-body > .react-renderer { max-width: none; margin: 0; }
+.prose-body > :first-child { margin-top: 0; }
+.prose-body > :last-child  { margin-bottom: 0; }
+
+.prose p { margin: 0 auto 0.95em; }
+
+.prose h2 {
+  font-size: 1.5rem; line-height: 1.4; letter-spacing: -0.02em;
+  font-weight: 700; margin: 2.1em auto 0.6em;
+}
+.prose h3 {
+  font-size: 1.175rem; line-height: 1.5; letter-spacing: -0.01em;
+  font-weight: 700; margin: 1.7em auto 0.45em; color: var(--ink);
+}
+.prose h4 {
+  font-size: 1.05rem; line-height: 1.55; letter-spacing: -0.005em;
+  font-weight: 700; margin: 1.45em auto 0.35em; color: var(--ink);
+}
+.prose h2:first-child, .prose h3:first-child, .prose h4:first-child { margin-top: 0; }
+
+.prose a { color: var(--accent); text-underline-offset: 3px; }
+.prose strong { font-weight: 700; }
+.prose mark {
+  background: #fff2a8; padding: 0.05em 0.15em; border-radius: 2px;
+  /* 브라우저 기본 스타일이 mark 에 `color: MarkText`(검정)를 박는다.
+     형광펜을 먼저 칠하면 글자색 <span> 이 바깥에 오는데, 그 상속을 이 기본값이 덮어
+     **글자색이 안 먹는 것처럼 보인다.** 상속으로 되돌린다. */
+  color: inherit;
+}
+
+.prose ul, .prose ol { margin: 0 auto 0.95em; padding-left: 1.3em; }
+/* 목록은 줄끼리 붙어 있어야 한 덩이로 읽힌다 — 문단 간격만큼 벌리면 낱개로 흩어진다 */
+.prose li { margin: 0.15em 0; line-height: 1.65; }
+.prose li::marker { color: var(--ink-faint); }
+
+/* ══ 구분선 8종 × 정렬 3 ══
+   hr 을 "본문 폭짜리 상자" 로 두고 모양은 ::after 가 그린다.
+   상자를 열 폭으로 두는 이유: 6rem 짜리 hr 에 margin-left:0 을 주면
+   measure 열이 아니라 페이지 왼쪽에 붙는다(.prose-body > * 가 가운데 정렬하므로).
+   모양은 전부 CSS 도형/SVG mask — 글리프 문자는 폰트에 없으면 빈 네모가 된다. */
+.prose hr {
+  /* 두께와 색은 변수로 내려보낸다 — 모양 규칙이 한 벌이면 축이 늘어도 규칙이 배수로 늘지 않는다.
+     기본색은 **모양마다 다르다**: 선은 옅은 --rule, 점·무늬는 조금 진한 --ink-faint
+     (얇은 점·빗금을 --rule 로 그리면 거의 안 보인다). */
+  --hr-ink: var(--rule);
+  --hr-w: 1px;
+  border: 0; margin: 1.55em auto; max-width: var(--measure);
+  height: 2.5rem;                      /* 40px — 폰에서 탭으로 고를 수 있는 최소치 */
+  display: flex; align-items: center; justify-content: center;
+  overflow: visible; background: none;
+}
+.prose hr[data-align='left']  { justify-content: flex-start; }
+.prose hr[data-align='right'] { justify-content: flex-end; }
+
+/* 점·무늬는 기본색이 한 칸 진하다 */
+.prose hr:is([data-kind='dots'], [data-kind='dots3'], [data-kind='slash'],
+             [data-kind='wave'], [data-kind='diamond']) { --hr-ink: var(--ink-faint); }
+
+/* 색 — 검정~회색 다섯 단계. **전부 토큰**이라 나중에 톤을 손보면 옛 글도 같이 따라온다.
+   'light'(#c9c6bd)는 옛 `bold` 구분선이 쓰던 색이다 — 이주해도 픽셀이 같게 남겨 둔다. */
+.prose hr[data-tone='faint'] { --hr-ink: var(--rule); }
+.prose hr[data-tone='light'] { --hr-ink: #c9c6bd; }
+.prose hr[data-tone='gray']  { --hr-ink: var(--ink-faint); }
+.prose hr[data-tone='dark']  { --hr-ink: var(--ink-soft); }
+.prose hr[data-tone='black'] { --hr-ink: var(--ink); }
+
+/* 두께 — null(속성 없음)이 1px 이다 */
+.prose hr[data-weight='medium'] { --hr-w: 2px; }
+.prose hr[data-weight='bold']   { --hr-w: 3px; }
+
+.prose hr::after { content: ''; display: block; background: var(--hr-ink); }
+
+.prose hr[data-kind='short']::after    { width: clamp(5rem, 18%, 14rem);  height: var(--hr-w); }
+.prose hr[data-kind='long']::after     { width: 100%;  height: var(--hr-w); }
+.prose hr[data-kind='vertical']::after { width: var(--hr-w);   height: 2.4rem; }
+.prose hr[data-kind='dots']::after {
+  width: clamp(84px, 12%, 200px); height: 6px; background:
+    radial-gradient(circle, var(--hr-ink) 2px, transparent 2.5px) 0 0/14px 6px repeat-x;
+}
+/* 점 **세 개**. 타일 20px × 3 = 60px 이라 점이 정확히 셋이다 — 폭을 유동으로 두면
+   창 크기에 따라 두 개나 네 개가 되어 「점 세 개」가 아니게 된다. */
+.prose hr[data-kind='dots3']::after {
+  width: 60px; height: 6px; background:
+    radial-gradient(circle, var(--hr-ink) 2.5px, transparent 3px) 0 0/20px 6px repeat-x;
+}
+.prose hr[data-kind='slash']::after {
+  width: clamp(7rem, 16%, 18rem); height: 12px; background:
+    repeating-linear-gradient(-45deg, var(--hr-ink) 0 1px, transparent 1px 7px);
+}
+.prose hr[data-kind='wave']::after {
+  width: clamp(9rem, 22%, 24rem); height: 8px; background: var(--hr-ink);
+  -webkit-mask: url("data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%208'><path%20d='M0%206%20Q4%201%208%206%20T16%206'%20fill='none'%20stroke='black'%20stroke-width='1.2'/></svg>") 0 0/16px 8px repeat-x;
+          mask: url("data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%208'><path%20d='M0%206%20Q4%201%208%206%20T16%206'%20fill='none'%20stroke='black'%20stroke-width='1.2'/></svg>") 0 0/16px 8px repeat-x;
+}
+.prose hr[data-kind='diamond']::after {
+  width: clamp(12rem, 32%, 34rem); height: 12px; background: var(--hr-ink);
+  -webkit-mask: url("data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20120%2012'><path%20d='M0%206h48M72%206h48'%20stroke='black'%20stroke-width='1'/><path%20d='M60%201.5l4.5%204.5-4.5%204.5-4.5-4.5z'%20fill='none'%20stroke='black'%20stroke-width='1'/></svg>") center/contain no-repeat;
+          mask: url("data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20120%2012'><path%20d='M0%206h48M72%206h48'%20stroke='black'%20stroke-width='1'/><path%20d='M60%201.5l4.5%204.5-4.5%204.5-4.5-4.5z'%20fill='none'%20stroke='black'%20stroke-width='1'/></svg>") center/contain no-repeat;
+}
+
+/* 편집 중 선택 표시 — hr 은 클릭 대상이 작아 눈에 띄게 */
+.editor-surface hr.ProseMirror-selectednode { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+@media (max-width: 640px) {
+  .prose hr[data-kind='diamond']::after { width: 9rem; }
+  .prose hr[data-kind='wave']::after { width: 7rem; }
+}
+
+/* 인용 — 남의 말. 공통값만 두고 모양은 variant 가 정한다 */
+.prose blockquote {
+  /* **세로 리듬은 변형과 무관하게 같다.** 변형마다 margin·padding 이 달라서 섞어 쓰면
+     간격이 들쭉날쭉해져 「행간이 넓다」로 보인다.
+     장식이 자리를 더 먹는 변형은 padding 으로만 벌리고, 바깥 여백은 건드리지 않는다. */
+  --q-gap: 1.5em;        /* 상자형 변형의 안쪽 위아래 */
+  --q-deco: 2.1em;       /* 장식(따옴표·갈고리)이 들어갈 자리 */
+  font-size: 1.06em;     /* 인용은 본문보다 조금 크다 — 남의 말이 묻히지 않게 */
+  margin: 1.7em auto; border: 0; padding: 0;
+  color: var(--ink-soft);
+}
+.prose blockquote p:last-child { margin-bottom: 0; }
+/* ══ 인용구 6종 — 네이버 블로그 에디터의 모양을 기준으로 맞춘다 ══
+   따옴표는 글리프(“ ”)가 아니라 SVG mask 로 그린다 — 폰트에 따라 모양이 달라지고
+   빈 네모가 되는 경우가 있다(툴바 아이콘에서 이미 겪음).
+   장식은 전부 ::before/::after 의 absolute 라 흐름에 끼어들지 않는다 → 편집·발행 기하 동일. */
+
+/* 따옴표 표식 — 여는 것은 같은 그림을 180° 돌려 쓴다 */
+.prose blockquote[data-variant='quote']::before,
+.prose blockquote[data-variant='quote']::after,
+.prose blockquote[data-variant='barquote']::before {
+  content: ''; display: block; background: var(--ink-faint);
+  -webkit-mask: url("data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2018'><path%20d='M10%2018V9.5C10%204.3%206.6%201%201.6%200L0%203.2c2.9.8%204.6%202.6%204.9%205.2H1.4V18zm13.6%200V9.5C23.6%204.3%2020.2%201%2015.2%200l-1.6%203.2c2.9.8%204.6%202.6%204.9%205.2h-3.5V18z'%20fill='black'/></svg>") center/contain no-repeat;
+          mask: url("data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2018'><path%20d='M10%2018V9.5C10%204.3%206.6%201%201.6%200L0%203.2c2.9.8%204.6%202.6%204.9%205.2H1.4V18zm13.6%200V9.5C23.6%204.3%2020.2%201%2015.2%200l-1.6%203.2c2.9.8%204.6%202.6%204.9%205.2h-3.5V18z'%20fill='black'/></svg>") center/contain no-repeat;
+}
+
+/* ① 따옴표 — 위에 여는 따옴표, 아래에 닫는 따옴표. 테두리 없음, 가운데 정렬 */
+.prose blockquote[data-variant='quote'] {
+  border: 0; padding: var(--q-deco) 0; text-align: center; position: relative;
+}
+.prose blockquote[data-variant='quote']::before,
+.prose blockquote[data-variant='quote']::after {
+  /* 장식 크기는 px 가 아니라 em — 드롭다운의 작은 미리보기에서도 같은 비율로 줄어든다 */
+  position: absolute; left: 50%; width: 1.55em; height: 1.12em;
+}
+.prose blockquote[data-variant='quote']::before { top: 0;    transform: translateX(-50%) rotate(180deg); }
+.prose blockquote[data-variant='quote']::after  { bottom: 0; transform: translateX(-50%); }
+
+/* ② 버티컬 라인 — 짧고 굵은 막대. 옅은 실선이 아니라 본문 색 */
+.prose blockquote[data-variant='bar'] {
+  /* 막대는 얇으면 밑줄처럼 보인다. 0.25em(4px) 은 아직 가늘다는 지적을 받아 키웠다.
+     em 이라 인용구의 글자 크기를 바꾸면 막대도 같이 굵어진다 — 비율이 유지된다. */
+  padding: 0.15em 0 0.15em 1.45em; border-left: 0.38em solid #3d3d3d;
+  text-align: left;
+}
+
+/* ③ 말풍선 — 각진 테두리 + 왼쪽 아래 꼬리, 가운데 정렬 */
+.prose blockquote[data-variant='bubble'] {
+  border: 2px solid var(--quote-line); border-radius: 0;
+  padding: var(--q-gap) 1.7em;
+  position: relative; color: var(--ink); text-align: center;
+}
+/* 꼬리 — 바깥 삼각(선 색) 위에 안쪽 삼각(종이 색)을 겹쳐 **윤곽선만** 남긴다.
+   채운 삼각이면 테두리만 있는 상자와 따로 놀아 말풍선으로 안 읽힌다. */
+.prose blockquote[data-variant='bubble']::after,
+.prose blockquote[data-variant='bubble']::before {
+  content: ''; position: absolute; left: 2.4em; width: 0; height: 0;
+}
+.prose blockquote[data-variant='bubble']::after {
+  bottom: -1.15em;
+  border-left: 1.15em solid var(--quote-line); border-bottom: 1.15em solid transparent;
+}
+.prose blockquote[data-variant='bubble']::before {
+  bottom: -0.82em; z-index: 1;
+  border-left: 0.82em solid var(--paper); border-bottom: 0.82em solid transparent;
+}
+
+/* ④ 라인&따옴표 — 왼쪽 위 작은 따옴표 + 아래 가는 밑줄 */
+.prose blockquote[data-variant='barquote'] {
+  border: 0; border-bottom: 1px solid var(--rule); padding: 0 0 0.9em; text-align: left;
+}
+.prose blockquote[data-variant='barquote']::before {
+  width: 1.06em; height: 0.77em; margin-bottom: 0.45em;
+}
+
+/* ⑤ 포스트잇 — 흰 바탕에 가는 테두리, 오른쪽 아래 모서리가 접힌다 */
+.prose blockquote[data-variant='postit'] {
+  border: 2px solid var(--quote-line); background: none;
+  padding: var(--q-gap) 1.7em;
+  position: relative; color: var(--ink); text-align: center;
+}
+/* 접힌 모서리 — ①종이색 삼각으로 오른쪽 아래 모서리(테두리 포함)를 지우고
+   ②그 자리에 접힌 면을 회색으로 얹는다. 그래야 「잘린 뒤 접힌」 것으로 보인다. */
+.prose blockquote[data-variant='postit']::before {
+  content: ''; position: absolute; right: -2px; bottom: -2px; width: 0; height: 0;
+  border-left: 1.7em solid transparent; border-bottom: 1.7em solid var(--paper);
+}
+.prose blockquote[data-variant='postit']::after {
+  content: ''; position: absolute; right: -1px; bottom: -1px; width: 0; height: 0;
+  border-left: 1.5em solid transparent; border-bottom: 1.5em solid var(--quote-fold);
+}
+
+/* ⑥ 프레임 — 테두리가 아니라 좌상·우하 갈고리 둘 */
+.prose blockquote[data-variant='frame'] {
+  border: 0; outline: 0; padding: var(--q-deco) 2.4em;
+  position: relative; color: var(--ink); text-align: center;
+}
+.prose blockquote[data-variant='frame']::before,
+.prose blockquote[data-variant='frame']::after {
+  content: ''; position: absolute; width: 1.45em; height: 1.45em;
+}
+.prose blockquote[data-variant='frame']::before {
+  left: 0; top: 0; border-left: 0.18em solid var(--ink); border-top: 0.18em solid var(--ink);
+}
+.prose blockquote[data-variant='frame']::after {
+  right: 0; bottom: 0; border-right: 0.18em solid var(--ink); border-bottom: 0.18em solid var(--ink);
+}
+
+/* ⑦ 두꺼운 프레임 — ⑥ 과 같은 갈고리를 굵고 길게. 네이버에도 두 굵기가 따로 있다 */
+.prose blockquote[data-variant='framebold'] {
+  border: 0; outline: 0; padding: var(--q-deco) 2.6em;
+  position: relative; color: var(--ink); text-align: center;
+}
+.prose blockquote[data-variant='framebold']::before,
+.prose blockquote[data-variant='framebold']::after {
+  /* 갈고리는 **짧고 굵게**. 길면 테두리처럼 보이고, 가늘면 얇은 프레임(⑥)과 구별이 안 된다. */
+  content: ''; position: absolute; width: 1.5em; height: 1.5em;
+}
+.prose blockquote[data-variant='framebold']::before {
+  left: 0; top: 0; border-left: 0.5em solid var(--ink); border-top: 0.5em solid var(--ink);
+}
+.prose blockquote[data-variant='framebold']::after {
+  right: 0; bottom: 0; border-right: 0.5em solid var(--ink); border-bottom: 0.5em solid var(--ink);
+}
+
+/* 출처 — 인용의 마지막 자식. 정렬은 인용에서 물려받는다(가운데 변형이면 가운데) */
+.prose footer[data-quote-source] {
+  margin-top: 0.6em; font-size: 0.85rem; line-height: 1.6; color: var(--ink-faint);
+}
+.prose footer[data-quote-source] cite { font-style: normal; }
+
+/* 장식형 다섯은 본문 폭을 다 쓰지 않는다.
+   전체 폭에서 프레임 갈고리가 1150px 벌어져 「틀」로 안 읽혔다.
+   글줄에 가까운 bar·barquote 는 본문 폭 그대로 둔다 — "본문은 진짜 꽉" 결정을 안 건드린다. */
+/* 변형마다 **폭과 서체가 다르다.**
+   상자형(말풍선·포스트잇)은 좁아야 상자로 읽히고, 본문 폭을 다 쓰면 그냥 띠가 된다.
+   따옴표형은 남의 말이라 서체를 바꿔 본문과 목소리를 가른다. */
+.prose blockquote[data-variant='quote']     { max-width: min(var(--measure), 34rem); }
+.prose blockquote[data-variant='bubble']    { max-width: min(var(--measure), 30rem); }
+.prose blockquote[data-variant='postit']    { max-width: min(var(--measure), 30rem); }
+.prose blockquote[data-variant='frame']     { max-width: min(var(--measure), 32rem); }
+.prose blockquote[data-variant='framebold'] { max-width: min(var(--measure), 32rem); }
+
+/* 따옴표 — 명조에 기울임, 26px 고정.
+   한글 이탤릭은 브라우저가 기울여 만드는 「가짜 이탤릭」이라 획이 조금 뭉개진다.
+   그래도 남의 말이라는 신호가 확실하다 — 크기도 본문을 따라가지 않고 못 박는다. */
+.prose blockquote[data-variant='quote'] {
+  font-family: 'Nanum Myeongjo', var(--font-body);
+  font-size: 26px; font-style: italic; line-height: 1.6; color: var(--ink);
+}
+.prose blockquote[data-variant='barquote'] {
+  font-family: 'Nanum Myeongjo', var(--font-body);
+  color: var(--ink);
+}
+/* 상자형 셋은 본문보다 조금 작게 — 상자 안에 갇힌 글은 커 보인다 */
+.prose blockquote:is([data-variant='bubble'], [data-variant='postit']) { font-size: 0.98em; }
+
+/* 큰 인용 — 내 글의 한 줄을 키운 것 */
+.prose p[data-pull-quote] {
+  margin: 1.7em auto; font-size: 1.4rem; line-height: 1.65;
+  letter-spacing: -0.02em; font-weight: 600; color: var(--ink);
+  text-wrap: balance;
+}
+
+/* 강조 박스 */
+.prose aside[data-callout] {
+  margin: 1.6em auto; padding: 1.05em 1.2em;
+  border-left: 3px solid var(--note-bar); background: var(--note-bg);
+  border-radius: 0 6px 6px 0; font-size: 0.97em;
+}
+.prose aside[data-callout][data-tone='tip']  { border-color: var(--tip-bar);  background: var(--tip-bg); }
+.prose aside[data-callout][data-tone='warn'] { border-color: var(--warn-bar); background: var(--warn-bg); }
+.prose aside[data-callout] p:last-child { margin-bottom: 0; }
+
+/**
+ * 블록의 **천장은 본문 열이다.** 가운데폭인데 그림이 화면 끝까지 번지면 안 된다
+ * (2026-09-15 사용자 발견). 넓게 쓰려면 폭 고르개를 전체폭으로 둔다 — 그때는
+ * `--measure` 가 100% 라 천장이 저절로 올라간다.
+ *
+ * ⚠ `.prose-body > *` 에 기대면 안 된다. 편집 화면에는 NodeView 감싸개가 끼어 있고
+ * 그 감싸개를 투명하게 만드느라 `max-width: none` 을 걸어 뒀다(위 44~52줄). 그래서
+ * **블록 자신이** 천장을 들어야 편집면과 발행면이 같아진다.
+ */
+.prose figure[data-figure],
+.prose div[data-image-row],
+.prose figure[data-diagram] { max-width: var(--measure); }
+/* 캡션 달린 이미지 — 폭은 인라인 style(%) 이 정한다 */
+.prose figure[data-figure] { margin: 2.2em auto;
+  display: flex; flex-direction: column; }
+/* 행 안의 사진은 행이 준 자리를 그대로 채운다 — 천장은 행이 이미 들고 있다 */
+.prose div[data-image-row] figure[data-figure] { max-width: none; }
+/* 캡션 위 — DOM 순서는 그대로 두고 표시만 뒤집는다(파싱 규칙 불변) */
+.prose figure[data-figure][data-caption='above'] { flex-direction: column-reverse; }
+/* 정렬 — 100% 는 .prose-body 폭이라 본문 열 가장자리에 정확히 붙는다 */
+.prose figure[data-figure][data-align='left']  { margin-inline: max(0px, calc((100% - var(--measure)) / 2)) auto; }
+.prose figure[data-figure][data-align='right'] { margin-inline: auto max(0px, calc((100% - var(--measure)) / 2)); }
+.prose figure[data-figure] .fig-frame > a { display: block; }
+.prose .fig-frame { position: relative; }
+.prose figure[data-figure] img {
+  display: block; width: 100%; height: auto;
+  border-radius: 6px; background: #f0efec;
+}
+.prose figure[data-figure] figcaption {
+  margin-top: 0.7em; font-size: 0.85rem; line-height: 1.6;
+  color: var(--ink-faint); text-align: center;
+  /* 빈 캡션의 높이를 양쪽에서 같게 만든다. 편집 화면에는 ProseMirror 가 넣는
+     trailingBreak 때문에 한 줄(22px)이 잡히지만 발행 화면은 0 이라, 캡션을 지우면
+     그만큼 아래 내용이 밀린다(캡션 3개면 66px). :empty 는 trailingBreak 때문에 안 먹는다. */
+  min-height: calc(0.85rem * 1.6);
+}
+/* 빈 캡션 자리 안내 — 편집 중에만. absolute 라 기하에 영향 0(발행면과 높이가 같다) */
+.ProseMirror figure[data-figure] figcaption:has(> br.ProseMirror-trailingBreak) { position: relative; }
+.ProseMirror figure[data-figure] figcaption:has(> br.ProseMirror-trailingBreak)::before {
+  content: '캡션 (선택)'; position: absolute; inset: 0;
+  color: var(--ink-faint); opacity: .45; pointer-events: none;
+}
+
+/* 빈 행 캡션 자리 안내 — 사진 캡션과 같은 규칙 */
+.ProseMirror figcaption[data-row-caption]:has(> br.ProseMirror-trailingBreak) { position: relative; }
+.ProseMirror figcaption[data-row-caption]:has(> br.ProseMirror-trailingBreak)::before {
+  content: '캡션 (선택)'; position: absolute; inset: 0;
+  color: var(--ink-faint); opacity: .45; pointer-events: none;
+}
+
+/* 8방향 손잡이 — 편집 중에만, 올려놓거나 선택했을 때만 보인다.
+   data-ui 가 붙은 것은 편집 전용이라 발행 DOM 에 없고, 전부 absolute 라 기하에 영향 0 */
+.fig-grip {
+  position: absolute; width: 11px; height: 11px; border-radius: 3px;
+  background: #fff; border: 2px solid #1a1a1a; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  opacity: 0; transition: opacity .12s; touch-action: none; z-index: 2;
+}
+.fig-grip-nw { left: -6px;  top: -6px;    cursor: nwse-resize; }
+.fig-grip-n  { left: 50%;   top: -6px;    margin-left: -5.5px; cursor: ns-resize; }
+.fig-grip-ne { right: -6px; top: -6px;    cursor: nesw-resize; }
+.fig-grip-w  { left: -6px;  top: 50%;     margin-top: -5.5px;  cursor: ew-resize; }
+.fig-grip-e  { right: -6px; top: 50%;     margin-top: -5.5px;  cursor: ew-resize; }
+.fig-grip-sw { left: -6px;  bottom: -6px; cursor: nesw-resize; }
+.fig-grip-s  { left: 50%;   bottom: -6px; margin-left: -5.5px; cursor: ns-resize; }
+.fig-grip-se { right: -6px; bottom: -6px; cursor: nwse-resize; }
+@media (pointer: coarse) { .fig-grip { width: 15px; height: 15px; } }
+.prose .fig-frame:hover .fig-grip,
+.prose figure[data-figure].is-active .fig-grip { opacity: 1; }
+.fig-size {
+  position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+  background: rgba(26,26,26,.82); color: #fff; font-size: 0.72rem;
+  padding: 2px 8px; border-radius: 999px; pointer-events: none; z-index: 2;
+  font-variant-numeric: tabular-nums;
+}
+.prose figure[data-figure].is-active img { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* NodeView 감싸개는 본문 폭을 다 차지한다. 거기에 선택 외곽선을 그리면
+   15% 짜리 사진을 골랐는데 **본문 폭 전체가 잡힌 것처럼** 보인다.
+   사진은 그림 자체에 외곽선을 그리므로(윗줄) 감싸개에는 그리지 않는다. */
+.editor-surface .react-renderer.ProseMirror-selectednode { outline: none; }
+
+/* ── 끌어서 합칠 때의 표시 ──
+   **선택자를 노드 자체에 걸면 안 된다.** 사진은 React NodeView 라 노드 데코레이션의 속성이
+   `figure` 가 아니라 그 **바깥 감싸개 div** 에 붙는다. 그래서 `figure[data-drop-target]` 은
+   한 번도 맞지 않아 표시가 아예 안 보인다. 자손으로 내려가서 건다.
+
+   놓일 쪽을 **반쪽 색칠**로 말한다 — 가느다란 선은 큰 사진 옆에서 눈에 안 들어온다.
+   칠은 absolute, 테두리는 inset box-shadow 라 기하에 영향이 없다. */
+.editor-surface [data-drop-target] .fig-frame::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 50%;
+  background: rgba(37, 99, 235, 0.22);
+  box-shadow: inset 0 0 0 2px #2563eb;
+  border-radius: 4px; pointer-events: none;
+}
+.editor-surface [data-drop-target][data-drop-side='before'] .fig-frame::after { left: 0; }
+.editor-surface [data-drop-target][data-drop-side='after']  .fig-frame::after { right: 0; }
+/* 행의 틈에 놓을 때는 행 전체를 두른다 */
+.editor-surface div[data-image-row][data-drop-target] { outline: 2px dashed #2563eb; outline-offset: 4px; }
+/* 끌려가는 중인 사진 — 원래 자리는 흐리게 */
+.editor-surface [data-drag-source] { opacity: 0.35; }
+
+/* 사진 행이 잡혔을 때 — 행은 NodeView 가 아니라 진짜 div 라 감싸개 문제가 없다 */
+.editor-surface div[data-image-row].ProseMirror-selectednode {
+  outline: 2px solid #2563eb; outline-offset: 4px; border-radius: 4px;
+}
+
+/* ── 사진 행 — 두세 장을 나란히 ──
+   칸 수를 CSS 가 세지 않는다(`grid-auto-flow: column`). 자식 수를 속성으로 적어 두면
+   그 값이 자식과 어긋날 수 있고, 어긋나는 순간 왕복 계약에 거짓말이 하나 들어간다.
+   `minmax(0, 1fr)` 의 0 이 중요하다 — 기본 `auto` 면 큰 사진이 칸을 밀어 균등이 깨진다. */
+/* 격자가 아니라 **flex** 인 이유: 캡션이 사진들 아래 한 줄을 통째로 차지해야 하는데,
+   격자로 하려면 「사진이 몇 장인지」를 CSS 가 알아야 한다(= 자식 수를 속성으로 적어 둬야 한다).
+   flex 는 `flex-basis: 100%` 한 줄로 줄바꿈이 되므로 장수를 몰라도 된다. */
+.prose div[data-image-row] {
+  display: flex; flex-wrap: wrap; align-items: flex-start;
+  column-gap: 0.75rem; row-gap: 0;
+  /* ⚠ `max-width: 100%` 를 두지 않는다 — 사진과 같은 이유로 본문 열 제한을 덮는다 */
+  margin: 2.2em auto;
+}
+/* 칸을 나누는 대상은 **직계 자식 전부**다(캡션만 뺀다).
+   편집 화면에서는 사진이 NodeView 감싸개(div) 안에 들어 있어 `> figure` 가 맞지 않는다 —
+   그러면 편집면만 사진이 제 폭(28%)으로 서고 발행면은 반반이 되어 기하가 어긋난다. 구조를 묻지 않는 선택자로 건다. */
+.prose div[data-image-row] > *:not(figcaption[data-row-caption]) { flex: 1 1 0; min-width: 0; }
+/* 칸 안에서 사진은 칸을 꽉 채운다 — 자기 인라인 폭(`width:N%`)은 행 안에서 뜻을 잃는다.
+   그 인라인은 renderHTML 이 쓰는 것이라 부모를 모른다. 값은 남으므로 행을 풀면 되돌아온다. */
+.prose div[data-image-row] figure[data-figure] { margin: 0; max-width: none; width: 100% !important; }
+/* 행 캡션 — 사진 아래 한 줄. 사진 캡션과 **같은 치수**라야 기하가 흔들리지 않는다 */
+.prose div[data-image-row] > figcaption[data-row-caption] {
+  flex: 1 0 100%;
+  margin-top: 0.7em; font-size: 0.85rem; line-height: 1.6;
+  color: var(--ink-faint); text-align: center;
+  min-height: calc(0.85rem * 1.6);
+}
+/* 행 안에서는 사진마다의 캡션이 없다 — 캡션은 행이 하나만 갖는다 */
+.prose div[data-image-row] figure[data-figure] > figcaption { display: none; }
+/* 정렬은 사진과 같은 식 — 100% 는 .prose-body 폭이라 본문 열 가장자리에 정확히 붙는다 */
+.prose div[data-image-row][data-align='left']  { margin-inline: max(0px, calc((100% - var(--measure)) / 2)) auto; }
+.prose div[data-image-row][data-align='right'] { margin-inline: auto max(0px, calc((100% - var(--measure)) / 2)); }
+/* ══ 글 제목 (배너 포함) — **편집 화면과 발행 페이지가 같은 DOM·같은 규칙** ══
+   구조: header.post-head > (div.post-cover > img)? + h1.post-title
+   편집 전용(버튼·배지·안내문)은 전부 [data-ui] + absolute 라 기하에 영향이 0 이다.
+
+   **머리는 종이 위에 선다.** 배너는 제목 위에 놓이는 사진이지 제목의 배경이 아니다.
+   예전에는 제목을 배너 위에 흰 글자로 얹고 고정 스크림(가운데 α .45)으로 대비를 만들었다.
+   순백 사진 기준 3.4:1 로 큰 글자 AA 는 넘지만, **비율이 문제가 아니었다** — 배너에
+   제 글자가 있는 그림(작성자가 실제로 고른 것)이면 어둡게 덮어도 두 글자가 같은 자리에서
+   회색으로 겹칠 뿐이다. 2026-09-14 실측: 제목이 서는 왼쪽 1/3 에서 픽셀의 24.6% 가 L>0.5,
+   인접 픽셀 휘도차가 다른 구역의 1.6배. 제목이 이기려면 α≈0.8 이고 그때 그림이 사라진다.
+   종이 위의 제목은 언제나 19.5:1 이다.
+
+   이 결정이 나머지를 전부 없앤다 — 흰 글자·스크림·세로 가운데 정렬이 사라지고,
+   소비자가 날짜를 덧붙여도 제목의 형제로 보통 흐름에 놓여 저절로 한 덩어리가 된다.
+
+   `.post-head` 는 `.prose` **밖**에 놓일 수 있어서(발행 페이지가 본문 앞에 따로 둔다)
+   `--measure` 가 아니라 `--measure-override` 를 직접 읽는다. */
+.post-head {
+  display: block; width: 100%; max-width: var(--measure-override, 38rem);
+  margin: 2.5rem auto 2.4rem; position: relative;
+  /* 머리를 닫는 선은 h1 이 아니라 header 가 갖는다 — 소비자가 제목 뒤에 날짜를 덧붙여도
+     선이 그 아래에 남는다. h1 에 걸면 날짜가 선 바깥으로 떨어진다. */
+  padding-bottom: 1.5rem; border-bottom: 1px solid #e6e4de;
+}
+/* 사진이 곧 머리다 — 위에 흰 띠가 있으면 떠 보인다 */
+.post-head[data-banner='1'] { margin-top: 0; }
+
+.post-title {
+  display: block; margin: 0; width: 100%; border: 0; background: transparent;
+  /* **굵기를 지정하지 않는다.** 고를 수 있는 글꼴 46종 중 굵은 판을 가진 것은 넷뿐이라
+     `700` 을 박아 두면 나머지는 브라우저가 굵게를 **지어낸다**(합성) — 궁서·손글씨일수록
+     획이 뭉개진다. 제목의 무게는 크기(38px)와 글꼴 선택이 만든다. */
+  font-weight: normal; letter-spacing: -0.035em; line-height: 1.4;
+  padding: 0.55rem 0 0;                    /* 아래 여백은 header 가 갖는다 */
+  outline: none; color: #1a1a1a;
+  /* 긴 제목은 **접힌다** — 발행면과 같은 줄 수여야 두 화면의 높이가 맞는다 */
+  word-break: keep-all; overflow-wrap: anywhere; white-space: pre-wrap;
+}
+
+/* ── 배너 — 흐름 안의 상자 ──
+   비율·최소 높이는 vocab 의 BANNER_RATIO · BANNER_MIN_HEIGHT 와 같은 값이다.
+   모서리는 둥글리지 않는다 — 화면 끝에 닿은 모서리를 깎으면 잘린 것처럼 보인다. */
+.post-cover {
+  position: relative; overflow: hidden; background: #1a1a1a;
+  width: 100%; aspect-ratio: 21 / 5; min-height: 200px;
+  margin-bottom: clamp(1.5rem, 4vw, 2rem);   /* 사진 → 제목: 폰 24 · 데스크톱 32 */
+}
+.post-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* 화면 끝까지 — **사진만** 나간다. 제목은 본문 열 안에 그대로 남는다.
+   `50%` 는 header(열) 폭 기준이고 header 가 뷰포트 가운데에 있으므로 정확히 0 에 닿는다.
+
+   함정: `100vw` 는 **세로 스크롤바 폭을 포함**한다. 맥의 겹침 스크롤바에서는 차이가 없지만,
+   스크롤바가 자리를 차지하는 환경에서는 가로 스크롤바가 생긴다 — 소비자 쪽에서
+   `html { overflow-x: hidden }` 로 막는다. 라이브러리가 남의 `html` 을 건드릴 수는 없다. */
+.post-head[data-banner='1'][data-bleed='viewport'] .post-cover {
+  width: 100vw; margin-inline: calc(50% - 50vw);
+}
+
+/* ══ 표 ══
+   선 색·굵기·종류는 커스텀 프로퍼티로 상속시킨다 — 셀마다 속성을 두면 왕복이 지저분해진다.
+   프리셋 → 선 종류 → 선 색 → 셀 배경(인라인) 순으로 덮인다.
+
+   **collapse 가 아니라 separate 다.** border-collapse: collapse 에서는 명세상
+   border-radius 가 무시되어 모서리를 둥글릴 수 없다.
+   대신 선을 「셀의 오른쪽·아래」 + 「표의 네 변」으로 나눠 그린다 — 겹치는 선이
+   하나도 없어 굵기가 두 배가 되지 않고, 모서리는 표가 직접 둥글린다.
+
+   마지막 열·마지막 행의 셀에서 선을 지우는 규칙(`tr > :last-child`)은 DOM 기준이라,
+   **마지막 열에 걸친 rowspan** 이 있으면 그 아래 행에서 세로선 하나가 어긋날 수 있다.
+   첫 열 rowspan(카테고리 라벨)이 훨씬 흔해서 어긋남이 오른쪽으로 가도록 골랐다. */
+.prose table {
+  /* table-layout: fixed 가 있어야 <col> 의 너비가 그대로 지켜진다.
+     auto 면 브라우저가 내용에 맞춰 다시 계산해서 열 너비 조절이 겉돈다.
+     덤으로 네이버와 같은 동작이 된다 — 열을 더해도 표 전체 폭은 그대로고 안에서 나눠 쓴다. */
+  width: 100%; table-layout: fixed; margin: 2em auto;
+  font-size: 0.94rem; line-height: 1.6;
+  --table-line: var(--rule-table);
+  --tl-w: 1px; --tl-style: solid;
+  border-collapse: separate; border-spacing: 0;
+  border: var(--tl-w) var(--tl-style) var(--table-line);
+  overflow: hidden;   /* 둥근 모서리가 머리행·줄무늬·셀 배경을 같이 자른다 */
+}
+.prose th, .prose td {
+  border: 0;
+  border-right:  var(--tl-w) var(--tl-style) var(--table-line);
+  border-bottom: var(--tl-w) var(--tl-style) var(--table-line);
+  padding: 0.55em 0.8em; text-align: left;
+  vertical-align: top;
+  /* 열 너비 손잡이가 셀 안에 absolute 로 놓인다 — 기준 상자가 없으면 아예 안 보인다.
+     레이아웃에는 영향이 없어 발행면 기하는 그대로다. */
+  position: relative;
+  /* fixed 레이아웃에서는 긴 낱말이 셀을 뚫는다 */
+  overflow-wrap: anywhere;
+}
+.prose tr > :last-child   { border-right: 0; }    /* 표의 오른쪽 변이 대신 그린다 */
+.prose tr:last-child > *  { border-bottom: 0; }   /* 표의 아래 변이 대신 그린다 */
+.prose th { background: #faf9f7; font-weight: 700; }
+.prose .tableWrapper { overflow-x: auto; max-width: var(--measure); margin-inline: auto; }
+
+/* 모서리 — 「틀」의 성질이라 어느 프리셋과도 겹쳐 쓴다. 프리셋에 녹이면 13×2 가 된다. */
+.prose table[data-radius='soft']  { border-radius: 8px; }
+.prose table[data-radius='round'] { border-radius: 16px; }
+
+/* ── 프리셋 ── (선 체계가 바뀌었을 뿐 모양은 전과 같다) */
+.prose table[data-preset='head'] th { background: #eef1fb; color: #2b3a67; }
+.prose table[data-preset='rows']    { border-left: 0; border-right: 0; }
+.prose table[data-preset='rows'] :is(th, td) { border-right: 0; }
+.prose table[data-preset='rows'] th { background: none; border-bottom-width: 2px; }
+.prose table[data-preset='minimal'] { border: 0; border-top: 2px solid var(--table-line); border-bottom: 2px solid var(--table-line); }
+.prose table[data-preset='minimal'] :is(th, td) { border: 0; }
+.prose table[data-preset='minimal'] th { background: none; border-bottom: 1px solid var(--table-line); }
+.prose table[data-preset='stripes'] { border-left: 0; border-right: 0; }
+.prose table[data-preset='stripes'] :is(th, td) { border-right: 0; }
+.prose table[data-preset='stripes'] tbody tr:nth-child(even) td { background: #faf9f6; }
+.prose table[data-preset='stripes'] th { background: none; border-bottom-width: 2px; }
+.prose table[data-preset='column'] :is(th, td):first-child { background: #f7f6f2; font-weight: 600; }
+.prose table[data-preset='clean']   { border: 0; }
+.prose table[data-preset='clean'] :is(th, td) { border: 0; }
+.prose table[data-preset='clean'] th { background: none; }
+/* 머리행 + 점선 격자 — 네이버 스타일 목록에 있는 것 */
+.prose table[data-preset='dashgrid'] { --tl-style: dashed; --tl-w: 1.5px; }
+.prose table[data-preset='dashgrid'] th { background: #f2f1ed; }
+/* 윗선 강조 — 굵은 윗줄 + 가로줄만 */
+.prose table[data-preset='topline'] { border: 0; border-top: 2.5px solid var(--ink); }
+.prose table[data-preset='topline'] :is(th, td) { border-right: 0; }
+.prose table[data-preset='topline'] th { background: none; }
+
+/* ── 2026-09-11 추가 넷 — 엑셀 표 스타일에서 **절제된 톤만** 가져왔다.
+      원색 테마를 그대로 베끼면 본문 글 위에서 표만 튄다. 쓰는 색은 본문 토큰과
+      기존 head 프리셋의 남색(#2b3a67) 뿐이다. */
+/* 머리행 검정 — 엑셀 「중간 1」의 무채색판 */
+.prose table[data-preset='inkhead']    { border-top-color: var(--ink); }
+.prose table[data-preset='inkhead'] th { background: var(--ink); color: #fff; border-color: var(--ink); }
+/* 남색 머리행 + 줄무늬 — 엑셀 「중간 2」를 head 의 남색으로 */
+.prose table[data-preset='navy'] { border-left: 0; border-right: 0; --table-line: #d6dcec; }
+.prose table[data-preset='navy'] :is(th, td) { border-right: 0; }
+.prose table[data-preset='navy'] th { background: #2b3a67; color: #fff; border-color: #2b3a67; }
+.prose table[data-preset='navy'] tbody tr:nth-child(even) td { background: #eef1fb; }
+/* 굵은 테두리 — 바깥 2px 먹색, 안쪽은 연한 본문 선 */
+.prose table[data-preset='frame'] { border: 2px solid var(--ink); --table-line: var(--rule); }
+.prose table[data-preset='frame'] th { background: none; border-bottom: 2px solid var(--ink); }
+/* 장부 — 세로선 없이 가로줄만, 머리행 밑 굵은 선 + 첫 열 강조 */
+.prose table[data-preset='ledger'] { border: 0; --table-line: var(--rule); }
+.prose table[data-preset='ledger'] :is(th, td) { border-right: 0; }
+.prose table[data-preset='ledger'] th { background: none; border-bottom: 2px solid var(--ink); }
+.prose table[data-preset='ledger'] :is(th, td):first-child { font-weight: 600; }
+
+/* 선 종류 — **프리셋 뒤에 둔다.** 사용자가 명시한 선 종류가 dashgrid 의 기본을 이겨야 한다.
+   굵기를 같이 주는 이유: 파선·점선의 눈금은 선 굵기에 비례해 그려진다. 1px 로 두면
+   눈금이 1~2px 라 실선과 구별이 안 된다(사용자가 "2중선 빼고 다 안 먹는다"고 본 것이 이것이다). */
+.prose table[data-line='solid']  { --tl-style: solid; }
+.prose table[data-line='dashed'] { --tl-style: dashed; --tl-w: 1.5px; }
+.prose table[data-line='dotted'] { --tl-style: dotted; --tl-w: 2px; }
+/* 이중선은 1px 로는 안 보인다 — 최소 3px 이어야 두 줄로 그려진다 */
+.prose table[data-line='double'] { --tl-style: double; --tl-w: 4px; }
+
+/* 코드 */
+.prose code {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.87em; background: #f4f3f0; padding: 0.12em 0.35em; border-radius: 4px;
+}
+
+/* ══ 코드 블록 ══
+   편집과 발행이 같은 <details> 구조를 쓴다. 접기는 브라우저 기본 동작이라 JS 가 없다.
+   하이라이팅 색은 여기 한 곳에만 있다 — 편집(데코레이션)과 발행(구운 span)이 같은 규칙을 탄다. */
+.prose details[data-code] {
+  margin: 1.8em auto; background: #1c1d21; border-radius: 10px; overflow: hidden;
+  --cb-gutter: 3.7em;   /* 줄 번호(세 자리까지) + 설명 달기 `+` 자리 */
+}
+
+.prose .cb-bar {
+  display: flex; align-items: center; gap: 8px; list-style: none; cursor: default;
+  padding: 0.55em 0.9em; background: #24262b; color: #9aa0aa; font-size: 0.76rem;
+  font-family: Pretendard, system-ui, sans-serif;
+}
+.prose .cb-bar::-webkit-details-marker { display: none; }
+.prose .cb-title { color: #cfd4dc; font-weight: 600; }
+.prose .cb-lang { margin-left: auto; opacity: .8; font-variant: small-caps; letter-spacing: .04em; }
+.prose .cb-copy {
+  border: 1px solid #3a3d45; background: transparent; color: #9aa0aa; cursor: pointer;
+  border-radius: 6px; padding: 3px 9px; font-size: 0.72rem; font-family: inherit;
+}
+.prose .cb-copy:hover { background: #2e3138; color: #e6e6e6; }
+/* JS 가 없으면 복사 버튼을 숨긴다 — 눌러도 안 되는 버튼을 보이지 않게. 기하에는 영향 없음 */
+html:not(.js) .prose .cb-copy { visibility: hidden; }
+
+/* ══ 코드 블록 테마 ══
+   `data-theme` 하나로 갈린다. **편집과 발행이 같은 규칙을 탄다** — 테마를 고르는 자리만
+   편집기에 있고, 그려지는 건 이 CSS 한 곳이다.
+
+   신호등(.cb-dots)은 **항상 그려 두고 테마에서 보인다.** 있다 없다 하면 제목의 가운데가
+   테마마다 달라진다(mac 은 가운데 정렬이라 양옆 폭이 곧 위치다). */
+.prose .cb-dots { display: none; gap: 6px; flex: none; }
+.prose .cb-dots i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+
+/* ── mac — macOS 창 ──
+   언어 라벨을 감춘다. 신호등 옆에 라벨이 붙으면 창이 아니라 코드 위젯으로 되돌아간다.
+   언어는 편집 중엔 블록 위 바에서 고르고, 발행면에서는 문법 색과 파일명이 말해 준다. */
+.prose details[data-code][data-theme='mac'] {
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .28), 0 12px 28px -12px rgba(0, 0, 0, .45);
+}
+.prose [data-theme='mac'] .cb-dots { display: flex; }
+.prose [data-theme='mac'] .cb-dots i:nth-child(1) { background: #ff5f57; }
+.prose [data-theme='mac'] .cb-dots i:nth-child(2) { background: #febc2e; }
+.prose [data-theme='mac'] .cb-dots i:nth-child(3) { background: #28c840; }
+.prose [data-theme='mac'] .cb-bar { padding: 0.62em 0.9em; background: #2c2e33; }
+/* 제목이 **창의 가운데**에 선다. 신호등이 왼쪽에 자리를 먹으므로 그만큼 밀어 보정한다.
+   긴 파일명이 신호등을 덮지 않도록 폭에 상한을 둔다 — 가운데는 유지하고 줄어들기만 한다. */
+.prose [data-theme='mac'] .cb-title {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  max-width: calc(100% - 9rem); overflow: hidden; white-space: nowrap;
+  text-overflow: ellipsis; text-align: center;
+}
+.prose [data-theme='mac'] .cb-bar { position: relative; }
+.prose [data-theme='mac'] .cb-lang { display: none; }
+/* 복사 버튼은 맥 창에 없는 물건이다 — 손이 올라갔을 때만 나온다 */
+.prose [data-theme='mac'] .cb-copy { margin-left: auto; opacity: 0; transition: opacity .12s; }
+.prose details[data-code][data-theme='mac']:hover .cb-copy,
+.prose [data-theme='mac'] .cb-copy:focus-visible { opacity: 1; }
+
+/* ── terminal — 터미널 ──
+   창 흉내가 아니라 **쉘 화면**이다. 그래서 라벨은 남기고, 머리띠를 바닥 선 하나로 낮춘다.
+   줄 앞에 프롬프트 기호를 붙이지 않는 이유: 코드를 복사했을 때 기호까지 딸려 가면 안 된다.
+   대신 머리띠에 기호를 두어 「여기는 터미널」만 말한다. */
+.prose details[data-code][data-theme='terminal'] {
+  background: #0d1117; border: 1px solid #222831; border-radius: 8px;
+}
+.prose [data-theme='terminal'] .cb-bar {
+  background: transparent; border-bottom: 1px solid #222831; color: #7d8590;
+  font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.72rem;
+}
+.prose [data-theme='terminal'] .cb-bar::before {
+  content: '❯'; color: #3fb950; font-weight: 700; flex: none;
+}
+.prose [data-theme='terminal'] .cb-title { color: #adbac7; font-weight: 500; }
+.prose [data-theme='terminal'] .cb-lang { opacity: .55; }
+.prose [data-theme='terminal'] .cb-copy { border-color: #2d333b; }
+
+
+.prose details[data-code] pre {
+  margin: 0; padding: 1em 1.15em 1em calc(1.15em + var(--cb-gutter)); overflow-x: auto;
+  background: none; color: #e6e6e6; font-size: 0.86rem; line-height: 1.7;
+}
+.prose pre { margin: 1.8em auto; padding: 1em 1.15em; overflow-x: auto;
+  background: #1c1d21; color: #e6e6e6; border-radius: 8px; font-size: 0.86rem; line-height: 1.7; }
+.prose pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+/* 줄 번호 — 편집은 위젯 span, 발행은 구운 span. 둘 다 같은 규칙이 그린다.
+   절대 위치를 쓰면 전부 한 자리에 겹치므로, 각 줄 앞에 인라인으로 두고
+   음수 마진으로 왼쪽 여백(거터)에 밀어 넣는다. */
+/* **position 을 주지 않는다.** 강조 띠(`.cb-ln.is-hl::after`)가 `left:0; right:0` 으로
+   `details` 폭을 다 쓰는 구조인데, 여기에 position 을 걸면 띠가 줄 번호 칸(3.7em) 안에
+   갇혀 「숫자에만 강조되고 코드 줄에는 안 되는」 증상이 된다. */
+.prose .cb-ln {
+  display: inline-block; box-sizing: border-box;
+  width: var(--cb-gutter); margin-left: calc(-1 * var(--cb-gutter));
+  padding-right: 1em; text-align: right;
+  color: #565c66; user-select: none; pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+.prose .cb-ln::before { content: attr(data-n); }
+/* 편집 중에는 번호가 곧 강조 버튼이다 — 눌러서 그 줄을 강조한다.
+   발행 HTML 에서는 누를 것이 없으므로 pointer-events 를 끈 채 둔다(기하는 완전히 동일). */
+.ProseMirror .cb-ln { pointer-events: auto; cursor: pointer; }
+.ProseMirror .cb-ln:hover { color: #aab3c0; }
+.ProseMirror .cb-ln.is-hl:hover { color: #b9cbff; }
+
+/* 설명 달기 — 번호 왼쪽. **absolute 라 흐름 밖**이고 발행 HTML 엔 아예 없다.
+   그래서 이 버튼이 있어도 편집면과 발행면의 줄 위치가 한 픽셀도 안 어긋난다. */
+/* `+` 도 `details` 기준으로 뜬다. **top 을 주지 않는 것이 요점** —
+   top 이 auto 여야 「그 줄의 흐름 위치」가 그대로 쓰인다(top 을 주면 블록 전체 기준이 된다). */
+.ProseMirror .cb-ln-add {
+  position: absolute; left: 0.3em; margin-top: 0.12em;
+  width: 1.5em; height: 1.5em; padding: 0; border: 0; border-radius: 5px;
+  background: #3c4250; color: #dfe3ea; cursor: pointer;
+  font-size: 0.85em; line-height: 1; text-align: center;
+  opacity: 0; transition: opacity .12s;
+}
+/* 블록 안에 들어오면 **전부 옅게** 드러난다(있다는 걸 알려 준다) →
+   그 줄에 다가가면 또렷해진다. 좁은 거터만 정확히 짚어야 보이면 못 찾는다. */
+.ProseMirror details[data-code]:hover .cb-ln-add { opacity: 0.4; }
+.ProseMirror .cb-ln:hover .cb-ln-add,
+.ProseMirror .cb-ln-add:focus-visible { opacity: 1; }
+.ProseMirror .cb-ln-add:hover { background: #4d5566; }
+/* 손가락엔 hover 가 없다 — 폰에서는 늘 보이게 */
+@media (hover: none) { .ProseMirror .cb-ln-add { opacity: 0.6; } }
+
+/* 강조 줄 — 번호만 밝히는 게 아니라 그 줄 전체에 띠를 깐다.
+   띠는 absolute 라 흐름에 끼어들지 않는다 → 편집면과 발행면의 기하가 그대로다.
+   기준 상자를 pre 가 아니라 details 로 두는 이유: pre 는 가로로 스크롤되므로
+   pre 기준이면 긴 줄을 오른쪽으로 밀 때 띠가 같이 밀려 화면에서 잘린다.
+   details 에 isolation 을 줘서 z-index:-1 이 details 의 배경 위, 코드 글자 아래에 놓이게 한다. */
+.prose details[data-code] { position: relative; isolation: isolate; }
+.prose .cb-ln.is-hl { color: #93b0ff; }
+.prose .cb-ln.is-hl::after {
+  content: ''; position: absolute; left: 0; right: 0; height: 1.7em;
+  margin-top: 0.05em; z-index: -1;
+  background: rgba(76, 110, 245, 0.15); border-left: 2px solid #4c6ef5;
+}
+
+/* 줄 설명 — 그 줄 **아래에 제 줄**로 붙는다.
+   코드 오른쪽에 인라인으로 붙이면 긴 글이 가로로 흘러 나가 안 보인다.
+   개행 **뒤**에 놓으므로 빈 줄이 생기지 않는다(개행 앞에 두면 한 줄이 더 생긴다 — 실측).
+   `pre` 안이지만 여기서만 접어 쓴다 → 코드는 안 접히고 설명만 접힌다. */
+/* 클래스를 두 번 적어 우선순위를 한 칸 올린다 — ProseMirror 기본 CSS 의
+   `.ProseMirror [contenteditable="false"]` 가 `white-space: normal` 을 걸어
+   같은 순위에서는 나중에 오는 쪽이 이긴다 — 줄바꿈이 안 먹는 원인이다. */
+/* 설명 패널 색 다섯 — **줄마다** 고른다. 실제 색값은 여기 한 곳에만 있다.
+   기본은 무채색(slate) — 어떤 코드 위에서도 튀지 않는다. */
+.prose .cb-note {
+  --note-bar: #7c8aa0; --note-bg: rgba(148, 163, 184, 0.13); --note-ink: #d5dce7;
+}
+.prose .cb-note[data-tone='teal'] {
+  --note-bar: #3fa9a0; --note-bg: rgba(63, 169, 160, 0.14); --note-ink: #cfe9e5;
+}
+.prose .cb-note[data-tone='violet'] {
+  --note-bar: #9a7cf0; --note-bg: rgba(154, 124, 240, 0.15); --note-ink: #ded5f7;
+}
+.prose .cb-note[data-tone='rose'] {
+  --note-bar: #e07a90; --note-bg: rgba(224, 122, 144, 0.14); --note-ink: #f6d8de;
+}
+.prose .cb-note[data-tone='amber'] {
+  --note-bar: #d9a441; --note-bg: rgba(217, 164, 65, 0.13); --note-ink: #ecdfc6;
+}
+
+.prose .cb-note.cb-note {
+  display: block; user-select: none;
+  white-space: pre-wrap; word-break: break-word;
+  margin: 0.45em 0 0.6em; padding: 0.5em 0.95em 0.55em 0.85em;
+  border-left: 3px solid var(--note-bar);
+  border-radius: 0 8px 8px 0;
+  background: var(--note-bg);
+  /* **코드가 아니라 글이다.** 고정폭에 회색으로 두면 `//` 주석과 구별이 안 된다. 서체를 본문 것으로 바꾸는 것이 가장 확실한 신호다. */
+  font-family: var(--font-body);
+  color: var(--note-ink); font-style: normal; font-size: 0.88em; line-height: 1.6;
+  letter-spacing: -0.005em;
+}
+.ProseMirror .cb-note.cb-note:hover { filter: brightness(1.25); }
+/* 마지막 줄에 설명이 붙으면 그 위젯이 블록의 **마지막 자식**이 된다.
+   그러면 ProseMirror 가 뒤에 줄바꿈 자리(trailingBreak)를 하나 더 그려서
+   편집면만 한 줄(23px) 길어지고 발행면과 어긋난다.
+   커서는 그 앞의 진짜 글자에 놓이므로 이 자리를 숨겨도 잃는 것이 없다. */
+.ProseMirror pre code .cb-note ~ br.ProseMirror-trailingBreak { display: none; }
+/* separator 는 ProseMirror 기본 CSS 가 `display: inline !important` 로 박아 둔다.
+   같은 무기가 아니면 못 이긴다 — 이 한 자리에서만 쓴다. */
+.ProseMirror pre code .cb-note ~ img.ProseMirror-separator { display: none !important; }
+
+/* 빈 문단은 **양쪽에서 같은 높이**를 차지해야 한다.
+   편집면은 ProseMirror 가 넣는 trailingBreak 때문에 한 줄이 잡히는데 발행면의 `<p></p>` 는 0 이라,
+   빈 칸이 있는 표에서 줄마다 25px 씩 어긋났다.
+   글자가 없는 문단에만 줄상자를 하나 만들어 준다. trailingBreak 가 들어 있는 편집면은
+   `:empty` 가 아니므로 이 규칙을 안 타고, 따라서 두 번 세어지지 않는다. */
+.prose p:empty::before { content: ''; display: inline-block; }
+
+.ProseMirror .cb-note { cursor: pointer; }
+
+/* 설명 입력칸 — 설명이 놓일 **바로 그 자리**에 뜬다.
+   한 줄짜리 칸은 답답하다 — 처음부터 두 줄 넘게 열어 두고,
+   내용이 길어지면 `fit()` 이 더 늘린다. 줄어들지는 않는다(min-height 가 바닥이다). */
+.cb-note-input {
+  display: block; box-sizing: border-box;
+  border: 0; outline: 0; background: rgba(255,255,255,0.06); color: #f2ead9;
+  border-radius: 7px; padding: 0.6em 0.8em;
+  width: 100%; resize: none; overflow: hidden;
+  min-height: 5em;
+  font-family: var(--font-body);
+  font-size: 0.94em; line-height: 1.75;
+}
+.cb-note-input:focus { background: rgba(255,255,255,0.09); }
+.cb-note-input::placeholder { color: #6b727e; }
+/* 고쳐 쓰는 동안은 패널을 조금 넉넉하게 — 읽을 때(.cb-note)보다 손이 많이 간다 */
+.prose .cb-note-edit {
+  margin: 0.6em 0 0.85em; padding: 0.8em 0.95em 0.85em 0.9em;
+  filter: brightness(1.2);
+}
+/* 확인·취소 — 키를 모르는 채로도 끝낼 수 있게. 손가락으로 누를 크기여야 한다. */
+.cb-note-actions { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+.cb-note-actions button {
+  border: 0; border-radius: 7px; cursor: pointer; min-height: 32px;
+  padding: 0 1.15em; font: inherit; font-size: 0.92em; line-height: 1.5;
+}
+.cb-note-ok { background: var(--note-bar); color: #14161a; font-weight: 600; }
+/* 색 고르기 — 이 줄의 설명 색.
+   버튼 **바로 옆**에 둔다. 오른쪽 끝으로 밀면 패널이 넓어서 손이 멀다.
+   동그란 원색 점 다섯을 그냥 늘어놓으면 촌스럽다 —
+   **둥근 네모 견본**으로 바꾸고, 고른 것은 테두리를 덧그리는 대신 **바깥에 띠**를 둘러
+   견본 자체의 크기와 색이 안 흔들리게 한다. */
+.cb-note-tones { display: inline-flex; gap: 6px; align-items: center;
+  margin-left: 6px; padding-left: 12px; border-left: 1px solid rgba(255,255,255,0.12); }
+.cb-note-tone {
+  width: 20px; height: 20px; border-radius: 7px; padding: 0; cursor: pointer; border: 0;
+  background: var(--dot);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.16);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.cb-note-tone[data-tone='slate']  { --dot: #7c8aa0; }
+.cb-note-tone[data-tone='teal']   { --dot: #3fa9a0; }
+.cb-note-tone[data-tone='violet'] { --dot: #9a7cf0; }
+.cb-note-tone[data-tone='rose']   { --dot: #e07a90; }
+.cb-note-tone[data-tone='amber']  { --dot: #d9a441; }
+.cb-note-tone:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 1px rgba(255,255,255,.3); }
+/* 고른 것 — 견본과 띠 사이에 패널색 한 겹을 끼워 넣어 띠가 색에 붙지 않게 한다 */
+.cb-note-tone.is-on {
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.22),
+              0 0 0 2px #22262f,
+              0 0 0 3.5px var(--dot);
+}
+.cb-note-ok:hover { filter: brightness(1.15); }
+.cb-note-cancel { background: #3c4250; color: #c8cedb; }
+.cb-note-cancel:hover { background: #4d5566; }
+
+/* 차분한 톤의 하이라이팅 */
+.prose .hljs-comment, .prose .hljs-quote { color: #6b727e; font-style: italic; }
+.prose .hljs-keyword, .prose .hljs-selector-tag, .prose .hljs-literal { color: #c792ea; }
+.prose .hljs-string, .prose .hljs-meta .hljs-string { color: #a5d6a7; }
+.prose .hljs-number, .prose .hljs-symbol, .prose .hljs-bullet { color: #f5c17b; }
+.prose .hljs-title, .prose .hljs-section, .prose .hljs-name { color: #82aaff; }
+.prose .hljs-attr, .prose .hljs-attribute, .prose .hljs-variable { color: #7fdbca; }
+.prose .hljs-type, .prose .hljs-built_in, .prose .hljs-class .hljs-title { color: #ffcb6b; }
+.prose .hljs-meta, .prose .hljs-doctag { color: #8a92a0; }
+.prose .hljs-deletion { color: #ff8a8a; }
+.prose .hljs-addition { color: #a5d6a7; }
+.prose .hljs-emphasis { font-style: italic; }
+.prose .hljs-strong { font-weight: 700; }
+
+@media (max-width: 640px) {
+  .prose details[data-code] pre { font-size: 0.78rem; }
+  .prose details[data-code] { --cb-gutter: 3.2em; }
+}
+
+/* 동영상 */
+.prose div[data-youtube-video] { margin: 2.2em auto; max-width: var(--wide-override, 52rem); }
+.prose div[data-youtube-video] iframe {
+  width: 100%; aspect-ratio: 16 / 9; height: auto; border: 0; border-radius: 8px;
+}
+
+/* 정렬 */
+.prose [style*='text-align: center'] { text-align: center; }
+.prose [style*='text-align: right']  { text-align: right; }
+
+/* ── 폰 ── */
+@media (max-width: 640px) {
+  .prose { --step: 1rem; --leading: 1.8; }
+  .prose h2 { font-size: 1.3rem; margin-top: 2.1em; }
+  .prose h3 { font-size: 1.09rem; }
+  .prose p[data-pull-quote] { font-size: 1.2rem; }
+  /* 사진 행은 폰에서 세로로 — 조작이 아니라 표시만 바뀐다 */
+  /* 세로로 세울 때는 캡션까지 **전부** 꽉 채운다 — 세로 flex 에서 `flex-basis: 100%` 는
+     높이를 뜻하므로, 폭은 따로 말해 주지 않으면 캡션이 글자 폭으로 쪼그라든다. */
+  .prose div[data-image-row] { flex-direction: column; }
+  .prose div[data-image-row] > * { flex: none; width: 100%; }
+}
+
+
+/* ── 빈 블록 안내 (편집 화면 전용) ──
+   프레임 인용구를 넣으면 큰 빈 상자만 남아 무엇인지 알 수 없다.
+   ProseMirror 가 빈 문단에 넣는 trailingBreak 를 :has() 로 잡아 안내를 띄운다.
+   absolute 라 기하에 영향이 없고, 발행 HTML 에는 trailingBreak 가 없어 안 뜬다. */
+.editor-surface blockquote > p:first-child:has(> br.ProseMirror-trailingBreak:only-child),
+.editor-surface aside[data-callout] > p:first-child:has(> br.ProseMirror-trailingBreak:only-child) {
+  position: relative;
+}
+/* 안내는 **첫 문단이 빌 때만**. 인용 안 아무 빈 줄에나 뜨면 글을 쓰는 중에 계속 끼어든다.
+   문구는 네이버와 같게 맞춘다. */
+.editor-surface blockquote > p:first-child:has(> br.ProseMirror-trailingBreak:only-child)::before {
+  content: '내용을 입력하세요.';
+  /* 가운데 정렬 변형(따옴표·말풍선·포스트잇·프레임)에서도 글자와 같은 자리에 오도록
+     좌우를 모두 0 으로 두고 정렬은 부모에서 물려받는다 */
+  position: absolute; left: 0; right: 0; top: 0; text-align: inherit;
+  color: var(--ink-faint); opacity: .55; pointer-events: none;
+}
+/* 안내를 **footer(블록)** 에 건다. `cite` 는 인라인이라 비어 있으면 폭이 0 이고,
+   그 안에 absolute 를 띄우면 글자가 한 자씩 세로로 쪼개진다. */
+.editor-surface footer[data-quote-source]:has(cite > br.ProseMirror-trailingBreak:only-child) { position: relative; }
+.editor-surface footer[data-quote-source]:has(cite > br.ProseMirror-trailingBreak:only-child)::before {
+  content: '출처 입력';
+  position: absolute; left: 0; right: 0; top: 0; text-align: inherit;
+  white-space: nowrap; color: var(--ink-faint); opacity: .55; pointer-events: none;
+}
+.editor-surface aside[data-callout] > p:first-child:has(> br.ProseMirror-trailingBreak:only-child)::before {
+  content: '강조할 내용을 입력하세요.';
+  position: absolute; left: 0; top: 0; color: var(--ink-faint); opacity: .55; pointer-events: none;
+}
+
+/* ══ 다이어그램 ══════════════════════════════════════════════════════════
+   그림은 **인라인 SVG** 다 — 발행 페이지가 렌더러를 안 받는다(JS 0바이트).
+   그래서 여기 규칙은 편집 화면과 발행 페이지가 **같은 것**을 그린다. */
+.prose .dg {
+  margin: 2rem auto;
+  /* 폭은 인라인 style 이 준다(사진·표와 같은 모델).
+     천장은 `.prose-body > *` 의 `var(--measure)` 다 — 본문 열을 넘지 않는다. */
+}
+.prose .dg[data-align='left'] { margin-left: 0; margin-right: auto; }
+.prose .dg[data-align='right'] { margin-left: auto; margin-right: 0; }
+
+/* 그림 상자 — **그림 크기에 붙는다.**
+   폭을 다 쓰면 650px 짜리 도면 옆으로 빈 회색 상자가 남는다. `fit-content` 로 붙이고,
+   그림이 글 폭보다 크면 `max-width` 가 막고 가로로만 스크롤한다. */
+.prose .dg-body {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  overflow-x: auto;
+  padding: 1.25rem;
+  /* 도면 뒤는 **흰 종이**다. 옅은 회색을 깔았더니 그림 안의 흰 상자와 구분이 안 되고
+     상자가 아니라 얼룩처럼 보였다. 모서리도 조금 굴린다 — 각진 회색 판은 스크린샷처럼 읽힌다. */
+  background: #fff;
+  border: 1px solid #e6e4de;
+  border-radius: 10px;
+}
+.prose .dg[data-align='left'] .dg-body { margin-left: 0; }
+.prose .dg[data-align='right'] .dg-body { margin-right: 0; }
+/* SVG 는 제 크기를 들고 온다(mermaid 의 width="100%" 는 굽는 자리에서 실제 폭으로 바뀐다).
+ *
+ * ⚠ `color-scheme: light` 를 **못 박는다.** draw.io 는 내보낸 SVG 에
+ * `style="color-scheme: light dark"` 를 넣고 도형 색을 `light-dark(#ffffff, #121212)` 로 쓴다.
+ * 그러면 **보는 사람의 OS 가 다크모드일 때 흰 상자가 새까맣게** 나온다 — 그린 것과 다른
+ * 그림이 된다(2026-09-15 실측: `rgb(18,18,18)`). 이 사이트는 밝은 색 하나뿐이므로 고정한다.
+ *
+ * `!important` 를 쓰는 이유: 저 선언이 SVG 의 **인라인 style** 이라 그냥은 못 이긴다.
+ */
+.prose .dg-body svg {
+  display: block; max-width: 100%; height: auto;
+  color-scheme: light !important;
+}
+
+.prose .dg > figcaption {
+  margin-top: .6rem;
+  font-size: .86rem;
+  color: #6b7280;
+  text-align: center;
+}
+.prose .dg > figcaption:empty { display: none; }
+
+@media (max-width: 640px) {
+  .prose .dg-body { padding: .75rem; }
+}

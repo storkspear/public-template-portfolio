@@ -1,0 +1,17 @@
+{
+  "name": "@site/server",
+  "private": true,
+  "type": "module",
+  "description": "관리자 API + 굽기. 사이트마다 이 코드를 .env 만 달리해 띄운다.",
+  "scripts": {
+    "start": "node admin-api.mjs",
+    "bake": "node -e \"import('./bake.mjs').then(m=>m.bakeOnce())\""
+  },
+  "dependencies": {
+    "pg": "^8.13.1",
+    "hast-util-from-html": "^2.0.3",
+    "hast-util-to-html": "^9.0.5",
+    "lowlight": "^3.3.0",
+    "highlight.js": "^11.10.0"
+  }
+}

@@ -1,0 +1,25 @@
+/*
+ * 이 레포가 **직접 소유하는** 글꼴 — 비어 있습니다.
+ *
+ * `fonts.css` 는 npm 패키지에서 오는 것만 담습니다(자동 생성, 손대지 마세요).
+ * 여기는 그 밖의 글꼴을 직접 넣고 싶을 때 쓰는 자리입니다.
+ *
+ * ⚠ 넣기 전에 확인하세요 — 「웹사이트 임베딩 가능」은 「파일 재배포 가능」이 아닙니다.
+ *   이 레포를 공개하거나 남에게 넘길 생각이라면, 그 글꼴의 라이선스가 **바이너리 재배포**를
+ *   허락하는지 보고, 허락한다면 라이선스 전문을 `public/fonts/` 에 같이 두세요.
+ *   서브셋으로 줄이는 것은 여러 라이선스가 금지하는 **수정**에 해당합니다.
+ *   `node tools/check-fonts.mjs` 가 이 규칙을 봅니다.
+ *
+ * 넣는 법
+ *   1. 파일을 `public/fonts/` 에
+ *   2. 아래처럼 @font-face 선언
+ *   3. 편집기의 글꼴 고르기에도 띄우려면 `admin/src/fonts.js` 에서
+ *      `configureFonts({ extra: [{ value: 'MyFont', label: '내 글꼴' }] })`
+ *   4. 출처 표기 의무가 있으면 `CREDITS.md` 에
+ *
+ * @font-face {
+ *   font-family: 'MyFont';
+ *   font-style: normal; font-weight: 400; font-display: swap;
+ *   src: url('../fonts/MyFont.woff2') format('woff2');
+ * }
+ */

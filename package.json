@@ -1,0 +1,29 @@
+{
+  "name": "template-portfolio-blog",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "admin"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "up": "docker compose up -d --build",
+    "down": "docker compose down",
+    "logs": "docker compose logs -f",
+    "admin:dev": "npm -w admin run dev",
+    "admin:build": "npm -w admin run build",
+    "check": "node tools/check-public.mjs && node tools/check-summary.mjs && node tools/check-fonts.mjs",
+    "check:fonts": "node tools/check-fonts.mjs",
+    "vendor:sync": "node tools/sync-vendor.mjs",
+    "icons:sync": "node tools/sync-icons.mjs",
+    "menu-icons:sync": "node tools/sync-menu-icons.mjs",
+    "check:summary": "node tools/check-summary.mjs"
+  },
+  "description": "정적 포트폴리오 + 글 쓰는 블로그. 방문자에게 JS 0바이트.",
+  "devDependencies": {
+    "lucide-static": "^1.47.0",
+    "simple-icons": "^16.31.0"
+  }
+}

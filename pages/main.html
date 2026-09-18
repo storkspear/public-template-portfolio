@@ -1,0 +1,91 @@
+<!--
+  메인 화면의 **본문**입니다. 관리자의 「홈디자인 → 메인」이 **직접 디자인**일 때 이 파일이
+  그대로 나갑니다(템플릿으로 바꾸면 안 쓰입니다).
+
+  이 파일은 `<body>` 안쪽만 담습니다 — `<!doctype>`·`<head>`·공통헤더·푸터는 굽기가 붙입니다.
+  제목·설명·og 는 `site.config.mjs` 의 `home` 이, 공통헤더를 이을지는 관리자가 정합니다.
+
+    스타일   public/assets/site.css   (`.m-` 접두가 이 화면의 것)
+    JS       아래 script 태그에. 방문자가 그대로 받습니다 — `node tools/check-public.mjs` 가 크기를 잽니다
+
+  통째로 비우면 하얀 빈 대지가 나옵니다. 거기서부터 쓰셔도 됩니다.
+-->
+<main class="m-page" data-stage>
+  <header class="m-id">
+    <p class="m-name">홍길동</p>
+    <p class="m-roles mono">무엇을 하는 사람인지 한 줄</p>
+  </header>
+
+  <div class="m-copy">
+    <h1 class="m-lines">
+      <span class="m-line m-l1" style="--i:0"><span>환영합니다</span></span>
+      <span class="m-line m-l2" style="--i:1"><span>천천히 둘러보세요.</span></span>
+    </h1>
+
+    <nav class="m-links" aria-label="바로 가기">
+      <a href="/portfolio/">포트폴리오
+        <svg width="16" height="9" viewBox="0 0 16 9" fill="none" aria-hidden="true">
+          <path d="M0 4.5h14M10.5 1 14 4.5 10.5 8" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      <a href="/blog/">블로그
+        <svg width="16" height="9" viewBox="0 0 16 9" fill="none" aria-hidden="true">
+          <path d="M0 4.5h14M10.5 1 14 4.5 10.5 8" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </nav>
+  </div>
+
+  <!--
+    새싹 — 손으로 그린 SVG 다. 선이 그려지는 애니메이션은 `site.css` 의 `.s-d` 가 만든다.
+    다른 그림으로 바꾸고 싶으면 이 <figure> 통째로 갈아 끼우면 된다.
+  -->
+  <figure class="m-scene">
+    <svg viewBox="88 218 144 132" role="img" aria-label="떡잎 두 장이 난 새싹" class="m-draw">
+      <g class="m-wash" aria-hidden="true">
+        <!-- 번짐은 **잎마다 하나씩**, 잎이 뻗은 방향으로 눕혀 놓는다.
+             줄기 위에 큰 원 하나로 덮으면 잎이 아니라 줄기가 칠해진 것으로 보인다.
+             회전은 <g> 의 속성으로 준다 — CSS transform 으로 주면 m-bleed 의 scale 이 덮어쓴다. -->
+        <ellipse class="m-w" style="--w:0" cx="160" cy="340" rx="76" ry="13" fill="url(#w-soil)"/>
+        <g transform="rotate(-135 141 267)"><ellipse class="m-w m-leaf-l" style="--w:.25" cx="141" cy="267" rx="31" ry="13" fill="url(#w-leaf)"/></g>
+        <g transform="rotate(-44 182.5 262)"><ellipse class="m-w m-leaf-r" style="--w:.5" cx="182.5" cy="262" rx="36" ry="13" fill="url(#w-leaf)"/></g>
+      </g>
+      <g fill="none" stroke="currentColor" stroke-width="0.52" stroke-linecap="round" stroke-linejoin="round">
+        <path class="m-stroke m-ground" vector-effect="non-scaling-stroke" d="M94 340H226"/>
+        <path class="m-stroke s-d" pathLength="1" style="--d:0"   d="M160 340C158 322 160 304 160 286"/>
+        <path class="m-stroke s-d s-leaf" pathLength="1" style="--d:.9"  d="M160 286C142 282 128 268 122 248C142 252 156 266 160 286"/>
+        <path class="m-stroke s-d s-leaf" pathLength="1" style="--d:1.2" d="M160 284C182 279 198 263 205 240C182 245 165 260 160 284"/>
+      </g>
+    </svg>
+  </figure>
+
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <defs>
+      <!-- 가운데가 짙고 가장자리에서 0 으로 사라진다. 경계가 없어야 「번진」 것으로 보인다 -->
+      <radialGradient id="w-leaf">
+        <stop offset="0"   stop-color="#7cb872" stop-opacity=".32"/>
+        <stop offset=".7"  stop-color="#8ec585" stop-opacity=".21"/>
+        <stop offset="1"   stop-color="#a8cfa0" stop-opacity="0"/>
+      </radialGradient>
+      <!-- 흙. 지면선 위아래로 스며야 해서 중심을 선에 두고 양쪽으로 뺀다 -->
+      <radialGradient id="w-soil">
+        <stop offset="0"   stop-color="#dab98a" stop-opacity=".85"/>
+        <stop offset=".5"  stop-color="#e4cba6" stop-opacity=".62"/>
+        <stop offset="1"   stop-color="#efe0c8" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+  </svg>
+</main>
+
+
+<script>
+  /* 글꼴이 아직 안 왔는데 시작하면 문구가 써지는 중에 글자 폭이 바뀌며 흔들린다.
+     그렇다고 무한정 기다릴 수도 없어 800ms 에서 끊는다.
+
+     ⚠ 이 페이지의 JS 는 **이게 전부**여야 한다. 발행된 글은 JS 가 0바이트고
+     (`server/serialize.mjs` 가 발행 시점에 구워 둔다), 이 첫 화면도 같은 기준을 지킨다.
+     `node tools/check-public.mjs` 가 크기를 재고 있다. */
+  var stage = document.querySelector('[data-stage]')
+  Promise.race([document.fonts.ready, new Promise(function (r) { setTimeout(r, 800) })])
+    .then(function () { stage.classList.add('play') })
+</script>
