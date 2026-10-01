@@ -14,12 +14,18 @@
     "logs": "docker compose logs -f",
     "admin:dev": "npm -w admin run dev",
     "admin:build": "npm -w admin run build",
-    "check": "node tools/check-public.mjs && node tools/check-summary.mjs && node tools/check-fonts.mjs",
+    "check": "node tools/check-public.mjs && node tools/check-summary.mjs && node tools/check-contract.mjs && node tools/check-bake.mjs && node tools/check-fonts.mjs && node tools/check-routes.mjs && node tools/check-refs.mjs && npm run --silent admin:build",
     "check:fonts": "node tools/check-fonts.mjs",
     "vendor:sync": "node tools/sync-vendor.mjs",
     "icons:sync": "node tools/sync-icons.mjs",
     "menu-icons:sync": "node tools/sync-menu-icons.mjs",
-    "check:summary": "node tools/check-summary.mjs"
+    "favicons:sync": "node tools/sync-favicons.mjs",
+    "check:summary": "node tools/check-summary.mjs",
+    "check:bake": "node tools/check-bake.mjs",
+    "check:contract": "node tools/check-contract.mjs",
+    "golden:update": "node tools/check-bake.mjs --update",
+    "check:routes": "node tools/check-routes.mjs",
+    "check-refs": "node tools/check-refs.mjs"
   },
   "description": "정적 포트폴리오 + 글 쓰는 블로그. 방문자에게 JS 0바이트.",
   "devDependencies": {

@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 /**
- * 푸터 아이콘 도형을 `shared/site-icons.mjs` 로 굽는다.
+ * 푸터 아이콘 도형을 `shared/site-icons.mjs` 로 굽습니다.
  *
- * 왜 데이터로 박는가: 아이콘은 **굽기(정적 HTML)와 관리자 화면이 같이** 그린다. 파일 하나(SVG
+ * 왜 데이터로 박는가: 아이콘은 굽기(정적 HTML)와 관리자 화면이 같이 렌더링합니다. 파일 하나(SVG
  * 스프라이트)로 두면 관리자가 그것을 또 받아야 하고, `<img>` 로 걸면 `currentColor` 가 안 먹어
- * 호버·어두운 푸터에서 색이 안 따라온다. 도형이 짧은 `path` 하나뿐이라 데이터가 제일 싸다.
+ * 호버·어두운 푸터에서 색이 안 따라옵니다. 도형이 짧은 `path` 하나뿐이라 데이터가 제일 저렴합니다.
  *
- * 왜 npm 인가: 이 레포의 규약이다(`tools/sync-vendor.mjs` 머리말). 손으로 내려받은 그림은
- * 출처를 적을 수 없다. `simple-icons` 는 CC0 로 배포된다.
+ * 왜 npm 인가: 이 레포의 규약입니다(`tools/sync-vendor.mjs` 주석). 손으로 내려받은 그림은
+ * 출처를 적을 수 없습니다. `simple-icons` 는 CC0 로 배포됩니다.
  *
- * ⚠ **도형이 CC0 인 것과 상표는 다른 이야기다.** 로고는 각 회사의 상표이므로 이 템플릿은
- *   「그 서비스로 가는 링크」에만, 모양·비율을 그대로 쓴다(`CREDITS.md` 의 「푸터 아이콘」 절).
- *   LinkedIn 은 상표권자의 요청으로 simple-icons 에서 빠졌다 — 넣지 않는다(「직접 입력」으로 건다).
+ * 도형이 CC0 인 것과 상표는 다른 이야기입니다. 로고는 각 회사의 상표이므로 이 템플릿은
+ *   「그 서비스로 가는 링크」에만, 모양·비율을 그대로 씁니다(`CREDITS.md` 의 「푸터 아이콘」 절).
+ *   LinkedIn 은 상표권자의 요청으로 simple-icons 에서 빠졌습니다 — 넣지 않습니다(「직접 입력」으로 겁니다).
  *
  *   npm i -D simple-icons && node tools/sync-icons.mjs
  */
@@ -26,8 +26,8 @@ const si = require('simple-icons')
 const pkg = JSON.parse(await readFile(join(ROOT, 'node_modules/simple-icons/package.json'), 'utf8'))
 
 /**
- * 푸터에 걸 서비스 — **한국 포트폴리오에서 실제로 쓰는 것**부터.
- * 라벨은 화면에 그대로 나가는 말이고, `hint` 는 관리자 주소 칸의 자리표시자다.
+ * 푸터에 걸 서비스 — 한국 포트폴리오에서 실제로 쓰는 것부터.
+ * 라벨은 화면에 그대로 나가는 말이고, `hint` 는 관리자 주소 칸의 자리표시자입니다.
  */
 const WANT = [
   ['github', 'siGithub', 'GitHub', 'github.com/아이디'],
@@ -42,7 +42,7 @@ const WANT = [
   ['x', 'siX', 'X', 'x.com/아이디'],
 ]
 
-/* 도형에 들어와도 되는 글자만 — path 명령과 숫자다. 다른 것이 섞이면 SVG 가 아니라 **주입**이다 */
+/* 도형에 들어와도 되는 글자만 — path 명령과 숫자입니다. 다른 것이 섞이면 SVG 가 아니라 주입입니다 */
 const SAFE = /^[MmZzLlHhVvCcSsQqTtAa0-9 .,eE+-]+$/
 
 const rows = WANT.map(([value, key, label, hint]) => {
@@ -53,8 +53,8 @@ const rows = WANT.map(([value, key, label, hint]) => {
 })
 
 /**
- * 「직접 입력」 — 목록에 없는 서비스로 갈 때. 상표가 아닌 **우리가 그린 사슬**이라
- * 어느 주소에 걸어도 문제가 없다. 24 격자, 채움 하나(세트의 다른 아이콘과 같은 규칙).
+ * 「직접 입력」 — 목록에 없는 서비스로 갈 때. 상표가 아닌 우리가 그린 사슬이라
+ * 어느 주소에 걸어도 문제가 없습니다. 24 격자, 채움 하나(세트의 다른 아이콘과 같은 규칙).
  */
 rows.push({
   value: 'link',
@@ -66,11 +66,11 @@ rows.push({
 })
 
 const body = `/* 자동 생성 — tools/sync-icons.mjs. 손으로 고치지 마세요.
-   출처: simple-icons@${pkg.version} (CC0). 도형은 CC0 이지만 **상표는 각 회사의 것**입니다 —
+   출처: simple-icons@${pkg.version} (CC0). 도형은 CC0 이지만 상표는 각 회사의 것입니다.
    그 서비스로 가는 링크에만, 모양·비율을 그대로 쓰세요(CREDITS.md 의 「푸터 아이콘」). */
 
 /**
- * 푸터에 거는 서비스 아이콘 — **굽기와 관리자가 같은 데이터로 그린다.**
+ * 푸터에 거는 서비스 아이콘. 생성기와 관리자가 같은 데이터로 렌더링합니다.
  *
  * \`path\` 는 24×24 격자의 채움 도형 하나다. 굽기는 \`<svg viewBox="0 0 24 24"><path d="…"></svg>\`
  * 로 박고 색은 \`currentColor\` 를 따르므로, 푸터 글자색·호버가 그대로 먹는다(그림 파일이면 안 먹는다).

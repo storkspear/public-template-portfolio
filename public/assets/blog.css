@@ -1,34 +1,34 @@
 /* 블로그 목록 — 사진 없이.
  *
- * **여기 사는 이유**: 목록은 이제 DB 에서 구워져 `blog-gen/` 에 산다. 규칙을 레포의
+ * 여기 사는 이유: 목록은 이제 DB 에서 구워져 `blog-gen/` 에 삽니다. 규칙을 레포의
  * `public/assets/site.css` 에만 두면, 그 파일을 push → git pull 하기 전까지 구운 목록이
- * 스타일 없이 뜬다(2026-09-14 에 실제로 그렇게 깨졌다). 굽는 것과 그 옷은 같이 다닌다.
+ * 스타일 없이 뜹니다. 굽는 것과 그 옷은 같이 다닙니다.
  *
- * 색·글꼴 변수는 site.css 의 `:root` 에서 온다 — 그쪽은 껍데기(머리줄·푸터)와 공유한다.
+ * 색·글꼴 변수는 site.css 의 `:root` 에서 옵니다 — 그쪽은 껍데기(헤더·푸터)와 공유합니다.
  *
- * 사진을 빼면 모든 행이 같은 무게가 되어 심심해진다. 사진이 하던 「눈이 걸리는 자리」를
- * 활자 대비 · 리듬 · 호버 셋이 대신한다.
+ * 사진을 빼면 모든 행이 같은 무게가 되어 심심해집니다. 사진이 하던 「눈이 걸리는 자리」를
+ * 활자 대비 · 리듬 · 호버 셋이 대신합니다.
  */
-/* 목록 머리(「글 / 5편」)는 여기 없다 — `templates/header.css` 의 `.lh` 가 갖는다.
-   작업 목록의 「작업 / 9편」과 **같은 부품**이라, 두 벌로 나눠 두면 크기가 갈린다
-   (실제로 1.6~2.1rem 과 1.9~3rem 으로 갈려 있었다 — 2026-09-16). */
+/* 목록 머리(「글 / 5편」)는 여기 없습니다 — `templates/header.css` 의 `.lh` 가 갖습니다.
+   작업 목록의 「작업 / 9편」과 같은 부품이라, 두 벌로 나눠 두면 크기가 갈립니다
+   (실제로 1.6~2.1rem 과 1.9~3rem 으로 갈려 있었습니다. */
 
-/* 목록의 줄 규칙은 여기 없다 — templates/blog.css 가 갈래(.bl-rows … .bl-lines)마다 따로 갖는다.
-   ⚠ 여기서 `.b-item` 으로 **모든 갈래에 한꺼번에** 걸면 안 된다 — 카드 격자에 가로선이
-   그어지고, 큰 제목에 2px 겹선이 서고, 썸네일은 좁은 폭에서 날짜가 밑으로 떨어진다.
-   마크업은 한 벌이므로 갈래를 가르는 것은 갈래 파일의 몫이다. */
+/* 목록의 줄 규칙은 여기 없습니다 — templates/blog.css 가 갈래(.bl-rows … .bl-lines)마다 따로 갖습니다.
+   여기서 `.b-item` 으로 모든 갈래에 한꺼번에 걸면 안 됩니다 — 카드 격자에 가로선이
+   그어지고, 큰 제목에 2px 겹선이 서고, 썸네일은 좁은 폭에서 날짜가 밑으로 떨어집니다.
+   마크업은 한 벌이므로 갈래를 가르는 것은 갈래 파일의 몫입니다. */
 
 /* ── 글 머리 — 종이 위 ──
-   라이브러리가 제목을 `font-family: var(--font-body)` 인라인으로 그린다. 그 변수만
-   여기서 바꾼다 — `.prose` 는 형제라 본문(Pretendard)은 안 바뀐다.
-   안 바꾸면 목록은 Paperlogy 800, 글은 Pretendard 400 으로 **같은 제목이 서체가 달라진다.** */
+   라이브러리가 제목을 `font-family: var(--font-body)` 인라인으로 렌더링합니다. 그 변수만
+   여기서 바꿉니다 — `.prose` 는 형제라 본문(Pretendard)은 안 바뀝니다.
+   안 바꾸면 목록은 Paperlogy 800, 글은 Pretendard 400 으로 같은 제목이 서체가 달라집니다. */
 .b-post .post-head { --font-body: var(--display); border-bottom-color: var(--line); }
-.b-post .post-title { color: var(--fg); }        /* 작성자가 색을 고르면 인라인이 이긴다 */
+.b-post .post-title { color: var(--fg); }        /* 작성자가 색을 고르면 인라인이 이깁니다 */
 .b-post .post-head { margin-bottom: 2.5rem; }    /* 헤어라인 → 본문 40 */
-/* 배너가 없으면 머리 위 여백을 목록의 「글」과 같은 높이로. 제목의 padding-top 0.55rem 만큼 뺀다 */
+/* 배너가 없으면 머리 위 여백을 목록의 「글」과 같은 높이로. 제목의 padding-top 0.55rem 만큼 뺍니다 */
 .b-post .post-head[data-banner='0'] { margin-top: calc(clamp(2.5rem, 6vh, 4rem) - 0.55rem); }
 
-/* 작성 일시 — 제목의 이웃. 정렬은 bake 가 제목 값에서 복사해 인라인으로 준다 */
+/* 작성 일시 — 제목의 이웃. 정렬은 bake 가 제목 값에서 복사해 인라인으로 줍니다 */
 .b-when {
   display: block; margin-top: .75rem;
   font-family: var(--mono); font-size: .82rem; line-height: 1.6; letter-spacing: .04em;
@@ -37,13 +37,122 @@
 /* 본문 → 푸터 */
 .b-post .prose { padding-bottom: clamp(4rem, 8vh, 5rem); }
 
-/* 글이 몇 편 없으면 푸터가 화면 **중간**에 떠 있고 밑이 허옇게 빈다.
-   바닥으로 밀어 내린다. 배너의 `margin-inline: calc(50% - 50vw)` 는 flex 열 안에서도
-   그대로 동작한다(폭을 100vw 로 잡는 방식이라 부모 정렬과 무관하다). */
+/* 글이 몇 편 없으면 푸터가 화면 중간에 떠 있고 밑이 허옇게 빕니다.
+   바닥으로 밀어 내립니다. 배너의 `margin-inline: calc(50% - 50vw)` 는 flex 열 안에서도
+   그대로 동작합니다(폭을 100vw 로 잡는 방식이라 부모 정렬과 무관합니다). */
 body { min-height: 100vh; display: flex; flex-direction: column; }
-/* ⚠ `.wrap` 은 `margin: 0 auto` 를 들고 있다. 세로 flex 안에서 가로 auto 마진은
-   **늘어나기(stretch)를 막아** 상자가 글자 폭으로 쪼그라든다 — 목록이 화면 가운데
-   좁은 기둥이 됐다(2026-09-14). 폭을 100% 로 못 박아 되돌린다. */
+/* `.wrap` 은 `margin: 0 auto` 를 들고 있습니다. 세로 flex 안에서 가로 auto 마진은
+   늘어나기(stretch)를 막아 상자가 글자 폭으로 쪼그라듭니다 — 목록이 화면 가운데
+   좁은 기둥이 됐습니다. 폭을 100% 로 못 박아 되돌립니다. */
 body > * { width: 100%; }
 body > main { flex: 1 0 auto; }
 body > .p-contact { flex: none; }
+
+/* ── 절 바로 가기 — 본문 오른쪽 ──────────────────────────────────────
+ *
+ * 관리자에서 켰을 때만 굽기가 냅니다(공통 → 블로그 → 상세페이지). 제목이 없는 글에는
+ * 마크업 자체가 안 나옵니다 — 여기 규칙이 걸릴 상자가 아예 없습니다.
+ *
+ * **흐름 밖으로 띄웁니다.** `<main>` 을 격자로 바꾸면 본문 배너가 깨집니다 — 배너가
+ * `width:100vw; margin-inline: calc(50% - 50vw)` 로 화면을 채우는데, 격자가 되면 그 `50%`
+ * 의 기준이 바뀌어 배너가 한쪽으로 밀립니다.
+ *
+ * 띄우는 방법은 `float` 입니다. `position:absolute` 로는 **세로 자리를 모릅니다** —
+ * 제목 배너의 높이는 글마다 다른데, 맨 위에 붙이면 배너 위에 목차가 겹쳐 앉습니다.
+ * 뜬 상자는 제가 놓인 자리(머리 바로 아래)에서 시작하므로 그 문제가 없습니다.
+ *
+ * 본문 줄을 갉지 않는 근거: `.prose-body > *` 는 `--measure` 폭으로 **가운데** 섭니다.
+ * 뜬 상자는 오른쪽 여백 안에만 있고(아래 `--gut` 산식), 본문 상자와 가로로 안 겹치므로
+ * 줄이 짧아지지 않습니다. 겹치면 글줄이 들쭉날쭉해지니 폭 산식을 함부로 늘리지 마세요.
+ */
+.b-jump {
+  /**
+   * 폭 셈 — 본문 옆 여백을 쓰되, 모자라면 **화면 여백을 빌립니다.**
+   *
+   * 빌리는 까닭: 여백(`--gut`)은 화면이 아니라 사이트 본문 폭과 그 글의 본문 폭이
+   * 정합니다. 본문 폭 1240 에 글 폭 68rem 인 글은 양옆에 36px 밖에 안 남아, 화면이
+   * 아무리 넓어도 목차가 설 자리가 없습니다. 실제 글이 그 모양이었습니다.
+   * `.wrap` 밖은 비어 있으므로 모자란 만큼만 그리로 넘어갑니다.
+   *
+   * 셈의 성질: 빌리든 안 빌리든 **본문과의 간격은 늘 2rem** 입니다. 빌린 만큼 오른쪽으로
+   * 나가면서 그만큼 넓어지기 때문입니다. 넓어지는 것은 `max-width` 까지입니다.
+   *
+   * 퍼센트는 `<main>` 안쪽 폭 기준이라 `50vw - 50%` 가 곧 「본문 상자 오른끝에서 화면
+   * 오른끝까지」입니다. 1.5rem 은 화면 끝에 붙지 않게 남기는 자리입니다.
+   */
+  --gut: calc((100% - var(--measure-override, 38rem)) / 2);
+  --want: 17rem;                                          /* 목록 15 + 본문과의 간격 2 */
+  --short: max(0px, calc(var(--want) - var(--gut)));       /* 모자란 만큼 */
+  --spare: max(0px, calc(50vw - 50% - 1.5rem));            /* 화면 여백에서 쓸 수 있는 만큼 */
+  --lend: min(var(--short), var(--spare));                 /* 실제로 빌리는 만큼 */
+  float: right;
+  margin-right: calc(-1 * var(--lend));
+  width: calc(var(--gut) + var(--lend) - 2rem);
+  max-width: 15rem;         /* 자리가 남아도 더 넓히지 않습니다 — 목록 줄이 길어지면 읽기 나빠집니다 */
+  /* 제 폭을 자식이 물어볼 수 있게 합니다. 아래 `@container` 가 이 값을 읽습니다 */
+  container-type: inline-size;
+  /* 스크롤을 따라옵니다. 뜬 상자의 한계는 `<main>` 이라 푸터까지 가면 멈춥니다 */
+  position: sticky;
+  top: calc(var(--hd-h, 66px) + 1.15rem);   /* 공통헤더도 sticky 라 그 밑에 섭니다 */
+  margin-bottom: 2rem;                      /* 본문이 짧을 때 푸터에 붙지 않게 */
+  /* 절이 아주 많은 글에서 목록이 화면을 넘어갑니다. 넘는 만큼만 제 안에서 굴립니다 */
+  max-height: calc(100vh - var(--hd-h, 66px) - 5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.b-jump::-webkit-scrollbar { display: none; }
+
+/* 왼쪽 엇선 하나가 목록의 전부입니다 — 머리글도 번호도 없습니다.
+   글을 읽는 사람의 눈을 본문에서 떼지 않는 것이 이 부품의 일입니다. */
+.b-jump nav {
+  display: flex; flex-direction: column; gap: .5rem;
+  border-left: 1px solid var(--line);
+  padding: .15rem 0 .15rem 1rem;
+}
+.b-jump a {
+  /* `--fg-3` 은 흰 배경에서 대비 3.89:1 이라 작은 글자에 못 씁니다(site.css 의 같은 주석) */
+  color: var(--fg-2);
+  font-size: .82rem; line-height: 1.5; letter-spacing: -.01em;
+  text-decoration: none;
+  word-break: keep-all;               /* 한글은 어절 단위로 접습니다 */
+  transition: color .15s ease;
+}
+.b-jump a:hover, .b-jump a:focus-visible { color: var(--accent, var(--fg)); }
+/* h3 는 한 칸 들입니다 — 깊이를 설정으로 두는 대신 눈으로 가릅니다 */
+.b-jump a.sub { padding-left: .85rem; font-size: .78rem; }
+
+/* 헤더가 sticky 라, 눌러서 뛰면 절 제목이 헤더 밑에 깔립니다.
+   site.css 의 `.p-sec` 와 같은 셈(헤더 높이 + 한 줄 숨)입니다. */
+.b-post .prose-body :is(h2, h3) { scroll-margin-top: calc(var(--hd-h, 66px) + 18px); }
+
+/**
+ * 화면 여백까지 빌려도 모자랄 때가 있습니다 — 좁은 창에서 본문이 넓은 글이 그렇습니다.
+ * 그때 그냥 두면 4px 짜리 조각에 세로선만 하나 서고 글자는 잘립니다(실제로 그랬습니다).
+ *
+ * 화면 크기(`@media`)로는 못 가릅니다. 남는 폭은 화면과 **그 글의 본문 폭**이 함께
+ * 정하기 때문입니다. 굽기에서 재는 것도 안 됩니다 — 사이트 본문 폭이 「화면 폭」이면
+ * `--body-w` 가 `none` 이라 px 이 안 나옵니다. 그래서 상자가 제 폭을 재게 합니다.
+ *
+ * 목록만 지웁니다. 남는 빈 상자는 높이가 0 이라 글줄에 닿지 않습니다.
+ */
+@container (max-width: 9rem) { .b-jump nav { display: none } }
+
+/* 좁은 화면에는 안 냅니다 — 본문 옆에 자리가 없고, 위에 붙이면 글 읽기를 가로막습니다.
+   1080px 은 공통헤더의 메뉴가 둘째 줄로 접히는 그 지점입니다(site.css 와 같은 값). */
+@media (max-width: 1080px) {
+  .b-jump { display: none; }
+  .b-post .prose-body :is(h2, h3) { scroll-margin-top: calc(var(--hd-h, 66px) + 40px); }
+}
+
+/* 「전체폭」으로 쓴 글 — 본문이 화면 끝까지 갑니다.
+ *
+ * `--measure-override: 100%` 만으로는 부족합니다. `.wrap` 이 사이트 본문 폭
+ * (`--body-w`, 기본 1240px)으로 천장을 치고 있어서 「1160px 의 100%」가 됩니다 —
+ * 단추는 「전체폭」인데 화면의 절반에서 멈춥니다. 편집 화면은 천장 없이 보여 주므로
+ * 쓰는 사람이 본 것과 읽는 사람이 보는 것이 갈립니다.
+ *
+ * 좌우 여백(`padding-inline`)은 그대로 둡니다 — 글자가 화면 모서리에 닿으면 안 읽힙니다.
+ * 명시도는 (0,2,0) 이라 `.wrap`(0,1,0)을 이깁니다.
+ */
+.b-post.b-full { max-width: none; }

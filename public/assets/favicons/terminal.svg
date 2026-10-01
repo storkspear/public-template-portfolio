@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="개발">
+  <style>
+    /* 어두운 탭에서 검정은 사라진다. 눈에 보이는 쪽(밝은 탭)은 검정 그대로 두고,
+       어두운 탭에서만 흰색으로 뒤집는다. */
+    .s { fill: none; stroke: #0b0d10; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round }
+    @media (prefers-color-scheme: dark) { .s { stroke: #ffffff } }
+  </style>
+  <!-- 자동 생성 — tools/sync-favicons.mjs. 손으로 고치지 마세요.
+       출처: lucide-static@1.47.0 (ISC) — lucide 의 'terminal'. -->
+  <g class="s"><path d="M12 19h8"/><path d="m4 17 6-6-6-6"/></g>
+</svg>

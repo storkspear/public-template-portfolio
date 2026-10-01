@@ -128,7 +128,8 @@ own `<header>` — it needs the section-jump links in the middle, and those only
 that page, so there is no room for them in a header shared by the whole site.
 
 > If a fragment has its own `<header>` and you also turn the shared header on, you get
-> two. The baker refuses by name, so trying it cannot break the site.
+> two. The baker does not refuse — it warns, naming the file, and the admin shows that
+> warning. You see it in the preview at once, and switching it back off undoes it.
 
 ### 3. Favicon
 

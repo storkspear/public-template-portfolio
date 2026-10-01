@@ -1,20 +1,19 @@
 /**
- * 글 목록 열두 벌 — **마크업은 하나, 보여 주는 것만 다르다.**
- * 규약: 갈래 규칙은 반드시 `.bl.bl-x` 로 시작한다(0,3,0). 바탕 `.bl .b-*`(0,2,0)과 같은 명시도로
- * 두면 파일 순서로만 이겨 규칙을 옮기는 순간 조용히 뒤집힌다(제목만이 아니라 번호·날짜·요약·사진도).
- * 색은 전부 테마 변수와 color-mix — 흰·베이지·검정·회색·직접 고른 색 어디서나 같은 논리로 선다.
- * `--line-2` 는 쓰지 않는다: site.css 기본에서는 --line 보다 옅고 테마를 고르면 진해 방향이 뒤집힌다.
+ * 글 목록 열두 벌 — 마크업은 하나, 보여 주는 것만 다릅니다.
+ * 규약: 갈래 규칙은 반드시 `.bl.bl-x` 로 시작합니다(0,3,0). 바탕 `.bl .b-*`(0,2,0)과 같은 명시도로
+ * 두면 파일 순서로만 이겨 규칙을 옮기는 순간 조용히 뒤집힙니다(제목만이 아니라 번호·날짜·요약·사진도).
+ * 색은 전부 테마 변수와 color-mix — 흰·베이지·검정·회색·직접 고른 색 어디서나 같은 논리로 섭니다.
+ * `--line-2` 는 쓰지 않습니다: site.css 기본에서는 --line 보다 옅고 테마를 고르면 진해 방향이 뒤집힙니다.
  */
 
 /* ── 바탕 ──────────────────────────────────────────────────────────── */
 /**
- * ⚠ **세로로 쌓는 카드는 `align-items: stretch` 를 적어 둔다.**
+ * 세로로 쌓는 카드는 `align-items: stretch` 를 적어 둡니다.
  *
- * `site.css` 의 `.b-item > a { align-items: baseline }` 이 여기까지 내려온다 — 그것이
+ * `site.css` 의 `.b-item > a { align-items: baseline }` 이 여기까지 내려옵니다 — 그것이
  * 기본 줄(번호·제목·날짜를 밑줄에 맞추는 것)의 모습이라 맞는 값이지만, 세로로 쌓는
- * 카드에서는 **사진칸이 0 으로 쪼그라든다.** 같은 함정에 세 번 걸렸다(2026-09-18 실측:
- * 참고서 카드 2px · 매거진 0x0 · 호수 0x0 — 매거진과 호수는 사진이 아예 안 보였다).
- * 한 줄에 모아 둔다: 새 카드 갈래를 더할 때 여기 이름만 보태면 된다.
+ * 카드에서는 사진칸이 0 으로 쪼그라듭니다. 같은 함정에 세 번 걸렸습니다.
+ * 한 줄에 모아 둡니다: 새 카드 갈래를 더할 때 여기 이름만 보태면 됩니다.
  */
 .bl.bl-cards a,
 .bl.bl-issue a,
@@ -22,18 +21,18 @@
 .bl.bl-magazine > li:first-child a { align-items: stretch; }
 
 .bl { list-style: none; margin: 0; padding: 0;
-  /* 굵기를 지어내지 않는다 — 한 벌짜리 글꼴(부크크명조·페이퍼로지·검은고딕)에 700 이 닿아도 번지지 않고
-     400 파일로 그려진다. 고른 뒤 글꼴을 바꿔도 안전하다 */
+  /* 굵기를 지어내지 않습니다 — 한 벌짜리 글꼴(부크크명조·페이퍼로지·검은고딕)에 700 이 닿아도 번지지 않고
+     400 파일로 렌더링됩니다. 고른 뒤 글꼴을 바꿔도 안전합니다 */
   font-synthesis: none; }
 .bl a { display: block; text-decoration: none; color: inherit; }
 .bl a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.bl .b-shot, .bl .b-lede, .bl .b-read { display: none; }   /* 갈래가 켠다 */
+.bl .b-shot, .bl .b-lede, .bl .b-read { display: none; }   /* 갈래가 켭니다 */
 .bl .b-body { min-width: 0; }
 .bl .b-no { font-family: var(--mono); font-size: .8rem; color: var(--fg-3);
   letter-spacing: .04em; font-variant-numeric: tabular-nums; }
 .bl .b-title { display: block; font-family: var(--display); font-weight: 400;
   font-size: 1.3rem; letter-spacing: -.03em; line-height: 1.45; color: var(--fg);
-  word-break: keep-all; overflow-wrap: anywhere; }         /* 무공백 잡문 제목이 칸을 뚫지 않게 */
+  word-break: keep-all; overflow-wrap: anywhere; }         /* 무공백 잡문 제목이 칸 밖으로 넘치지 않게 */
 .bl .b-lede { color: var(--fg-2); word-break: keep-all; overflow-wrap: anywhere; }
 .bl .b-date { font-family: var(--mono); font-size: .78rem; color: var(--fg-3);
   font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -45,14 +44,14 @@
   letter-spacing: .06em; color: var(--fg-3); font-variant-numeric: tabular-nums; }
 .bl > .b-year:first-child { padding-top: 0; }
 
-/* ── ⓪ 기본 rows — 처음부터 쓰던 번호 행 목록. 글꼴도 사이트 기본을 따른다 ──
-   값은 예전 「인덱스」와 같은 `rows` — 그 값으로 저장한 설정은 이 모양 그대로 나온다
-   번호·제목·날짜 한 줄씩, 행 사이 헤어라인. 호버는 옅은 띠 + 번호 별색 + 제목 밑줄(옛 모습 그대로) */
+/* ── ⓪ 기본 rows — 처음부터 쓰던 번호 행 목록. 글꼴도 사이트 기본을 따릅니다 ──
+   값은 예전 「인덱스」와 같은 `rows` — 그 값으로 저장한 설정은 이 모양 그대로 나옵니다.
+   번호·제목·날짜 한 줄씩, 행 사이 헤어라인. 호버는 옅은 띠 + 번호 accent + 제목 밑줄(옛 모습 그대로) */
 .bl.bl-rows > li.b-item { border-top: 1px solid var(--line); }
 .bl.bl-rows > li.b-item:last-child { border-bottom: 1px solid var(--line); }
 .bl.bl-rows a { display: grid; grid-template-columns: 2.7rem minmax(0, 1fr) auto;
   gap: 0 1.3rem; align-items: baseline;
-  padding: 1.125rem 0;                /* 18+30+18 = 66 = 머리줄 높이. 두 띠의 박자를 맞춘다 */
+  padding: 1.125rem 0;                /* 18+30+18 = 66 = 헤더 높이. 두 띠의 박자를 맞춥니다 */
   transition: background-color var(--t); }
 .bl.bl-rows a:hover { background: var(--bg-2); }
 .bl.bl-rows .b-no { font-size: .82rem; transition: color var(--t); }
@@ -67,12 +66,12 @@
 
 /* ── ① 장부 ledger — 번호·제목·날짜. 위 2px 머리선, 행 사이 헤어라인 ───────── */
 .bl.bl-ledger { border-top: 2px solid var(--fg); border-bottom: 1px solid var(--line); }
-/* ⚠ `.b-item` 만. 연도 라벨은 선을 안 갖는다 — 「라벨 밑에 다음 행의 윗선이 밑줄로 붙는다」 */
+/* `.b-item` 만. 연도 라벨은 선을 안 갖습니다 — 「라벨 밑에 다음 행의 윗선이 밑줄로 붙습니다」 */
 .bl.bl-ledger > li.b-item + li.b-item,
 .bl.bl-ledger > li.b-year + li.b-item { border-top: 1px solid var(--line); }
 .bl.bl-ledger a { display: grid; grid-template-columns: 2.7rem minmax(0, 1fr) auto;
   gap: 0 1.3rem; align-items: baseline;
-  padding: 1.125rem .75rem; margin-inline: -.75rem;        /* 띠가 글줄보다 12px 넓다 */
+  padding: 1.125rem .75rem; margin-inline: -.75rem;        /* 띠가 글줄보다 12px 넓습니다 */
   transition: background-color var(--t); }
 .bl.bl-ledger a:hover, .bl.bl-ledger a:focus-visible { background: var(--bg-2); }
 .bl.bl-ledger .b-no { position: relative; color: var(--fg); transition: color var(--t); }
@@ -96,13 +95,13 @@
 .bl.bl-feed > li.b-item { border-bottom: 1px solid var(--line); }
 .bl.bl-feed a { display: grid; grid-template-columns: 3.6rem minmax(0, 1fr) auto 1.25rem;
   column-gap: 1rem; align-items: center; padding: .7rem 0;
-  scroll-margin-top: 7rem; }            /* Tab 으로 옮겨 갈 때 머리줄·연도 라벨 밑에 가려지지 않게 */
+  scroll-margin-top: 7rem; }            /* Tab 으로 옮겨 갈 때 헤더·연도 라벨 밑에 가려지지 않게 */
 .bl.bl-feed .b-no, .bl.bl-feed .b-shot, .bl.bl-feed .b-lede { display: none; }
-/* 날짜 글자(2026.09.16)는 남기되 0 크기로 — 화면읽기는 읽고, 눈에는 아래 두 조각이 보인다 */
+/* 날짜 글자(2026.09.16)는 남기되 0 크기로 — 화면읽기는 읽고, 눈에는 아래 두 조각이 보입니다 */
 .bl.bl-feed .b-date[data-d] { grid-column: 1; grid-row: 1; display: grid; justify-items: center;
   font-size: 0; line-height: 1; }
 .bl.bl-feed .b-date[data-d]::before { content: attr(data-d); content: attr(data-d) / ''; font-family: var(--sans); font-weight: 700;
-  font-size: 1.35rem; letter-spacing: -.02em; color: var(--fg); font-variant-numeric: tabular-nums; }   /* 별색 아닌 글자색 */
+  font-size: 1.35rem; letter-spacing: -.02em; color: var(--fg); font-variant-numeric: tabular-nums; }   /* accent 아닌 글자색 */
 .bl.bl-feed .b-date[data-d]::after { content: attr(data-m) '월'; content: attr(data-m) '월' / ''; margin-top: .15rem;
   font-family: var(--sans); font-size: .68rem; letter-spacing: .04em; color: var(--fg-3); }
 .bl.bl-feed .b-date:not([data-d]) { grid-column: 1; grid-row: 1; }   /* 옛 마크업 — 그냥 날짜 */
@@ -116,12 +115,12 @@
 .bl.bl-feed a:hover .b-title, .bl.bl-feed a:focus-visible .b-title {
   text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1.5px; }
 .bl.bl-feed a:visited .b-title { color: var(--fg-2); }
-.bl.bl-feed > .b-year { position: sticky; top: calc(var(--hd-h, 66px) + 1px); z-index: 1;   /* 머리줄 높이 + 아랫선 1 */
+.bl.bl-feed > .b-year { position: sticky; top: calc(var(--hd-h, 66px) + 1px); z-index: 1;   /* 헤더 높이 + 아랫선 1 */
   background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(6px);
   padding: .8rem 0 .4rem; margin-top: 1.4rem; font-size: .8rem; }
 .bl.bl-feed > .b-year:first-child { margin-top: 0; }
 @media (max-width: 860px) {
-  .bl.bl-feed > .b-year { position: static; }   /* 메뉴가 두 줄로 접히면 머리줄 높이가 달라진다 */
+  .bl.bl-feed > .b-year { position: static; }   /* 메뉴가 두 줄로 접히면 헤더 높이가 달라집니다 */
 }
 @media (max-width: 640px) {
   .bl.bl-feed a { grid-template-columns: 3rem minmax(0, 1fr) 1rem; column-gap: .75rem; }
@@ -129,8 +128,8 @@
   .bl.bl-feed a::after { grid-column: 3; }
 }
 
-/* ── ③ 목차 lines — 제목 … 날짜. 점선 리더는 배경, 제목 바탕이 글자 뒤 점을 덮는다 ─── */
-/* 목록은 본문 폭 끝까지 — 다른 갈래와 같은 폭으로 선다 */
+/* ── ③ 목차 lines — 제목 … 날짜. 점선 리더는 배경, 제목 바탕이 글자 뒤 점을 덮습니다 ─── */
+/* 목록은 본문 폭 끝까지 — 다른 갈래와 같은 폭으로 섭니다 */
 .bl.bl-lines { --dot: color-mix(in srgb, var(--fg) 45%, var(--bg)); }
 .bl.bl-lines a { display: flex; align-items: baseline; align-items: last baseline; gap: .5rem; padding: .55rem 0; }
 .bl.bl-lines .b-no, .bl.bl-lines .b-shot, .bl.bl-lines .b-lede { display: none; }
@@ -139,13 +138,13 @@
   background-size: 6px 6px; background-repeat: repeat-x;
   background-position: 0 calc(100% - .32em); }             /* 마지막 줄 베이스라인 높이 — 리디바탕 기준 값 */
 .bl.bl-lines .b-title { display: inline; font-size: 1.08rem; line-height: 1.55; letter-spacing: -.015em;
-  background: var(--bg); padding-right: .35rem;             /* 글자 뒤 점을 지운다 */
+  background: var(--bg); padding-right: .35rem;             /* 글자 뒤 점을 지웁니다 */
   -webkit-box-decoration-break: clone; box-decoration-break: clone;
   text-decoration: underline transparent; text-decoration-thickness: 1px; text-underline-offset: .45em;
   transition: color var(--t), text-decoration-color var(--t), text-underline-offset var(--t); }
 .bl.bl-lines a:hover .b-title, .bl.bl-lines a:focus-visible .b-title {
   text-decoration-color: currentColor; text-underline-offset: .14em; text-decoration-thickness: 1.5px; }
-.bl.bl-lines:has(a:hover) a:not(:hover) .b-title { color: var(--fg-3); }   /* Are.na — 나머지가 물러선다 */
+.bl.bl-lines:has(a:hover) a:not(:hover) .b-title { color: var(--fg-3); }   /* Are.na — 나머지가 물러섭니다 */
 .bl.bl-lines a:visited .b-title { color: var(--fg-2); }
 .bl.bl-lines > .b-year { font-family: var(--display); font-size: 1rem; letter-spacing: 0; color: var(--fg);
   padding: 1.6rem 0 .4rem; margin-bottom: .3rem; border-bottom: 1px solid var(--line); }
@@ -189,7 +188,7 @@
   .bl.bl-titles a { flex-direction: column; align-items: flex-start; gap: .5rem; }
 }
 
-/* ── ⑥ 에세이 stack — 선 없이, 날짜 → 굵은 제목 → 첫 문장. 오래될수록 옅다 ──── */
+/* ── ⑥ 에세이 stack — 선 없이, 날짜 → 굵은 제목 → 첫 문장. 오래될수록 옅습니다 ──── */
 .bl.bl-stack { display: flex; flex-direction: column; gap: clamp(2rem, 5vh, 3rem); }
 .bl.bl-stack a { display: flex; flex-direction: column; }
 .bl.bl-stack .b-no, .bl.bl-stack .b-shot, .bl.bl-stack .b-read { display: none; }
@@ -203,7 +202,7 @@
 .bl.bl-stack > li:nth-child(3) .b-title { color: color-mix(in srgb, var(--fg) 84%, var(--bg)); }
 .bl.bl-stack > li:nth-child(4) .b-title { color: color-mix(in srgb, var(--fg) 78%, var(--bg)); }
 .bl.bl-stack > li:nth-child(n+5) .b-title { color: var(--fg-2); }
-/* 호버는 nth 규칙 **뒤에** — 같은 명시도(0,4,1)라 순서로 이긴다 */
+/* 호버는 nth 규칙 뒤에 — 같은 명시도(0,4,1)라 순서로 이깁니다 */
 .bl.bl-stack > li a:hover .b-title, .bl.bl-stack > li a:focus-visible .b-title {
   color: var(--fg); text-decoration-color: currentColor; text-underline-offset: .1em; }
 
@@ -213,16 +212,16 @@
 .bl.bl-thumb a { display: grid; grid-template-columns: minmax(0, 1fr) 7rem; grid-template-rows: auto auto;
   column-gap: 1.75rem; align-items: start; padding: 1.1rem 0;
   box-shadow: inset 0 0 0 0 var(--fg); transition: box-shadow var(--t); }
-.bl.bl-thumb a:hover { box-shadow: inset 0 2px 0 0 var(--fg); }    /* 윗선이 두꺼워진다 — 시프트 0 */
+.bl.bl-thumb a:hover { box-shadow: inset 0 2px 0 0 var(--fg); }    /* 윗선이 두꺼워집니다 — 시프트 0 */
 .bl.bl-thumb .b-no { display: none; }
 .bl.bl-thumb .b-date { grid-column: 1; grid-row: 1; font-size: .72rem; letter-spacing: .08em; margin-bottom: .45rem; }
 .bl.bl-thumb .b-body { grid-column: 1; grid-row: 2; }
 .bl.bl-thumb .b-shot { grid-column: 2; grid-row: 1 / 3; display: block; aspect-ratio: 4 / 3;
   overflow: hidden; background: var(--bg-2); }
-.bl.bl-thumb .b-shot:empty { background: none; }                 /* 표지 없는 글 — 칸은 지키되 회색 상자는 세우지 않는다 */
+.bl.bl-thumb .b-shot:empty { background: none; }                 /* 표지 없는 글 — 칸은 지키되 회색 상자는 세우지 않습니다 */
 .bl.bl-thumb .b-shot img { transition: transform .35s var(--ease); }
 .bl.bl-thumb a:hover .b-shot img { transform: scale(1.04); }
-/* 표지가 **하나도** 없으면 오른쪽 칸을 접는다. 하나라도 있으면 빈 칸을 남겨 제목 열 폭을 맞춘다 */
+/* 표지가 하나도 없으면 오른쪽 칸을 접습니다. 하나라도 있으면 빈 칸을 남겨 제목 열 폭을 맞춥니다 */
 .bl.bl-thumb:not(:has(.b-shot img)) a { grid-template-columns: minmax(0, 1fr); }
 .bl.bl-thumb:not(:has(.b-shot img)) .b-shot { display: none; }
 .bl.bl-thumb .b-title { font-weight: 700; font-size: 1.18rem; line-height: 1.38; letter-spacing: -.02em; }
@@ -240,7 +239,7 @@
 .bl.bl-magazine > li:first-child a { display: flex; flex-direction: column; }
 .bl.bl-magazine > li:first-child .b-shot { display: block; aspect-ratio: 21 / 9; overflow: hidden;
   background: var(--bg-2); margin-bottom: 1.25rem; }
-.bl.bl-magazine > li:first-child .b-shot:empty { display: none; }   /* 빈 회색 상자를 세우지 않는다 */
+.bl.bl-magazine > li:first-child .b-shot:empty { display: none; }   /* 빈 회색 상자를 세우지 않습니다 */
 .bl.bl-magazine > li:first-child .b-shot img { transition: transform .5s var(--ease); }
 .bl.bl-magazine > li:first-child a:hover .b-shot img { transform: scale(1.02); }
 .bl.bl-magazine > li:first-child .b-date { order: 1; margin-bottom: .55rem;
@@ -248,7 +247,7 @@
 .bl.bl-magazine > li:first-child .b-date[data-y] { font-size: 0; }
 .bl.bl-magazine > li:first-child .b-date[data-y]::before {
   content: attr(data-y) '년 ' attr(data-m) '월 ' attr(data-d) '일';
-  content: attr(data-y) '년 ' attr(data-m) '월 ' attr(data-d) '일' / ''; font-size: .95rem; }   /* 글자는 이미 읽힌다 — 두 번 읽지 않게 */
+  content: attr(data-y) '년 ' attr(data-m) '월 ' attr(data-d) '일' / ''; font-size: .95rem; }   /* 글자는 이미 읽힙니다 — 두 번 읽지 않게 */
 .bl.bl-magazine > li:first-child .b-body { order: 2; max-width: 30em; text-wrap: balance; }
 .bl.bl-magazine > li:first-child .b-title { font-weight: 700; font-size: clamp(1.8rem, 4.5vw, 3rem);
   line-height: 1.18; letter-spacing: -.025em;
@@ -273,16 +272,15 @@
 @media (max-width: 720px) { .bl.bl-magazine { grid-template-columns: 1fr; } }
 
 /* ── ⑨ 참고서 카드 cards — 1px + 4px 먹선, 각진 모서리, 모서리 번호표, 호버 반전 ── */
-/* ⚠ **`auto-fit` 이다.** `auto-fill` 은 글이 없어도 칸을 만들어, 글 3편에 칸 4개가 서면
-   카드가 **좁아지면서 왼쪽으로 몰리고 오른쪽에 빈 칸 하나가 통째로 남는다**
-   (2026-09-18 실측: 본문 폭 1240 에서 오른쪽 295px · 1800 에서 870px). `auto-fit` 은
-   빈 칸을 접어 남은 글이 줄을 꽉 채운다. `min(100%, …)` 은 아주 좁은 칸에서 넘치지 않게. */
+/* `auto-fit` 입니다. `auto-fill` 은 글이 없어도 칸을 만들어, 글 3편에 칸 4개가 서면
+   카드가 좁아지면서 왼쪽으로 몰리고 오른쪽에 빈 칸 하나가 통째로 남습니다. `auto-fit` 은
+   빈 칸을 접어 남은 글이 줄을 꽉 채웁니다. `min(100%, …)` 은 아주 좁은 칸에서 넘치지 않게. */
 .bl.bl-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14.5rem), 1fr)); gap: 1.25rem; }
 .bl.bl-cards > li { display: flex; }
-/* ⚠ 가로 여백은 **카드가 아니라 글자가** 갖는다. 카드에 주고 사진을 음수 margin 으로
-   당겨 채우는 수법은 세로 flex 칸에서 **폭만 늘고 왼쪽 자리는 안 당겨져**, 사진이
-   통째로 15px 밀려 오른쪽 테두리를 넘었다(2026-09-18 사용자 지적 · 실측 +16/+14px).
-   여백을 글자 쪽으로 옮기면 사진은 손댈 것 없이 저절로 카드 폭을 쓴다. */
+/* 가로 여백은 카드가 아니라 글자가 갖습니다. 카드에 주고 사진을 음수 margin 으로
+   당겨 채우는 수법은 세로 flex 칸에서 폭만 늘고 왼쪽 자리는 안 당겨져, 사진이
+   통째로 15px 밀려 오른쪽 테두리를 넘었습니다.
+   여백을 글자 쪽으로 옮기면 사진은 손댈 것 없이 저절로 카드 폭을 씁니다. */
 .bl.bl-cards a { position: relative; display: flex; flex-direction: column; width: 100%;
   border: 1px solid var(--fg); border-top-width: 4px; padding: 0 0 .95rem;
   color: var(--fg); background: var(--bg);
@@ -303,7 +301,7 @@
 .bl.bl-cards .b-lede { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
   margin-top: .4rem; font-size: .84rem; line-height: 1.55; color: var(--fg-2); }
 .bl.bl-cards .b-date { margin-top: .7rem; color: var(--fg-3); }
-/* 반전 상태 — 섞은 색은 테마 대비 하한(4.5:1)에서 3:1 아래로 떨어진다. 종이색 그대로 쓴다 */
+/* 반전 상태 — 섞은 색은 테마 대비 하한(4.5:1)에서 3:1 아래로 떨어집니다. 종이색 그대로 씁니다 */
 .bl.bl-cards a:hover .b-lede, .bl.bl-cards a:hover .b-date { color: var(--bg); }
 .bl.bl-cards .b-date::after { content: '→'; content: '→' / ''; display: inline-block; width: 1.4em; text-align: right;
   opacity: 0; transform: translateX(-.3em); transition: opacity var(--t), transform var(--t); }
@@ -312,13 +310,17 @@
   .bl.bl-cards { grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: .9rem; }
 }
 
-/* ── ⑩ 외곽선 카드 outline — 글만. 별색 기운 얇은 테두리, 날짜 + 번호 칩, 읽는 시간 ── */
+/* ── ⑩ 카드 outline — 글만. accent 기운 얇은 테두리, 날짜 + 번호 칩, 읽는 시간 ── */
 .bl.bl-outline { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 1rem; }
 .bl.bl-outline > li { display: flex; }
-.bl.bl-outline a { --ol: color-mix(in srgb, var(--accent) 32%, var(--line));
+/* 선 색·배경·모서리는 폴백 자리에 둡니다 — 관리자에서 고른 값(`--bo-*`)이 이기고,
+   안 고르면 아래 기본이 그대로 삽니다. 테마도 제 기본을 폴백 자리에 넣습니다. */
+.bl.bl-outline a { --ol: var(--bo-ink, color-mix(in srgb, var(--accent) 32%, var(--line)));
   display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr auto;
   grid-template-areas: 'date no' 'body body' 'read read';
-  width: 100%; padding: 1.05rem 1.2rem 1rem; border: 1px solid var(--ol); border-radius: 12px;
+  width: 100%; padding: 1.05rem 1.2rem 1rem; border: 1px solid var(--ol);
+  background: var(--bo-bg, transparent); border-radius: var(--bo-radius, 12px);
+  position: relative;                        /* 결이 가상요소로 겹선·표식을 그립니다 */
   transition: border-color var(--t), box-shadow var(--t); }
 .bl.bl-outline a:hover { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .bl.bl-outline a:focus-visible { outline-offset: 2px; }
@@ -336,11 +338,236 @@
   border-top: 1px dashed var(--ol); }
 .bl.bl-outline .b-read::before { content: '읽는 데 '; }
 
-/* ── ⑪ 호수 issue — 「No.01」 윤곽선 숫자가 표지. 호버에 채워진다 ──────────────── */
+/* ══ 카드 갈래의 테마 ══════════════════════════════════════════
+   갈래 하나에만 붙습니다(어휘 `OUTLINE_SKINS`). 마크업은 그대로이고 클래스 한 장만 더
+   붙습니다 — 굽기의 `skinCls` 가 기본 테마일 때는 아무것도 안 답니다.
+
+   ## 규약 둘
+   ① 테마의 기본색은 **폴백 자리**에 둡니다(`var(--bo-ink, 이 테마의 색)`). 그래야 관리자에서
+      고른 색이 자동으로 이깁니다. 직접 칠하면 색 손잡이가 죽습니다.
+   ② 자바스크립트를 안 씁니다. 프롬프트 기호·톱니·모눈·모서리 표식은 전부 가상요소와
+      그라디언트입니다. 여기에 스크립트를 부르면 「공개 JS 0」이 깨집니다.
+
+   명시도는 `.bl.bl-outline.bo-x`(0,3,0)라 바탕 `.bl .b-item`(0,2,0)을 이깁니다. */
+
+/* ── 터미널 — 어두운 판, 고정폭, 프롬프트. 둥근 터미널은 없으므로 모서리는 각지게 ──
+   본문 글꼴은 `--mono` 가 아니라 `--sans` 를 봅니다. `--mono` 는 사이트 기본(JetBrains Mono)
+   이라 한글 글리프가 없어 대체 글꼴로 떨어집니다 — 고정폭이 깨집니다.
+   결이 「글꼴」 칸에 나눔고딕코딩을 넣으므로 `--sans` 가 곧 한글 고정폭입니다.
+   날짜·번호의 `--mono` 는 그대로 둡니다 — 숫자는 그쪽이 낫습니다. */
+.bl.bl-outline.bo-terminal a {
+  --ol: var(--bo-ink, #2f6f45);
+  background: var(--bo-bg, #0b0f0d); border-radius: var(--bo-radius, 0px);
+  font-family: var(--sans); padding: .95rem 1.1rem .9rem; }
+.bl.bl-outline.bo-terminal .b-title { font-family: var(--sans); font-weight: 700; color: #cfe8d6; letter-spacing: -.01em; }
+.bl.bl-outline.bo-terminal .b-title::before { content: '$ '; color: #4ec97a; }
+.bl.bl-outline.bo-terminal .b-lede { color: #7d9187; }
+.bl.bl-outline.bo-terminal .b-date, .bl.bl-outline.bo-terminal .b-read { color: #4d6356; }
+.bl.bl-outline.bo-terminal .b-read { border-top-color: var(--ol); }
+.bl.bl-outline.bo-terminal .b-no { border: 0; padding: 0; border-radius: 0; color: #4ec97a; }
+.bl.bl-outline.bo-terminal .b-no::before { content: '['; }
+.bl.bl-outline.bo-terminal .b-no::after { content: ']'; }
+.bl.bl-outline.bo-terminal a:hover { border-color: #4ec97a; box-shadow: inset 0 0 0 1px #4ec97a; }
+.bl.bl-outline.bo-terminal a:hover .b-no { background: none; color: #9ef7bd; }
+/**
+ * 커서 한 칸 — 올린 카드에서만 뜨고 깜빡입니다.
+ * 올린 것 하나만 깜빡이므로 목록 전체가 어지러워지지 않습니다.
+ * `steps(1)` 이라 서서히 흐려지지 않고 딱딱 끊깁니다 — 터미널 커서가 그렇습니다.
+ */
+@keyframes bo-term-blink { 0%, 49% { opacity: 1 } 50%, 99% { opacity: .12 } }
+.bl.bl-outline.bo-terminal a:hover .b-title::after {
+  content: '\2583'; margin-left: .35em; color: #4ec97a;
+  animation: bo-term-blink 1.06s steps(1) infinite; }
+
+/**
+ * 배경으로 내려오는 0과 1.
+ *
+ * 숫자 모양은 그라디언트로 못 만듭니다 — 글자를 깔고 `translateY` 로 흘립니다.
+ * 높이를 200% 로 두고 절반만큼 올린 자리에서 0 까지 내려오면 이음매가 안 보입니다.
+ *
+ * **대체 텍스트를 비웁니다**(`content: '…' / ''`). 안 비우면 화면읽기가 「영일영영…」을
+ * 그대로 읽습니다 — 장식이지 내용이 아닙니다.
+ *
+ * 글자는 비 **위**에 서야 합니다. 그래서 칸마다 `position: relative` 를 답니다 —
+ * 가상요소가 흐름 밖(absolute)이라 그것만으로 쌓임 순서가 갈립니다.
+ */
+@keyframes bo-term-rain { from { transform: translateY(-50%) } to { transform: translateY(0) } }
+.bl.bl-outline.bo-terminal a { overflow: hidden; }
+.bl.bl-outline.bo-terminal a::before {
+  content: '01001100 10110010 00101101 11010010 01101001 10010110 00110101 10101100 01011010 11001001 01101100 10010011 00110110 01101001 10110100 01001011 01001100 10110010 00101101 11010010 01101001 10010110 00110101 10101100 01011010 11001001 01101100 10010011 00110110 01101001 10110100 01001011 01001100 10110010 00101101 11010010 01101001 10010110 00110101 10101100 01011010 11001001 01101100 10010011 00110110 01101001 10110100 01001011 01001100 10110010 00101101 11010010 01101001 10010110 00110101 10101100 01011010 11001001 01101100 10010011 00110110 01101001 10110100 01001011 01001100 10110010 00101101 11010010 01101001 10010110 00110101 10101100 01011010 11001001 01101100 10010011 00110110 01101001 10110100 01001011 01001100 10110010 00101101 11010010 01101001 10010110 00110101 10101100 01011010 11001001 01101100 10010011 00110110 01101001 10110100 01001011 01001100 10110010 00101101 11010010 01101001 10010110 00110101 10101100 01011010 11001001 01101100 10010011 00110110 01101001 10110100 01001011 01001100 10110010 00101101 11010010 01101001 10010110 00110101 10101100 01011010 11001001 01101100 10010011 00110110 01101001 10110100 01001011' / '';
+  position: absolute; inset: 0 0 auto 0; height: 200%; pointer-events: none;
+  font-family: var(--mono); font-size: .62rem; line-height: 1.5; letter-spacing: .22em;
+  word-break: break-all; color: #4ec97a; opacity: .2;
+  animation: bo-term-rain 14s linear infinite; }
+.bl.bl-outline.bo-terminal .b-no,
+.bl.bl-outline.bo-terminal .b-body,
+.bl.bl-outline.bo-terminal .b-date,
+.bl.bl-outline.bo-terminal .b-read { position: relative; }
+
+/* 움직임을 줄여 달라는 기기에서는 비도 커서도 멈춥니다 */
+@media (prefers-reduced-motion: reduce) {
+  .bl.bl-outline.bo-terminal a::before,
+  .bl.bl-outline.bo-terminal a:hover .b-title::after,
+  .bl.bl-outline.bo-blueprint a { animation: none; }
+}
+
+/* ── 스케치 — 손으로 그린 네모는 한 번에 안 닫힙니다. 두 겹으로 겹쳐 긋습니다 ──
+   SVG 를 안 씁니다: border-radius 를 네 귀퉁이 다르게 주면 손맛이 나고,
+   그러면 선 색이 `--ol` 로 남아 색 손잡이가 그대로 먹습니다. */
+.bl.bl-outline.bo-sketch a {
+  --ol: var(--bo-ink, #2b2b2b);
+  background: var(--bo-bg, #fffdf6); border-width: 2px;
+  border-radius: var(--bo-radius, 255px 15px 225px 15px / 15px 225px 15px 255px);
+  font-family: 'Gaegu', var(--sans); }
+.bl.bl-outline.bo-sketch a::after {
+  content: ''; position: absolute; inset: -5px; pointer-events: none;
+  border: 2px solid var(--ol); opacity: .38;
+  border-radius: 15px 225px 15px 255px / 255px 15px 225px 15px; }
+.bl.bl-outline.bo-sketch .b-title { font-family: 'Gaegu', var(--sans); font-size: 1.35rem; font-weight: 700; }
+.bl.bl-outline.bo-sketch .b-lede { font-family: 'Gaegu', var(--sans); font-size: 1.05rem; line-height: 1.45; }
+.bl.bl-outline.bo-sketch .b-date, .bl.bl-outline.bo-sketch .b-read {
+  font-family: 'Gaegu', var(--sans); font-size: .95rem; letter-spacing: 0; }
+.bl.bl-outline.bo-sketch .b-no {
+  border-width: 2px; border-radius: 60% 40% 55% 45% / 45% 55% 40% 60%;
+  font-family: 'Gaegu', var(--sans); font-size: .9rem; }
+/* 손으로 놓은 종이는 반듯하지 않습니다. 올리면 제자리를 찾습니다 */
+.bl.bl-outline.bo-sketch > li:nth-child(3n+1) a { transform: rotate(-.5deg); }
+.bl.bl-outline.bo-sketch > li:nth-child(3n+2) a { transform: rotate(.35deg); }
+.bl.bl-outline.bo-sketch > li:nth-child(3n) a { transform: rotate(-.15deg); }
+/**
+ * 올리면 손이 다시 그립니다 — 두 겹 선의 굽이를 번갈아 바꿉니다.
+ *
+ * `border-color` 를 꼭 덮어야 합니다. 안 적으면 바탕의
+ * `.bl.bl-outline a:hover { border-color: var(--accent) }` 가 이겨서 **연필 선이 사이트
+ * 포인트색으로 바뀝니다** — 파란 연필은 없습니다(사용자 지적으로 드러난 결함).
+ *
+ * 올린 카드 **하나만** 움직입니다. 목록 전체가 흔들리면 제목을 못 읽습니다.
+ * `steps(1)` 은 중간값을 안 만듭니다 — 손그림은 부드럽게 변형되지 않고 한 번에 다시 그려집니다.
+ *
+ * 아는 한계: 관리자에서 모서리를 고른 글에서도 올린 동안에는 이 굽이가 이깁니다.
+ * `border-radius` 하나를 두 규칙이 다투기 때문입니다. 손으로 덧그리는 결이라 어색하지 않아
+ * 그대로 둡니다 — 거슬리면 겹선(::after)에만 애니메이션을 남기면 됩니다.
+ */
+@keyframes bo-sketch-redraw {
+  0% { border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px; }
+  25% { border-radius: 225px 20px 255px 12px / 20px 255px 12px 225px; }
+  50% { border-radius: 15px 225px 15px 255px / 255px 15px 225px 15px; }
+  75% { border-radius: 240px 14px 210px 18px / 14px 240px 18px 210px; }
+}
+.bl.bl-outline.bo-sketch a:hover {
+  border-color: var(--ol); box-shadow: none;
+  transform: rotate(0deg) translateY(-2px);
+  animation: bo-sketch-redraw .5s steps(1) infinite; }
+.bl.bl-outline.bo-sketch a:hover::after {
+  opacity: .6; animation: bo-sketch-redraw .5s steps(1) infinite reverse; }
+/* 움직임을 줄여 달라는 기기에서는 선만 또렷해집니다 */
+@media (prefers-reduced-motion: reduce) {
+  .bl.bl-outline.bo-sketch a:hover,
+  .bl.bl-outline.bo-sketch a:hover::after { animation: none; }
+}
+
+/* ── 청사진 — 모눈 위의 가는 흰 선. 모눈은 **배경 층**입니다 ──
+   가상요소로 덮으면 글자 위를 선이 가로지릅니다(시안에서 실제로 그랬습니다). */
+/**
+ * 모눈이 대각선으로 흘러갑니다 — 도면을 끌어 옮기는 느낌.
+ * 한 칸(22px)을 정확히 돌므로 이음매가 안 보입니다. 바탕색 층은 안 움직입니다.
+ */
+@keyframes bo-bp-pan { to { background-position: 22px 22px, 22px 22px, 0 0 } }
+.bl.bl-outline.bo-blueprint a {
+  --ol: var(--bo-ink, #7fb2e5); color: #dbe9f7; border-radius: var(--bo-radius, 0px);
+  background:
+    repeating-linear-gradient(0deg, #ffffff14 0 1px, #0000 1px 22px),
+    repeating-linear-gradient(90deg, #ffffff14 0 1px, #0000 1px 22px),
+    var(--bo-bg, #0e2a4a);
+  animation: bo-bp-pan 3s linear infinite; }
+/* 도면의 모서리 표식 — 두 귀퉁이에 짧은 십자 */
+.bl.bl-outline.bo-blueprint a::before, .bl.bl-outline.bo-blueprint a::after {
+  content: ''; position: absolute; width: 9px; height: 9px; pointer-events: none;
+  background:
+    linear-gradient(#ffffff5c, #ffffff5c) center / 100% 1px no-repeat,
+    linear-gradient(#ffffff5c, #ffffff5c) center / 1px 100% no-repeat; }
+.bl.bl-outline.bo-blueprint a::before { top: 6px; left: 6px; }
+.bl.bl-outline.bo-blueprint a::after { bottom: 6px; right: 6px; }
+.bl.bl-outline.bo-blueprint .b-title { color: #f2f8ff; font-weight: 500; letter-spacing: -.01em; }
+.bl.bl-outline.bo-blueprint .b-lede { color: #9dbcd8; }
+.bl.bl-outline.bo-blueprint .b-date { color: #7fb2e5; }
+.bl.bl-outline.bo-blueprint .b-read { color: #7fb2e5; border-top-style: solid; border-top-color: #ffffff2e; }
+.bl.bl-outline.bo-blueprint .b-no { border-radius: 0; color: #cfe4f8; }
+.bl.bl-outline.bo-blueprint a:hover { border-color: #ffffff; box-shadow: inset 0 0 0 1px #ffffff66; }
+
+/* ── 영수증 — 종이 한 장. 테두리 대신 위아래를 찢습니다 ──
+   처음 것에서 둘만 바꿨습니다(시안 A · 커터 자국): 미색 → 흰 종이, 반원 톱니 → 삼각 지그재그.
+   **시안에서 또렷했던 까닭은 그 페이지 바탕이 회색이었기 때문입니다.** 사이트 바탕이
+   흰색이면 흰 종이가 묻혀 찢긴 자국이 흐려집니다 — 바탕색은 관리자 「콘텐츠 배경색」이
+   정하므로, 이 갈래를 쓸 사이트가 밝은 바탕이면 배경색을 살짝 낮추는 편이 낫습니다. */
+/**
+ * 종이를 바탕에서 떼어 놓는 그림자. **`li` 에 겁니다 — `a` 에 걸면 안 보입니다.**
+ *
+ * `filter` 는 `mask` 보다 **먼저** 적용됩니다. 같은 요소에 둘 다 두면 그림자가 그려진 뒤
+ * 마스크가 그것까지 잘라 내 아무것도 안 남습니다. 마스크 없는 바깥 상자에서 그려야 합니다.
+ *
+ * 선(윤곽)이 아니라 그림자인 까닭: 윤곽선은 네 방향으로 밀어 그리는 것이라 좌우의 곧은
+ * 변과 위아래의 톱니가 서로 어긋나고 굵어 보입니다. 그림자는 오려낸 모양을 그대로 따라갑니다.
+ *
+ * 없으면 흰 종이가 흰 바탕에 묻혀 **종이가 아예 없는 것처럼** 보입니다.
+ */
+.bl.bl-outline.bo-receipt > li {
+  /* 번짐을 내림보다 작게 둡니다 — 그래야 그림자가 아래로만 깔리고 좌우로 안 퍼집니다 */
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .11)) drop-shadow(0 5px 4px rgba(0, 0, 0, .06)); }
+.bl.bl-outline.bo-receipt a {
+  --ol: var(--bo-ink, #8a8175);
+  background: var(--bo-bg, #ffffff); border: 0; border-radius: 0;
+  font-family: var(--sans); padding: 1.5rem 1.3rem 1.7rem;
+  /* 커터 자국 — 감열 프린터가 뜯는 삼각 지그재그(시안 A) */
+  -webkit-mask:
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 16px 8px repeat-x,
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / 16px 8px repeat-x,
+    linear-gradient(#000 0 0) center / 100% calc(100% - 16px) no-repeat;
+  mask:
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 16px 8px repeat-x,
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / 16px 8px repeat-x,
+    linear-gradient(#000 0 0) center / 100% calc(100% - 16px) no-repeat;
+}
+/* 인쇄 영역 — 영수증의 글자는 종이 끝까지 안 갑니다 */
+.bl.bl-outline.bo-receipt a::before {
+  content: ''; position: absolute; inset: 11px 12px; pointer-events: none;
+  border: 1px dashed var(--ol); opacity: .55; }
+.bl.bl-outline.bo-receipt .b-title { font-family: var(--sans); font-weight: 700; letter-spacing: -.02em; }
+.bl.bl-outline.bo-receipt .b-lede { font-family: var(--sans); font-size: .82rem; color: #6f675c; }
+.bl.bl-outline.bo-receipt .b-date, .bl.bl-outline.bo-receipt .b-read { color: #8a8175; }
+.bl.bl-outline.bo-receipt .b-read { border-top-style: dashed; }
+.bl.bl-outline.bo-receipt .b-no { border-radius: 0; border-style: dashed; color: #6f675c; }
+.bl.bl-outline.bo-receipt .b-no::before { content: 'No.'; opacity: .6; }
+.bl.bl-outline.bo-receipt a:hover { border-color: var(--fg); box-shadow: none; }
+
+/* ── 심플 포스트잇 — 노란 종이 한 장. 테두리도 톱니도 없습니다 ──
+   붙이는 종이는 뜯지 않습니다. 그림자 하나로만 종이를 세웁니다.
+   글은 왼쪽으로 모읍니다 — 메모를 가운데 정렬로 쓰지 않습니다. */
+.bl.bl-outline.bo-postit a {
+  --ol: var(--bo-ink, #e0d26a);
+  background: var(--bo-bg, #ffe97f); border: 0;
+  border-radius: var(--bo-radius, 0px);
+  padding: 1.35rem 1.25rem 1.3rem;
+  /* box-shadow 가 아니라 filter 입니다 — 모서리를 둥글게 골라도 그림자가 따라 휩니다 */
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .10)) drop-shadow(0 6px 10px rgba(0, 0, 0, .07));
+  transition: filter var(--t), transform var(--t); }
+.bl.bl-outline.bo-postit .b-title { font-weight: 700; font-size: 1.06rem; color: #3b3524; }
+.bl.bl-outline.bo-postit .b-lede { margin-top: .4rem; color: #6b6042; }
+.bl.bl-outline.bo-postit .b-read {
+  margin-top: 1rem; padding-top: .6rem; border-top: 1px solid var(--ol); color: #8b7f56; }
+/* 번호는 칩을 벗깁니다 — 종이 한 장에 테두리가 둘이면 어수선합니다 */
+.bl.bl-outline.bo-postit .b-no { border: 0; border-radius: 0; padding: 0; color: #8b7f56; }
+/* 올리면 종이가 조금 더 떠오릅니다 */
+.bl.bl-outline.bo-postit a:hover {
+  border-color: transparent; box-shadow: none;
+  transform: translateY(-3px);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .12)) drop-shadow(0 12px 18px rgba(0, 0, 0, .10)); }
+
+/* ── ⑪ 호수 issue — 「No.01」 윤곽선 숫자가 표지. 호버에 채워집니다 ──────────────── */
 .bl.bl-issue { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: 2.25rem 2rem; }
 .bl.bl-issue > li { display: flex; }
 .bl.bl-issue a { display: flex; flex-direction: column; width: 100%; border-top: 1px solid var(--fg); padding-top: .75rem; }
-.bl.bl-issue .b-no { font-family: var(--display);                /* 표제 글꼴(페이퍼로지 800)의 윤곽 — 구름체(Cloudsofa)는 장난감 같아 뺐다 */
+.bl.bl-issue .b-no { font-family: var(--display);                /* 표제 글꼴(페이퍼로지 800)의 윤곽 — 구름체(Cloudsofa)는 장난감 같아 제외했습니다 */
   font-weight: 400; font-size: clamp(3.4rem, 8vw, 5.4rem); line-height: .92; letter-spacing: -.02em;
   color: transparent; -webkit-text-stroke: 1.5px var(--fg); transition: color var(--t); }
 .bl.bl-issue .b-no::before { content: 'No.'; display: inline-block; margin: .55em .2em 0 0;
@@ -359,49 +586,14 @@
   .bl.bl-issue .b-no { font-size: 3rem; }
 }
 
-/* ── 움직임을 줄여 달라는 기기 — 전환·확대 전부 끈다(상태는 즉시 바뀐다) ─────────── */
+/* ── 움직임을 줄여 달라는 기기 — 전환·확대 전부 끕니다(상태는 즉시 바뀝니다) ─────────── */
 @media (prefers-reduced-motion: reduce) {
   .bl a, .bl a *, .bl a::before, .bl a::after, .bl .b-no::after, .bl .b-date::after { transition: none !important; }
   .bl a:hover img, .bl a:hover::after, .bl a:hover .b-no::after, .bl a:hover .b-date::after { transform: none !important; }
 }
 
-/* ── 상세는 목록과 **한 벌** ──────────────────────────────────────────
-   규칙은 전부 `.b-post.bp-x` 로 시작한다 — blog.css 의 `.b-post .post-head`(0,2,0)와 같은 명시도면
-   링크 순서로만 이겨 선 색이 뒤집힐 수 있다
-   제목의 인라인(글꼴·크기·정렬·색)은 절대 덮지 않는다 — 「보이는 대로 저장된다」가 갈래보다 먼저다.
-   만지는 것: 머리의 선·여백·날짜의 결·첫 문단·날짜의 자리(위/아래). 배너에 모서리를 주지 않는다. */
-
-/* 장부·참고서·호수 — 목록의 먹선이 머리에도 선다 */
-.b-post.bp-ledger .post-head { border-bottom: 2px solid var(--fg); }
-.b-post.bp-cards .post-head { border-bottom-color: var(--fg); }
-.b-post.bp-cards .post-head[data-banner='0'] { border-top: 4px solid var(--fg); padding-top: 1rem; }
-.b-post.bp-issue .post-head[data-banner='0'] { border-top: 1px solid var(--fg); padding-top: 1.2rem; border-bottom: 0; }
-
-/* 날짜가 제목 **위**에 서는 셋(사진 행·날짜 피드·에세이) — Craig Mod. DOM 은 그대로, order 만 */
-.b-post.bp-thumb .post-head, .b-post.bp-feed .post-head, .b-post.bp-stack .post-head { display: flex; flex-direction: column; }
-.b-post.bp-thumb .post-cover, .b-post.bp-feed .post-cover, .b-post.bp-stack .post-cover { order: 0; }
-.b-post.bp-thumb .b-when, .b-post.bp-feed .b-when, .b-post.bp-stack .b-when { order: 1; margin: 0 0 .35rem; }
-.b-post.bp-thumb .post-title, .b-post.bp-feed .post-title, .b-post.bp-stack .post-title { order: 2; }
-.b-post.bp-thumb .b-when { font-size: .72rem; letter-spacing: .08em; }
-.b-post.bp-feed .b-when { font-family: var(--sans); font-weight: 700; font-synthesis: none; font-size: .85rem; letter-spacing: 0; color: var(--fg-2); }
-.b-post.bp-stack .post-head { border-bottom: 0; }
-.b-post.bp-stack .b-when { font-family: var(--sans); letter-spacing: 0; }
-
-/* 큰 활자 셋 — 자간만 거들고, 첫 문단을 살짝 키운다(lead) */
-.b-post.bp-titles .post-title, .b-post.bp-magazine .post-title { letter-spacing: -.025em; }
-.b-post.bp-titles .b-when, .b-post.bp-runin .b-when { font-family: var(--display); font-size: .92rem; letter-spacing: 0; }
-.b-post.bp-titles .prose-body > p:first-child:not([data-pull-quote]),
-.b-post.bp-magazine .prose-body > p:first-child:not([data-pull-quote]),
-.b-post.bp-stack .prose-body > p:first-child:not([data-pull-quote]) { font-size: 1.1em; line-height: 1.72; }   /* 큰 인용은 편집기 크기 그대로 */
-
-/* 목차 — 머리 마감도 점선. 이어쓰기 — 선 없이 문단이 바로 잇는다 */
-.b-post.bp-lines .post-title { letter-spacing: -.02em; }
-.b-post.bp-lines .post-head { border-bottom: 0; padding-bottom: 1.6rem;
-  background-image: radial-gradient(circle, color-mix(in srgb, var(--fg) 45%, var(--bg)) 1px, transparent 1.5px);
-  background-size: 6px 6px; background-repeat: repeat-x; background-position: 0 100%; }
-.b-post.bp-runin .post-head { border-bottom: 0; padding-bottom: .6rem; }
-
-/* 외곽선 — 배너가 없을 때만 머리를 카드로 감싼다(배너는 화면 끝까지 흐르는 상자라 둥근 틀에 못 넣는다) */
-.b-post.bp-outline .post-head[data-banner='0'] { border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line));
-  border-radius: 12px; padding: 1.4rem 1.5rem 1.3rem; }
-.b-post.bp-outline .post-head[data-banner='1'] { border-bottom-color: color-mix(in srgb, var(--accent) 32%, var(--line)); }
+/* ── 상세(글 페이지)는 여기 없습니다 ──────────────────────────────
+   예전에는 `.b-post.bp-*` 로 갈래마다 제목 블록을 달리 그렸습니다. 고르는 화면은 목록인데
+   바뀌는 것은 글이라 왜 바뀌었는지 보이지 않았습니다 — 걷어 냈습니다.
+   글은 한 가지 모양입니다. 그 모양은 `public/assets/blog.css` 의 `.b-post` 가 갖습니다.
+   갈래별로 다시 나누고 싶어지면 목록 값을 끌어오지 말고 상세 제 손잡이를 만드세요. */

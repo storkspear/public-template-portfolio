@@ -1,17 +1,18 @@
 /**
- * 작업 폴더 — 디자이너가 완성된 그림을 올리는 자리. **편집기를 안 쓴다.**
+ * 작업 폴더 — 디자이너가 완성된 그림을 올리는 자리. 편집기를 안 씁니다.
  *
- * 글쓰기 화면과 일부러 다르게 생겼다. 그쪽은 「쓰는 자리」라 툴바와 본문이 주인공이지만
- * 여기는 「고르는 자리」라 **그림이 화면의 전부**여야 한다. 제목 한 줄과 격자뿐이다.
+ * 글쓰기 화면과 일부러 다르게 생겼습니다. 그쪽은 「쓰는 자리」라 툴바와 본문이 주인공이지만
+ * 여기는 「고르는 자리」라 그림이 화면의 전부여야 합니다. 제목 한 줄과 격자뿐입니다.
  *
- * 순서는 끌어서 바꾼다 — 공개면의 세로 스택이 정확히 이 차례로 나간다.
- * 대표(★)는 목록 카드와 공유 그림에 쓰인다.
+ * 순서는 끌어서 바꿉니다 — 공개면의 세로 스택이 정확히 이 차례로 나갑니다.
+ * 대표(★)는 목록 카드와 공유 그림에 쓰입니다.
  */
 import { useEffect, useRef, useState } from 'react'
 import { api } from './api.js'
 import { ACCEPT, uploadMood } from './mood.js'
 import { postUrl, workPath } from './urls.js'
 import { useHeadH, useSlow } from './wait.js'
+import { useToast } from './toast.js'
 
 const Star = ({ on }) => (
   <svg viewBox="0 0 24 24" width="15" height="15" fill={on ? 'currentColor' : 'none'}
@@ -31,14 +32,13 @@ export function WorkFolder({ slug: openSlug, onBack, onDirtyChange, leaving, liv
   const [no, setNo] = useState(null)
   const [pubAt, setPubAt] = useState(null)
   const [hidden, setHidden] = useState(false)
-  const [err, setErr] = useState('')
-  const [note, setNote] = useState('')
+  const { note, setNote, err, setErr, say, fail } = useToast()
   const [busy, setBusy] = useState('')
   const [upl, setUpl] = useState(null)
   const [loaded, setLoaded] = useState(!openSlug)
   const fileRef = useRef(null)
 
-  /* 저장 안 한 변경 — 글쓰기 화면과 같은 규약(`onDirtyChange`)이라 나가기 확인 띠가 그대로 듣는다 */
+  /* 저장 안 한 변경 — 글쓰기 화면과 같은 규약(`onDirtyChange`)이라 나가기 확인 띠가 그대로 듣습니다 */
   const baseRef = useRef(null)
   const dirtyRef = useRef(false)
   const sig = (t, im, cv) => JSON.stringify([t, im.map((x) => x.id), cv])
@@ -62,12 +62,12 @@ export function WorkFolder({ slug: openSlug, onBack, onDirtyChange, leaving, liv
         setPubAt(d.work.published_at)
         setHidden(!!d.work.hidden)
         /**
-         * ⚠ **`thumb` 의 모양이 두 곳에서 다르다.**
+         * `thumb` 의 모양이 두 곳에서 다릅니다.
          *   올릴 때(`uploadMood`)  파일 이름 — `abc.webp`
          *   되읽을 때(이 응답)      전체 경로 — `/blog/30/abc.webp`
-         * 서버에 저장할 때는 **파일 이름**이어야 한다(`okFileName` 이 거른다). 그래서 들어오는
-         * 자리에서 한 모양으로 맞춘다 — 안 맞추면 다시 연 작업이 그림을 잃고(경로가 두 번 겹쳐
-         * 붙는다), 다시 저장하면 작은 판이 통째로 날아간다(2026-09-18 사용자 지적).
+         * 서버에 저장할 때는 파일 이름이어야 합니다(`okFileName` 이 거릅니다). 그래서 들어오는
+         * 자리에서 한 모양으로 맞춥니다 — 안 맞추면 다시 연 작업이 그림을 잃고(경로가 두 번 겹쳐
+         * 붙습니다), 다시 저장하면 작은 판이 통째로 날아갑니다.
          */
         const list = d.images.map((a) => ({
           id: a.attachment_id, src: a.file_path,
@@ -82,19 +82,17 @@ export function WorkFolder({ slug: openSlug, onBack, onDirtyChange, leaving, liv
       .catch((e) => { setErr(e.message); setLoaded(true) })
   }, [openSlug])
 
-  /* 확인 띠가 붙을 자리와 기다림 표시 — 글 편집과 **같은 훅**을 쓴다(`wait.js`) */
+  /* 확인 배너가 붙을 자리와 로딩 표시. 글 편집과 같은 훅을 씁니다(wait.js) */
   const headRef = useRef(null)
   const headH = useHeadH(headRef)
   const slow = useSlow(!loaded)
 
-  const say = (t) => { setNote(t); setTimeout(() => setNote(''), 4000) }
-  const fail = (e) => { setErr(e.message || String(e)); setTimeout(() => setErr(''), 6000) }
 
   /**
-   * 번호를 먼저 받는다 — 사진은 `{번호}/` 폴더에 쌓이므로 올리기 전에 있어야 한다.
+   * 번호를 먼저 받습니다 — 사진은 `{번호}/` 폴더에 쌓이므로 올리기 전에 있어야 합니다.
    *
-   * **도는 약속에 붙는다.** 첫 배치가 번호를 받는 중에 또 끌어다 놓으면 둘 다 `no` 가
-   * 비어 있어 번호를 두 번 받고, 폴더가 둘로 갈려 먼저 올린 것이 저장에서 사라진다.
+   * 도는 약속에 붙습니다. 첫 배치가 번호를 받는 중에 또 끌어다 놓으면 둘 다 `no` 가
+   * 비어 있어 번호를 두 번 받고, 폴더가 둘로 갈려 먼저 올린 것이 저장에서 사라집니다.
    */
   const noRef = useRef(null)
   const ensureNo = () => {
@@ -108,11 +106,11 @@ export function WorkFolder({ slug: openSlug, onBack, onDirtyChange, leaving, liv
   }
 
   /**
-   * 고른 파일을 올린다.
+   * 고른 파일을 올립니다.
    *
-   * ⚠ **아무 말 없이 끝나지 않는다.** 폴더를 끌어다 놓거나 그림이 아닌 것만 고르면
-   *   목록이 0장이라 예전에는 성공도 실패도 안 말했다 — 누른 사람에게는 「눌렀는데 아무 일도
-   *   안 일어남」으로 보인다(2026-09-18 사용자 지적). 걸러진 자리마다 까닭을 댄다.
+   * 아무 말 없이 끝나지 않습니다. 폴더를 끌어다 놓거나 그림이 아닌 것만 고르면
+   *   목록이 0장이라 예전에는 성공도 실패도 안 말했습니다 — 누른 사람에게는 「눌렀는데 아무 일도
+   *   안 일어남」으로 보입니다. 걸러진 자리마다 까닭을 밝힙니다.
    */
   const pick = async (files) => {
     const all = [...(files || [])]
@@ -137,7 +135,7 @@ export function WorkFolder({ slug: openSlug, onBack, onDirtyChange, leaving, liv
     } catch (e) { fail(e) } finally { setBusy(''); setUpl(null) }
   }
 
-  /* 끌어서 순서 바꾸기. 라이브러리를 들이지 않는다 — 격자 한 겹에 쓰기엔 브라우저 것으로 충분하다 */
+  /* 끌어서 순서 바꾸기. 라이브러리를 들이지 않습니다 — 격자 한 겹에 쓰기엔 브라우저 것으로 충분합니다 */
   const dragFrom = useRef(null)
   const drop = (to) => {
     const from = dragFrom.current
@@ -152,15 +150,15 @@ export function WorkFolder({ slug: openSlug, onBack, onDirtyChange, leaving, liv
   }
 
   /**
-   * 저장 — **서버가 고친 결과를 받아 화면에 앉힌다.**
+   * 저장 — 서버가 고친 결과를 받아 화면에 반영합니다.
    *
-   * 이 문은 말없이 셋을 고친다: 없는 대표를 첫 장으로, 파일이 없는 작은 판을 `null` 로,
+   * 이 문은 말없이 셋을 고칩니다: 없는 대표를 첫 장으로, 파일이 없는 작은 판을 `null` 로,
    * 같은 그림을 한 장으로. 예전에는 보낸 값 그대로 「깨끗함」 도장을 찍어, 새로고침 전까지
-   * 화면과 DB 가 다른 상태로 갈렸다(2026-09-18 사용자 지적). 이제 응답으로 갈아 끼우고,
-   * **달라진 것이 있으면 말해 준다** — 조용히 고치면 다음에 또 같은 자리를 의심하게 된다.
+   * 화면과 DB 가 다른 상태로 달라졌습니다. 이제 응답으로 갈아 끼우고,
+   * 달라진 것이 있으면 말해 줍니다 — 조용히 고치면 다음에 또 같은 자리를 의심하게 됩니다.
    */
-  /* 작업엔 초안이 없다 — 저장은 곧 발행이다. 예전엔 `publish` 를 인자로 받아 본문에도
-     실었는데 서버가 그걸 안 읽어, 초안 단추를 되살리는 날 조용히 발행될 자리였다 */
+  /* 작업엔 초안이 없습니다 — 저장은 곧 발행입니다. 예전엔 `publish` 를 인자로 받아 본문에도
+     실었는데 서버가 그걸 안 읽어, 초안 단추를 되살리는 날 조용히 발행될 자리였습니다 */
   const save = async () => {
     setErr(''); setBusy('publish')
     try {
@@ -174,10 +172,10 @@ export function WorkFolder({ slug: openSlug, onBack, onDirtyChange, leaving, liv
       const n = d.work.no
       setNo(n)
       setPubAt(d.work.published_at)
-      /* 새 작업은 주소가 아직 `/works/new` 다 — 갈아 끼우지 않으면 새로고침에 빈 작업이 뜬다 */
+      /* 새 작업은 주소가 아직 `/works/new` 다 — 갈아 끼우지 않으면 새로고침에 빈 작업이 뜹니다 */
       if (!openSlug) history.replaceState(null, '', workPath(n))
 
-      /* 서버가 돌려준 목록이 정본이다. 경로는 화면이 짓는다(서버는 파일 이름만 다룬다) */
+      /* 서버가 돌려준 목록이 정본입니다. 경로는 화면이 짓는다(서버는 파일 이름만 다룹니다) */
       const back = Array.isArray(d.images)
         ? d.images.map((im) => ({ ...im, src: `/blog/${n}/${im.id}` }))
         : sent
@@ -187,7 +185,7 @@ export function WorkFolder({ slug: openSlug, onBack, onDirtyChange, leaving, liv
       rebase(t, back, cv)
 
       if (d?.bakeError) throw new Error('저장은 됐지만 화면을 굽지 못했습니다: ' + d.bakeError)
-      /* 고쳐진 자리를 한 줄로 — 여러 개면 제일 눈에 띄는 것 하나만 말한다 */
+      /* 고쳐진 자리를 한 줄로 — 여러 개면 제일 눈에 띄는 것 하나만 말합니다 */
       const dropped = sent.length - back.length
       const lostThumb = back.some((im, i) => sent[i] && sent[i].thumb && !im.thumb)
       say(dropped > 0 ? `발행했습니다 — 같은 그림 ${dropped}장은 한 장으로 합쳤습니다`
@@ -208,10 +206,10 @@ export function WorkFolder({ slug: openSlug, onBack, onDirtyChange, leaving, liv
     } catch (e) { fail(e) } finally { setBusy('') }
   }
 
-  /* 공개 주소는 `site.config.mjs` 의 origin 에서 온다 — 관리자 주소에서 유추하지 않는다.
-     관리자와 공개면이 포트로 갈릴 수도, 도메인으로 갈릴 수도 있어서다.
-     ⚠ 포트폴리오가 「직접 디자인」이면 굽기가 작업 페이지를 **아예 안 만든다**(bake 의 wantWorks).
-        그때 링크를 걸면 404 로 보낸다 — 링크 대신 까닭을 적는다(2026-09-18 사용자 지적) */
+  /* 공개 주소는 site.config.mjs 의 origin 에서 옵니다. 관리자 주소에서 유추하지 않습니다.
+     관리자와 공개면이 포트로 갈릴 수도, 도메인으로 갈릴 수도 있기 때문입니다.
+     포트폴리오가 code 모드면 생성기가 작업 페이지를 만들지 않습니다(bake 의 wantWorks).
+     그때 링크를 걸면 404 로 보내므로, 링크 대신 까닭을 표시합니다 */
   const url = no && live ? postUrl(no, 'work') : null
 
   return (
@@ -235,7 +233,7 @@ export function WorkFolder({ slug: openSlug, onBack, onDirtyChange, leaving, liv
                         strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg>
                  </a>
                )}
-               {/* 안 나가는 동안에는 「발행됨」이 거짓말이다 — 목록 화면과 같은 말을 여기서도 한다 */}
+               {/* 안 나가는 동안에는 「발행됨」은 사실과 다릅니다 — 목록 화면과 같은 말을 여기서도 합니다 */}
                {!hidden && !live && <span className="wfOff">포트폴리오가 직접 디자인이라 사이트에는 아직 안 나갑니다</span>}
              </>)}
         </span>
@@ -261,22 +259,22 @@ export function WorkFolder({ slug: openSlug, onBack, onDirtyChange, leaving, liv
       )}
 
       {/* 기존 작업을 열 때 본문을 바로 그리면 「아직 없음 / 끌어다 놓으세요」 빈 상태가
-          한 번 번쩍인 뒤 사진이 들어온다 — 글쓰기 화면과 같은 뼈대로 그 자리를 채운다.
-          ⚠ 여기는 `.adm` **밖**이라 `.adm` 을 전제한 규칙은 안 걸린다. 제 클래스로만 건다 */}
+          한 번 번쩍인 뒤 사진이 들어옵니다 — 글쓰기 화면과 같은 뼈대로 그 자리를 채웁니다.
+          여기는 `.adm` 밖이라 `.adm` 을 전제한 규칙은 안 걸립니다. 제 클래스로만 겁니다 */}
       {!loaded ? (slow && (
         <div className="wfMain wfWait" aria-hidden="true">
           <span className="skb skb-h" />
           <span className="skb skb-p" />
-          {/* 격자는 **진짜 `.wfGrid`** 를 쓴다 — 뼈대와 실물의 열 수가 같아야 자리가 안 튄다 */}
+          {/* 격자는 진짜 `.wfGrid` 를 씁니다 — 뼈대와 실물의 열 수가 같아야 자리가 안 튑니다 */}
           <ul className="wfGrid">
             {[0, 1, 2, 3, 4, 5].map((i) => <li key={i} className="sk"><span className="skb" /></li>)}
           </ul>
         </div>
       )) : (
-      /* ⚠ 끌어다 놓기는 **화면 전체**가 받는다. 예전에는 빈 자리(`.wfDrop`)에만 달려 있어,
-         사진이 한 장이라도 있으면 끌어다 놓아도 아무 일이 안 일어났다 — 격자 위에 떨어뜨리면
-         그건 「순서 바꾸기」로 읽히고 파일은 버려졌다(2026-09-18 하네스가 잡음).
-         파일이 실린 끌기만 여기서 받고, 파일이 없는 끌기(타일 순서)는 그대로 지나가게 둔다 */
+      /* 끌어다 놓기는 화면 전체가 받습니다. 예전에는 빈 자리(`.wfDrop`)에만 달려 있어,
+         사진이 한 장이라도 있으면 끌어다 놓아도 아무 일이 안 일어났습니다 — 격자 위에 떨어뜨리면
+         그러면 「순서 바꾸기」로 읽혀 파일이 버려집니다.
+         파일이 실린 끌기만 여기서 받고, 파일이 없는 끌기(타일 순서)는 그대로 지나가게 둡니다 */
       <main className="wfMain"
             onDragOver={(e) => { if ([...e.dataTransfer.types].includes('Files')) e.preventDefault() }}
             onDrop={(e) => {
@@ -288,43 +286,42 @@ export function WorkFolder({ slug: openSlug, onBack, onDirtyChange, leaving, liv
         <input className="wfTitle" type="text" value={title} placeholder="작업 이름"
                onChange={(e) => setTitle(e.target.value)} />
 
-        {/* 머리줄은 **할 수 있는 일만** 말한다. 빈 화면에서 「끌어서 순서를 바꿉니다 ·
+        {/* 헤더는 할 수 있는 일만 말합니다. 빈 화면에서 「끌어서 순서를 바꿉니다 ·
              ★ 는 대표입니다」를 띄우면 아직 끌 것도 고를 대표도 없는 사람에게 설명서를
-             읽히는 꼴이다(2026-09-18 사용자 지적). 게다가 대표는 이미 화면이 말한다 —
-             검은 테두리와 「대표」 딱지. 남은 건 한 가지, 두 장부터 뜻이 생기는 순서다 */}
+             읽히는 꼴입니다. 게다가 대표는 이미 화면이 말합니다 —
+             검은 테두리와 「대표」 딱지. 남은 건 한 가지, 두 장부터 뜻이 생기는 순서입니다 */}
         <div className="wfBar">
           <span className="wfSum">
             {images.length > 0 && (
               <>
-                {/* 개수는 늘 모노다 — 목록 카드의 곁말(`.fo-sub`)과 같은 글자 */}
+                {/* 개수는 늘 모노입니다 — 목록 카드의 곁말(`.fo-sub`)과 같은 글자 */}
                 <span className="wfCnt">{images.length}장</span>
                 {images.length > 1 && <span className="wfHint">끌어서 순서를 바꿉니다</span>}
               </>
             )}
           </span>
-          {/* ⚠ 이 화면은 `.adm` **밖**이라(`main.jsx` 의 분기) `.adm button.primary` 가 안 걸려
-               예전에는 운영체제 기본 단추가 떴다. 값을 여기 베끼는 대신 그 규칙의 **선택자에
-               `.wf` 를 덧붙였다**(styles.css) — 베끼면 언젠가 두 단추가 갈라진다 */}
+          {/* 이 화면은 `.adm` 밖이라(`main.jsx` 의 분기) `.adm button.primary` 가 안 걸려
+               예전에는 운영체제 기본 단추가 떴습니다. 값을 여기 베끼는 대신 그 규칙의 선택자에
+               `.wf` 를 덧붙였습니다(styles.css) — 베끼면 언젠가 두 단추가 갈라집니다 */}
           <button type="button" className="primary" disabled={busy === 'upload'}
                   onClick={() => fileRef.current?.click()}>
             {busy === 'upload' ? '올리는 중' : '이미지 올리기'}
           </button>
           <input ref={fileRef} type="file" multiple accept={ACCEPT} hidden
-                 /* ⚠ **목록을 먼저 베껴 둔다.** `e.target.files` 는 칸을 따라다니는 살아 있는
-                      목록이라, 아래에서 칸을 비우면 **그 목록도 비워진다** — `pick` 은 글 번호를
-                      받아 오느라 한 박자 기다리므로, 그 사이에 0장이 되어 아무 일도 안 일어났다
-                      (2026-09-18 사용자 지적: 작업 올리기가 안 먹던 것).
-                      비우는 까닭은 같은 파일을 다시 골라도 `change` 가 나게 하려는 것이다 */
+                 /* 목록을 먼저 베껴 둡니다. `e.target.files` 는 칸을 따라다니는 살아 있는
+                      목록이라, 아래에서 칸을 비우면 그 목록도 비워집니다 — `pick` 은 글 번호를
+                      받아 오느라 한 박자 기다리므로, 그 사이에 0장이 되어 아무 일도 안 일어났습니다.
+                      비우는 까닭은 같은 파일을 다시 골라도 `change` 가 나게 하려는 것입니다 */
                  onChange={(e) => { const files = [...e.target.files]; e.target.value = ''; pick(files) }} />
         </div>
 
         {images.length === 0 ? (
-          /* 빈 격자를 그리지 않는다 — 무엇을 해야 하는지 한 줄로 말한다 */
+          /* 빈 격자를 그리지 않습니다 — 무엇을 해야 하는지 한 줄로 말합니다 */
           <button type="button" className="wfDrop" onClick={() => fileRef.current?.click()}
                   onDragOver={(e) => e.preventDefault()}
-                  /* ⚠ 파일 칸과 **같은 함정**이다(위 `input` 머리말) — `dataTransfer` 는 이 행사가
-                       끝나면 비워지고, `pick` 은 글 번호를 기다리느라 그 뒤에 목록을 읽는다.
-                       베껴 두지 않으면 끌어다 놓기가 조용히 0장이 된다 */
+                  /* 파일 칸과 같은 함정입니다(위 `input` 주석) — `dataTransfer` 는 이 행사가
+                       끝나면 비워지고, `pick` 은 글 번호를 기다리느라 그 뒤에 목록을 읽습니다.
+                       베껴 두지 않으면 끌어다 놓기가 조용히 0장이 됩니다 */
                   onDrop={(e) => { e.preventDefault(); pick([...e.dataTransfer.files]) }}>
             완성된 이미지를 끌어다 놓거나 눌러서 고르세요
           </button>
@@ -334,19 +331,19 @@ export function WorkFolder({ slug: openSlug, onBack, onDirtyChange, leaving, liv
               <li key={im.id} draggable
                   onDragStart={() => { dragFrom.current = i }}
                   onDragOver={(e) => e.preventDefault()}
-                  /* 파일이 실려 왔으면 순서 바꾸기가 아니다 — 위(`wfMain`)가 받게 지나보낸다 */
+                  /* 파일이 실려 왔으면 순서 바꾸기가 아닙니다 — 위(`wfMain`)가 받게 지나보냅니다 */
                   onDrop={(e) => { if (e.dataTransfer.files.length) return; e.preventDefault(); drop(i) }}
                   data-cover={im.id === cover ? '' : undefined}>
-                {/* ⚠ `thumb` 는 **경로가 아니라 파일 이름**이다(서버가 그 모양으로 받고 돌려준다).
-                     그대로 `src` 에 넣으면 지금 주소 옆을 가리켜 **그림이 안 뜬다** — 큰 사진일수록
-                     작은 판이 따로 생기므로 큰 것만 골라 안 보였다(2026-09-18 사용자 지적).
-                     원본 경로의 마지막 칸만 갈아 끼운다(홈디자인의 같은 자리와 같은 셈) */}
-                {/* 치수를 적어 둔다 — 그림이 들어오기 전에도 칸 높이가 잡혀 격자가 안 밀린다
+                {/* `thumb` 는 경로가 아니라 파일 이름입니다(서버가 그 모양으로 받고 돌려줍니다).
+                     그대로 `src` 에 넣으면 지금 주소 옆을 가리켜 그림이 안 뜹니다 — 큰 사진일수록
+                     작은 판이 따로 생기므로 큰 것만 골라 안 보였습니다.
+                     원본 경로의 마지막 칸만 갈아 끼웁니다(홈디자인의 같은 자리와 같은 셈) */}
+                {/* 치수를 적어 둡니다 — 그림이 들어오기 전에도 칸 높이가 잡혀 격자가 안 밀립니다
                      (공개면 `workImage` 와 같은 까닭) */}
                 <img src={im.thumb ? im.src.replace(/[^/]+$/, im.thumb) : im.src} alt=""
                      width={im.w || undefined} height={im.h || undefined} loading="lazy" />
-                {/* 차례와 대표를 **한 자리에서** 읽는다. 대표를 글로 설명하는 대신
-                     딱지로 붙인다 — 손가락으로 쓰면 별에 마우스를 올릴 수가 없다 */}
+                {/* 차례와 대표를 한 자리에서 읽습니다. 대표를 글로 설명하는 대신
+                     딱지로 붙입니다 — 손가락으로 쓰면 별에 마우스를 올릴 수가 없습니다 */}
                 <span className="wfMark">
                   <span className="wfNo">{i + 1}</span>
                   {im.id === cover && <span className="wfTag">대표</span>}

@@ -1,23 +1,24 @@
 #!/usr/bin/env node
 /**
- * 메뉴 아이콘 도형을 `shared/menu-icons.mjs` 로 굽는다.
+ * 메뉴 아이콘 도형을 `shared/menu-icons.mjs` 로 생성합니다.
  *
- * 푸터의 `sync-icons.mjs` 와 **같은 규약, 다른 세트**다. 왜 갈랐는가:
+ * 푸터의 `sync-icons.mjs` 와 규약은 같고 세트만 다릅니다. 나눈 이유는 다음과 같습니다.
  *
- *   푸터 아이콘 = 서비스 **브랜드 로고**(GitHub·인스타그램…). 각 회사의 상표라
- *                그 서비스로 가는 링크에만, 모양 그대로 쓴다.
- *   메뉴 아이콘 = **UI 픽토그램**(집·봉투·별…). 상표가 아니라 뜻을 가리키는 그림이고,
- *                어느 링크에 걸어도 된다.
+ *   푸터 아이콘 = 서비스 브랜드 로고(GitHub·인스타그램…). 각 회사의 상표라
+ *                그 서비스로 가는 링크에만, 모양 그대로 씁니다.
+ *   메뉴 아이콘 = UI 픽토그램(집·봉투·별…). 상표가 아니라 뜻을 가리키는 그림이라
+ *                어느 링크에 걸어도 됩니다.
  *
- * 둘은 그리는 법도 다르다. 브랜드 로고는 **채움 도형 하나**(`fill`)이고, Lucide 는
- * **선 그림**(`stroke`, 여러 요소)이다. 그래서 데이터가 `path` 한 줄이 아니라 `body` 다.
+ * 그리는 방식도 다릅니다. 브랜드 로고는 채움 도형 하나(`fill`)이고, Lucide 는
+ * 선 그림(`stroke`)이라 요소가 여럿입니다. 그래서 데이터가 `path` 한 줄이 아니라 `body` 입니다.
  *
- * 왜 npm 인가: 이 레포의 규약이다(`tools/sync-vendor.mjs` 머리말). 손으로 내려받은 그림은
- * 출처를 적을 수 없다. `lucide-static` 은 ISC 로 배포된다 — 상표 제약이 없다.
+ * npm 으로 받는 이유는 이 레포의 규약입니다(`tools/sync-vendor.mjs` 주석). 손으로 내려받은
+ * 그림은 출처를 적을 수 없습니다. `lucide-static` 은 ISC 라이선스로 배포돼 상표 제약이 없습니다.
  *
  *   npm i -D lucide-static && node tools/sync-menu-icons.mjs
  */
 import { readFile, writeFile } from 'node:fs/promises'
+import { bodyOf } from './lucide.mjs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -26,11 +27,11 @@ const DIR = join(ROOT, 'node_modules/lucide-static/icons')
 const pkg = JSON.parse(await readFile(join(ROOT, 'node_modules/lucide-static/package.json'), 'utf8'))
 
 /**
- * 메뉴 한 줄에 걸 만한 것 — **포트폴리오·블로그가 실제로 쓰는 말**부터.
- * 라벨은 관리자 고르개에 그대로 나간다. 뜻이 겹치는 것은 안 넣는다(고르는 사람이 헷갈린다).
+ * 메뉴 한 줄에 걸 만한 것 — 포트폴리오·블로그가 실제로 쓰는 말부터 담습니다.
+ * 라벨은 관리자 피커에 그대로 나갑니다. 뜻이 겹치는 것은 넣지 않습니다(고르는 사람이 헷갈립니다).
  *
- * 갈래(`group`)는 고르개를 나누는 데만 쓴다 — 어느 갈래의 아이콘이든 어느 링크에나 걸 수 있다.
- * 서른여덟을 한 줄로 늘어놓으면 못 찾는다.
+ * `group` 은 피커를 나누는 데만 씁니다 — 어느 그룹의 아이콘이든 어느 링크에나 걸 수 있습니다.
+ * 서른여덟 개를 한 줄로 늘어놓으면 찾지 못합니다.
  */
 const WANT = [
   /* ── 기본 — 어느 사이트에나 있는 자리 ─────────────────────────── */
@@ -98,50 +99,8 @@ const WANT = [
   ['partner', 'handshake', '협업', '이력'],
 ]
 
-/**
- * 들어와도 되는 것만 통과시킨다 — 도형 요소 일곱과 그 치수 속성뿐이다.
- * **이것이 이 도구의 안전장치다.** 남의 파일에서 읽은 글자를 그대로 HTML 에 박으므로,
- * `<script>` 든 `onload=` 든 하나라도 새면 굽기가 주입 통로가 된다.
- */
-const TAGS = new Set(['path', 'circle', 'rect', 'line', 'polyline', 'polygon', 'ellipse'])
-const ATTRS = new Set(['d', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'y', 'x1', 'y1', 'x2', 'y2',
-                       'width', 'height', 'points'])
-/* 값에 들어와도 되는 글자 — path 명령과 숫자다. 따옴표·괄호·글자는 못 들어온다 */
-const SAFE = /^[MmZzLlHhVvCcSsQqTtAa0-9 .,eE+-]+$/
-/* `fill` 만 예외다 — 속이 찬 점(`tag` 의 구멍)에 쓴다. **값을 둘로 못 박는다**:
-   글자를 열어 주면 `url(#…)` 같은 것이 들어와 도형이 아닌 것을 가리킬 수 있다 */
-const FILLS = new Set(['none', 'currentColor'])
-
-/** SVG 파일에서 **도형만** 꺼낸다. `<svg>` 껍데기(색·굵기)는 굽기가 제 것으로 다시 씌운다 */
-const bodyOf = (svg, name) => {
-  const inner = svg.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>[\s\S]*$/, '')
-  const out = []
-  for (const m of inner.matchAll(/<([a-z]+)\b([^>]*?)\/?>/g)) {
-    const [, tag, rest] = m
-    if (!TAGS.has(tag)) throw new Error(`${name}: 도형이 아닌 요소 <${tag}> 가 있습니다`)
-    const attrs = []
-    /* ⚠ 이름에 **숫자가 들어간다**(`x1`·`y2`). 빼먹으면 `<line>` 의 치수를 통째로 못 읽는다.
-       그리고 안 읽힌 것은 **조용히 버려지지 않아야 한다** — 일부만 버려지면 모양이 틀린 채
-       통과한다. 그래서 아래에서 「속성처럼 생긴 것」의 수와 읽은 수를 맞춰 본다 */
-    for (const a of rest.matchAll(/([a-zA-Z][\w-]*)="([^"]*)"/g)) {
-      const [, key, val] = a
-      if (key === 'fill') {
-        if (!FILLS.has(val)) throw new Error(`${name}: fill 값이 ${val} 입니다 — none·currentColor 만 됩니다`)
-        attrs.push(`fill="${val}"`)
-        continue
-      }
-      if (!ATTRS.has(key)) throw new Error(`${name}: 허락하지 않은 속성 ${key}`)
-      if (!SAFE.test(val)) throw new Error(`${name}: ${key} 에 도형이 아닌 글자가 있습니다`)
-      attrs.push(`${key}="${val}"`)
-    }
-    const seen = (rest.match(/[^\s=]+\s*=\s*"/g) || []).length
-    if (seen !== attrs.length) throw new Error(`${name}: <${tag}> 의 속성 ${seen}개 중 ${attrs.length}개만 읽혔습니다`)
-    if (!attrs.length) throw new Error(`${name}: <${tag}> 에 치수가 없습니다`)
-    out.push(`<${tag} ${attrs.join(' ')}/>`)
-  }
-  if (!out.length) throw new Error(`${name}: 도형이 하나도 없습니다`)
-  return out.join('')
-}
+/* 도형만 꺼내는 검사(`bodyOf`)는 파비콘 도구와 **같은 한 벌**을 씁니다 — tools/lucide.mjs.
+   보안 검사라 복사해 두면 한쪽만 고쳐지는 날이 오고, 그날 뚫리는 쪽은 아무도 안 보는 쪽입니다 */
 
 const rows = []
 for (const [value, file, label, group] of WANT) {
@@ -153,27 +112,27 @@ for (const [value, file, label, group] of WANT) {
 
 const out = `/* 자동 생성 — tools/sync-menu-icons.mjs. 손으로 고치지 마세요.
    출처: lucide-static@${pkg.version} (ISC). 상표가 아니라 UI 픽토그램이라 쓰는 자리에 제약이 없습니다.
-   푸터의 서비스 로고(\`site-icons.mjs\`)와는 **다른 세트**입니다 — CREDITS.md 의 「메뉴 아이콘」. */
+   푸터의 서비스 로고(site-icons.mjs)와는 다른 세트입니다. CREDITS.md 의 「메뉴 아이콘」 항목 참고. */
 
 /**
- * 메뉴 한 줄에 거는 아이콘 — **굽기와 관리자가 같은 데이터로 그린다.**
+ * 메뉴에 거는 아이콘. 생성기와 관리자가 같은 데이터로 렌더링합니다.
  *
- * \`body\` 는 24×24 격자의 **선 그림**이다(채움이 아니다). 굽기가 껍데기를 씌운다:
+ * body 는 24×24 좌표계의 선 그림입니다(채움이 아닙니다). 생성기가 색·선 굵기를 씌웁니다.
  *
  *   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
  *        stroke-linecap="round" stroke-linejoin="round">{body}</svg>
  *
- * 색이 \`currentColor\` 라 메뉴 글자색·오버가 그대로 먹는다(그림 파일이면 안 먹는다).
- * 굵기를 2 로 고정하는 것은 Lucide 의 기본값이다 — 글자 크기를 키워도 선은 안 두꺼워진다.
+ * 색이 \`currentColor\` 라 메뉴 글자색·호버 색이 그대로 적용됩니다(이미지 파일이면 안 됩니다).
+ * 굵기 2 는 Lucide 의 기본값입니다 — 글자 크기를 키워도 선은 두꺼워지지 않습니다.
  */
 export const MENU_ICONS = [
 ${rows.map((r) => `  { value: '${r.value}', label: '${r.label}', group: '${r.group}',\n    body: '${r.body}' },`).join('\n')}
 ]
 
-/** 값 → 도형. 굽기·관리자가 같이 쓴다. 없는 값이면 \`undefined\` — 부르는 쪽이 안 그린다 */
+/** 값 → 도형. 생성기와 관리자가 같이 씁니다. 없는 값이면 \`undefined\` 이고 호출부가 렌더링을 건너뜁니다 */
 export const MENU_ICON_OF = Object.fromEntries(MENU_ICONS.map((i) => [i.value, i.body]))
 
-/** 고르개가 쓰는 갈래 차례 — 데이터에 나온 순서 그대로다(가나다순이 아니다) */
+/** 피커가 쓰는 그룹 순서 — 데이터에 나온 순서 그대로입니다(가나다순이 아닙니다) */
 export const MENU_ICON_GROUPS = [...new Set(MENU_ICONS.map((i) => i.group))]
 `
 

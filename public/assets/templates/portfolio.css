@@ -1,28 +1,28 @@
 /**
- * 포트폴리오 목록 템플릿 다섯 — **마크업은 하나, 수치만 다르다.**
+ * 포트폴리오 목록 템플릿 다섯 — 마크업은 하나, 수치만 다릅니다.
  *
- * 넷은 실제 디자이너 사이트에서 잰 값이다(2026-09-16). 차이는 네 가지뿐이다:
+ * 넷은 실제 디자이너 사이트에서 잰 값입니다. 차이는 네 가지뿐입니다:
  * 단 수 · 비율을 자르는가 · 모서리 · 간격. 그래서 템플릿을 고른 뒤에도 관리자의
- * 손잡이(`--pf-*`)가 그대로 듣는다 — 고른 값이 손잡이의 출발점이 될 뿐이다.
- * 다섯째 「수직 이미지」는 한 단으로 길게 잇는 것이라 같은 네 수치로 표현된다.
+ * knob(`--pf-*`)가 그대로 듣습니다 — 고른 값이 knob 의 출발점이 될 뿐입니다.
+ * 다섯째 「수직 이미지」는 한 단으로 길게 잇는 것이라 같은 네 수치로 표현됩니다.
  *
  * 값은 굽기가 `<style data-knobs>` 로 내고(`bake.mjs` 의 `knobStyle`), 여기서는
- * **그 변수를 어떻게 쓰는지**만 정한다. 그래야 관리자가 값만 갈아 끼워 즉시 보여 줄 수 있다.
+ * 그 변수를 어떻게 쓰는지만 정합니다. 그래야 관리자가 값만 갈아 끼워 즉시 보여 줄 수 있습니다.
  */
 
-/* 목록 머리(「작업 / 9편」)는 여기 없다 — `templates/header.css` 의 `.lh` 가 갖는다.
-   블로그의 「글 / 5편」과 같은 부품이다. 격자와 폭을 맞추는 일도 그쪽이 `--pf-max`·`--pf-pad`
-   를 보고 한다 — 변수는 여기서 내므로 둘은 늘 함께 움직인다. */
+/* 목록 머리(「작업 / 9편」)는 여기 없습니다 — `templates/header.css` 의 `.lh` 가 갖습니다.
+   블로그의 「글 / 5편」과 같은 부품입니다. 격자와 폭을 맞추는 일도 그쪽이 `--pf-max`·`--pf-pad`
+   를 보고 합니다 — 변수는 여기서 내므로 둘은 늘 함께 움직입니다. */
 .lh + .pf { padding-top: clamp(1.25rem, 3vh, 2rem); }
-/* 제목을 숨기면 공통헤더 바로 밑부터 — 띄우는 값은 header.css 의 --lh-gap(상단 여백)이 정한다 */
+/* 제목을 숨기면 공통헤더 바로 밑부터 — 띄우는 값은 header.css 의 --lh-gap(상단 여백)이 정합니다 */
 main > .pf:first-child { padding-top: var(--lh-gap, 0px); }
 
 .pf {
   list-style: none;
   margin: 0 auto;
   padding: 0 var(--pf-pad, 24px) clamp(3rem, 8vh, 5rem);
-  /* 0 으로 두면 `none` 이 들어와 화면 끝까지 간다 — 인스타그램처럼 벽을 만들 때 */
-  /* 폴백은 **사이트 본문 폭** — 옛 1800px 은 베한스 한 벌의 값이었다(굽기가 늘 --pf-max 를 낸다) */
+  /* 0 으로 두면 `none` 이 들어와 화면 끝까지 갑니다 — 인스타그램처럼 벽을 만들 때 */
+  /* 폴백은 사이트 본문 폭 — 옛 1800px 은 베한스 한 벌의 값이었습니다(굽기가 늘 --pf-max 를 냅니다) */
   max-width: var(--pf-max, var(--body-w, 1240px));
 }
 .pf .w-card { display: block; text-decoration: none; }
@@ -34,7 +34,7 @@ main > .pf:first-child { padding-top: var(--lh-gap, 0px); }
 .pf .w-title { color: var(--fg); }
 
 /* ── 비율을 맞춰 자르는 것들: 베한스 · 인스타그램 · 드리블 ────────────
-   격자라 줄이 맞는다. 포스터와 책이 섞여도 목록의 리듬이 안 흔들린다. */
+   격자라 줄이 맞습니다. 포스터와 책이 섞여도 목록의 리듬이 안 흔들립니다. */
 .pf-behance, .pf-instagram, .pf-dribbble {
   display: grid;
   grid-template-columns: repeat(var(--pf-cols, 3), minmax(0, 1fr));
@@ -43,20 +43,20 @@ main > .pf:first-child { padding-top: var(--lh-gap, 0px); }
 }
 .pf-behance .w-shot, .pf-instagram .w-shot, .pf-dribbble .w-shot { aspect-ratio: var(--pf-ratio, 4 / 3); }
 
-/* 베한스 — 제목이 그림 바로 밑에 작게 붙는다 */
+/* 베한스 — 제목이 그림 바로 밑에 작게 붙습니다 */
 .pf-behance figcaption { padding-top: 0.55rem; }
 
-/* 인스타그램 — 제목이 없다. 그림만 딱 붙어 벽이 된다.
-   간격이 0이면 모서리도 0이어야 한 장처럼 읽힌다 */
+/* 인스타그램 — 제목이 없습니다. 그림만 딱 붙어 벽이 됩니다.
+   간격이 0이면 모서리도 0이어야 한 장처럼 읽힙니다 */
 .pf-instagram figcaption { display: none; }
 
-/* 드리블 — 제목이 카드 **밖** 아래에 선다. 카드가 떠 있는 느낌이 여기서 나온다 */
+/* 드리블 — 제목이 카드 밖 아래에 섭니다. 카드가 떠 있는 느낌이 여기서 나옵니다 */
 .pf-dribbble figcaption { padding-top: 0.7rem; font-size: 0.85rem; }
 .pf-dribbble .w-shot { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
 
 /* ── 자르지 않는 것: 핀터레스트 ──────────────────────────────────────
-   벽돌쌓기. 세로로 흐르므로 읽는 차례가 위→아래로 한 단씩이다.
-   `columns` 를 쓰는 이유: 그리드 masonry 는 아직 브라우저가 고르게 지원하지 않는다. */
+   벽돌쌓기. 세로로 흐르므로 읽는 차례가 위→아래로 한 단씩입니다.
+   `columns` 를 쓰는 이유: 그리드 masonry 는 아직 브라우저가 고르게 지원하지 않습니다. */
 .pf-pinterest {
   columns: var(--pf-cols, 4);
   column-gap: var(--pf-gap-x, 16px);
@@ -70,9 +70,9 @@ main > .pf:first-child { padding-top: var(--lh-gap, 0px); }
 .pf-pinterest figcaption { display: none; }
 
 /* ── 자르지 않는 것: 수직 이미지 ─────────────────────────────────────
-   한 단으로 길게 잇는다. 자르지 않으므로 세로로 긴 그림도 제 비율 그대로 선다 —
-   메인의 「수직 이미지」(`.m-shots`)와 같은 결이되, 여기는 링크와 제목이 붙는다.
-   단 수는 손잡이라 2·3 단으로 늘려도 그대로 듣는다(그때는 높이가 들쭉날쭉한 격자가 된다). */
+   한 단으로 길게 잇습니다. 자르지 않으므로 세로로 긴 그림도 제 비율 그대로 섭니다 —
+   메인의 「수직 이미지」(`.m-shots`)와 같은 결이되, 여기는 링크와 제목이 붙습니다.
+   단 수는 knob라 2·3 단으로 늘려도 그대로 듣습니다(그때는 높이가 들쭉날쭉한 격자가 됩니다). */
 .pf-vstack {
   display: grid;
   grid-template-columns: repeat(var(--pf-cols, 1), minmax(0, 1fr));
@@ -84,7 +84,7 @@ main > .pf:first-child { padding-top: var(--lh-gap, 0px); }
 .pf-vstack figcaption { padding-top: .7rem; }
 
 /* ── 좁은 화면 ───────────────────────────────────────────────────────
-   단 수는 손잡이 값이지만, 폰에서 4단은 어느 템플릿이든 안 읽힌다. 상한을 둔다. */
+   단 수는 knob 값이지만, 폰에서 4단은 어느 템플릿이든 안 읽힙니다. 상한을 둡니다. */
 @media (max-width: 980px) {
   .pf-behance, .pf-instagram, .pf-dribbble { grid-template-columns: repeat(min(var(--pf-cols, 3), 3), minmax(0, 1fr)); }
   .pf-pinterest { columns: min(var(--pf-cols, 4), 3); }
@@ -95,18 +95,18 @@ main > .pf:first-child { padding-top: var(--lh-gap, 0px); }
   .pf-pinterest { columns: 2; }
 }
 
-/* ── 상세페이지 「팝업 열림」 — 목록 위에 작업 하나를 연다 ─────────────────
-   자바스크립트 없이 주소의 `#` 만으로(`:target`) 열고 닫는다. 뒤로가기로도 닫힌다.
-   바탕은 검정이 아니라 **본문 바탕** — 확대(.wk-zoom)가 아니라 상세 페이지를 여는 것이라
-   페이지로 넘어갔을 때와 같은 결이어야 한다. 그림 묶음은 상세와 같은 `.wk-stack` 이다. */
+/* ── 상세페이지 「팝업 열림」 — 목록 위에 작업 하나를 엽니다 ─────────────────
+   자바스크립트 없이 주소의 `#` 만으로(`:target`) 열고 닫습니다. 뒤로가기로도 닫힙니다.
+   바탕은 검정이 아니라 본문 바탕 — 확대(.wk-zoom)가 아니라 상세 페이지를 여는 것이라
+   페이지로 넘어갔을 때와 같은 결이어야 합니다. 이미지 스택은 상세와 같은 `.wk-stack` 입니다. */
 .pf-pop {
   position: fixed; inset: 0; z-index: 50; display: none;
   overflow-y: auto; overscroll-behavior: contain;
   background: var(--bg); color: var(--fg);
 }
 .pf-pop:target { display: block; }
-/* 닫으면 보던 카드로 돌아가는데, 카드를 **맨 위에** 맞추면 보던 자리에서 수백 px 튄다(리뷰 실측 295px).
-   화면 위쪽 1/4 쯤에 서게 해 돌아온 느낌을 줄인다 */
+/* 닫으면 보던 카드로 돌아가는데, 카드를 맨 위에 맞추면 보던 자리에서 수백 px 튑니다.
+   화면 위쪽 1/4 쯤에 서게 해 돌아온 느낌을 줄입니다 */
 .pf > li[id^="c-"] { scroll-margin-top: 25vh; }
 /* 열려 있는 동안 뒤의 목록이 같이 굴러가지 않게 */
 body:has(.pf-pop:target) { overflow: hidden; }
@@ -119,7 +119,7 @@ body:has(.pf-pop:target) { overflow: hidden; }
   backdrop-filter: saturate(1.4) blur(8px);
   border-bottom: 1px solid var(--line);
 }
-/* 팝업의 상단 여백 — 페이지 상세(.wk-top)와 **같은 손잡이**(--wk-top) */
+/* 팝업의 상단 여백 — 페이지 상세(.wk-top)와 같은 knob(--wk-top) */
 .pf-pop > .wk-stack { padding-top: var(--wk-top, clamp(1.25rem, 4vh, 2.5rem)); }
 .pf-pop-bar h2 {
   flex: 1; min-width: 0; margin: 0;

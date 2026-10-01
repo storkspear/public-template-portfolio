@@ -1,17 +1,17 @@
 /* 자동 생성 — tools/sync-menu-icons.mjs. 손으로 고치지 마세요.
    출처: lucide-static@1.47.0 (ISC). 상표가 아니라 UI 픽토그램이라 쓰는 자리에 제약이 없습니다.
-   푸터의 서비스 로고(`site-icons.mjs`)와는 **다른 세트**입니다 — CREDITS.md 의 「메뉴 아이콘」. */
+   푸터의 서비스 로고(`site-icons.mjs`)와는 다른 세트입니다 — CREDITS.md 의 「메뉴 아이콘」. */
 
 /**
- * 메뉴 한 줄에 거는 아이콘 — **굽기와 관리자가 같은 데이터로 그린다.**
+ * 메뉴에 거는 아이콘. 생성기와 관리자가 같은 데이터로 렌더링합니다.
  *
- * `body` 는 24×24 격자의 **선 그림**이다(채움이 아니다). 굽기가 껍데기를 씌운다:
+ * body 는 24×24 좌표계의 선 그림입니다(채움이 아닙니다). 생성기가 색·선 굵기를 씌웁니다.
  *
  *   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
  *        stroke-linecap="round" stroke-linejoin="round">{body}</svg>
  *
- * 색이 `currentColor` 라 메뉴 글자색·오버가 그대로 먹는다(그림 파일이면 안 먹는다).
- * 굵기를 2 로 고정하는 것은 Lucide 의 기본값이다 — 글자 크기를 키워도 선은 안 두꺼워진다.
+ * 색이 `currentColor` 라 메뉴 글자색·호버 색이 그대로 적용됩니다(이미지 파일이면 안 됩니다).
+ * 굵기 2 는 Lucide 의 기본값입니다 — 글자 크기를 키워도 선은 두꺼워지지 않습니다.
  */
 export const MENU_ICONS = [
   { value: 'home', label: '홈', group: '기본',
@@ -128,8 +128,8 @@ export const MENU_ICONS = [
     body: '<path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/>' },
 ]
 
-/** 값 → 도형. 굽기·관리자가 같이 쓴다. 없는 값이면 `undefined` — 부르는 쪽이 안 그린다 */
+/** 값 → 도형. 생성기와 관리자가 같이 씁니다. 없는 값이면 `undefined` 이고 호출부가 렌더링을 건너뜁니다 */
 export const MENU_ICON_OF = Object.fromEntries(MENU_ICONS.map((i) => [i.value, i.body]))
 
-/** 고르개가 쓰는 갈래 차례 — 데이터에 나온 순서 그대로다(가나다순이 아니다) */
+/** 피커가 쓰는 그룹 순서 — 데이터에 나온 순서 그대로입니다(가나다순이 아닙니다) */
 export const MENU_ICON_GROUPS = [...new Set(MENU_ICONS.map((i) => i.group))]

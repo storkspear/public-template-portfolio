@@ -5,7 +5,7 @@
 #    http://localhost:8081   관리자    — admin / admin
 #
 #  포트를 바꾸려면 `.env` 에 WEB_PORT / ADMIN_PORT 를 적으세요.
-#  **로컬과 운영이 같은 모양입니다.** 도메인과 TLS 만 각자 붙이면 됩니다 —
+#  로컬과 운영이 같은 모양입니다. 도메인과 TLS 만 각자 붙이면 됩니다 —
 #  그래야 「로컬에선 되는데」가 안 생깁니다.
 # ─────────────────────────────────────────────────────────────
 services:
@@ -25,18 +25,18 @@ services:
       retries: 20
     restart: unless-stopped
 
-  # 관리자 API + 굽기. **JSON 만** 냅니다 — 정적 파일은 web 이 줍니다.
+  # 관리자 API + 굽기. JSON 만 냅니다 — 정적 파일은 web 이 줍니다.
   api:
     build:
       context: .
       dockerfile: docker/api.Dockerfile
-    # `.env` 는 **없어도 됩니다** — 아래 기본값으로 뜹니다. 있으면 그쪽이 이깁니다.
+    # `.env` 는 없어도 됩니다 — 아래 기본값으로 뜹니다. 있으면 그쪽이 이깁니다.
     # (`cp .env.example .env` 는 값을 바꾸고 싶을 때만 하면 됩니다)
     env_file:
       - path: .env
         required: false
     environment:
-      # 공개 주소 — 포트를 바꾸면 여기도 따라갑니다(`site.config.mjs` 의 origin 머리말).
+      # 공개 주소 — 포트를 바꾸면 여기도 따라갑니다(`site.config.mjs` 의 origin 주석).
       # 도메인을 붙였으면 `.env` 에 SITE_ORIGIN=https://example.com 으로 못 박으세요.
       SITE_ORIGIN: ${SITE_ORIGIN:-http://localhost:${WEB_PORT:-8080}}
       # compose 안에서는 db 가 서비스 이름으로 풀립니다.
@@ -47,7 +47,7 @@ services:
       PGPASSWORD: ${PGPASSWORD:-localdev}
       PGSCHEMA: ${PGSCHEMA:-mysite}
       ADMIN_ID: ${ADMIN_ID:-admin}
-      # ⚠ `:-` 가 아니라 `-` 입니다. 배포할 때 이 값을 **일부러 비우기** 때문입니다
+      # `:-` 가 아니라 `-` 입니다. 배포할 때 이 값을 일부러 비우기 때문입니다
       #   (비밀번호는 server/set-password.mjs 로 정합니다). `:-` 를 쓰면 빈 값이
       #   기본값으로 되살아나 약한 비밀번호가 다시 들어옵니다.
       ADMIN_PASSWORD: ${ADMIN_PASSWORD-admin}
@@ -57,35 +57,39 @@ services:
       BLOG_DIR: /data/blog
       TRASH_DIR: /data/trash
       # 첫 화면·포트폴리오가 구워지는 곳.
-      # ⚠ BLOG_DIR 과 **다른 폴더**여야 합니다 — 화면 굽기가 사진 원본을 지웁니다.
+      # BLOG_DIR 과 다른 폴더여야 합니다 — 화면 굽기가 사진 원본을 지웁니다.
       PAGES_DIR: /data/www
       PREVIEW_DIR: /data/preview
     volumes:
       - blogdata:/data
-      # 「직접 디자인」 화면의 본문 조각. **마운트**로 넣어야 고치고 다시 굽기만 하면
+      # 「직접 디자인」 화면의 본문 조각. 마운트로 넣어야 고치고 다시 굽기만 하면
       # 반영됩니다 — 이미지에만 있으면 한 줄 고칠 때마다 다시 빌드해야 합니다.
       - ./pages:/app/pages:ro
       # 샘플 조각도 같은 이유로 마운트 — 레포를 받아 샘플이 바뀌면 다시 굽기만 하면 됩니다
       - ./sample-pages:/app/sample-pages:ro
-      # CSS 는 web(nginx) 이 내주지만, 굽기도 **날짜만** 읽습니다 — `site.css?v=` 의 판번호가
+      # CSS 는 web(nginx) 이 내주지만, 굽기도 날짜만 읽습니다 — `site.css?v=` 의 버전이
       # 「CSS 가 마지막으로 바뀐 때」라서입니다. 없으면 「서버가 뜬 시각」으로 물러서고,
       # 그때는 CSS 를 고칠 때마다 api 를 다시 띄워야 화면에 닿습니다(bake.mjs 의 V 주석).
       - ./public/assets:/app/public/assets:ro
+      # 「설정」에서 파비콘 색을 고르면 굽기가 이 파일을 읽어 색을 입힙니다.
+      # 없으면 조용히 색 없는 주소로 떨어집니다 — 운영은 체크아웃이라 늘 있는데 여기만 비어
+      # 「색이 안 먹는다」로 보입니다(실제로 그랬습니다).
+      - ./public/favicon.svg:/app/public/favicon.svg:ro
     depends_on:
       db: { condition: service_healthy }
     restart: unless-stopped
 
   # 공개 화면과 관리자 화면. 포트 둘로 가릅니다.
   web:
-    # 관리자 SPA 를 **이미지 안에서 굽습니다** — docker/web.Dockerfile 주석 참고.
+    # 관리자 SPA 를 이미지 안에서 굽습니다 — docker/web.Dockerfile 주석 참고.
     build:
       context: .
       dockerfile: docker/web.Dockerfile
     ports:
       - '${WEB_PORT:-8080}:8080'
-      # ⚠ 관리자는 **이 기계에서만** 닿게 기본을 127.0.0.1 로 둡니다.
+      # 관리자는 이 기계에서만 닿게 기본을 127.0.0.1 로 둡니다.
       #   IP 를 안 적으면 모든 인터페이스에 열리고, 리눅스에서는 도커가 iptables 를
-      #   직접 만져 ufw 같은 방화벽을 **우회**합니다 — 「방화벽 뒤에 뒀다」가 안 통합니다.
+      #   직접 만져 ufw 같은 방화벽을 우회합니다 — 「방화벽 뒤에 뒀다」가 안 통합니다.
       #   밖에서 써야 하면 SSH 터널이나 VPN 을 쓰고, 정말 열어야 할 때만 ADMIN_BIND 를 바꾸세요.
       - '${ADMIN_BIND:-127.0.0.1}:${ADMIN_PORT:-8081}:8081'
     volumes:

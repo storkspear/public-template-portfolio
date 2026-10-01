@@ -1,6 +1,6 @@
 # 관리자 API + 굽기.
 #
-# **관리자 화면(admin/dist)은 여기 안 들어갑니다** — 그건 nginx 가 호스트의 폴더에서
+# 관리자 화면(admin/dist)은 여기 안 들어갑니다 — 그건 nginx 가 호스트의 폴더에서
 # 바로 줍니다. 그래야 UI 를 고칠 때 `npm run admin:build` 한 번이면 되고,
 # 이미지를 다시 굽지 않아도 됩니다.
 FROM node:24-alpine
@@ -31,7 +31,7 @@ RUN mkdir -p /data/blog /data/trash
 RUN chown -R node:node /app /data
 USER node
 
-# nginx 가 **다른 컨테이너**라 루프백으로는 못 닿습니다. 대신 이 포트를 밖으로
+# nginx 가 다른 컨테이너라 루프백으로는 못 닿습니다. 대신 이 포트를 밖으로
 # 열지 않으므로 compose 망 안에서만 닿습니다 — admin-api.mjs 의 HOST 주석 참고.
 ENV HOST=0.0.0.0
 EXPOSE 8090

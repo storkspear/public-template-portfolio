@@ -1,8 +1,8 @@
 /**
- * 뜬 눈 / 감은 눈 — **지금 상태**를 그린다(다음 동작이 아니라).
+ * 뜬 눈 / 감은 눈 — 지금 상태를 나타냅니다(다음 동작이 아니라).
  *
- * 글 목록의 「공개에서 내리기」와 홈디자인의 「보이기」가 같은 뜻이라 같은 그림을 쓴다.
- * 홈디자인에 「☐ 보이기」 체크칸을 따로 두었더니 같은 일이 두 모양으로 보였다(2026-09-17 사용자 지적).
+ * 글 목록의 「공개에서 내리기」와 홈디자인의 「보이기」가 같은 뜻이라 같은 그림을 씁니다.
+ * 홈디자인에 「☐ 보이기」 체크칸을 따로 두었더니 같은 일이 두 모양으로 보였습니다.
  */
 export const Eye = ({ off }) => (
   <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
@@ -14,8 +14,8 @@ export const Eye = ({ off }) => (
 )
 
 /**
- * 보이기 단추 — 눈 하나. 글 목록의 `.vis` 와 같은 약속이다:
- * `aria-pressed="true"` = **숨김**(감은 눈), 이름은 누르면 일어날 일을 말한다.
+ * 보이기 단추 — 눈 하나. 글 목록의 `.vis` 와 같은 약속입니다:
+ * `aria-pressed="true"` = 숨김(감은 눈), 이름은 누르면 일어날 일을 말합니다.
  */
 export const EyeToggle = ({ shown, onToggle, what }) => (
   <button type="button" className="vis" aria-pressed={shown ? 'false' : 'true'}

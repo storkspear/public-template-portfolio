@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="커피">
+  <style>
+    /* 어두운 탭에서 검정은 사라진다. 눈에 보이는 쪽(밝은 탭)은 검정 그대로 두고,
+       어두운 탭에서만 흰색으로 뒤집는다. */
+    .s { fill: none; stroke: #0b0d10; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round }
+    @media (prefers-color-scheme: dark) { .s { stroke: #ffffff } }
+  </style>
+  <!-- 자동 생성 — tools/sync-favicons.mjs. 손으로 고치지 마세요.
+       출처: lucide-static@1.47.0 (ISC) — 메뉴 아이콘 'daily' 과 같은 그림. -->
+  <g class="s"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></g>
+</svg>

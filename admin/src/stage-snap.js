@@ -1,17 +1,17 @@
 /**
- * 무대 편집기의 **붙기와 안내선 계산** — DOM 을 모른다(그래서 node 에서 바로 시험한다).
+ * 무대 편집기의 붙기와 안내선 계산 — DOM 을 모릅니다(그래서 node 에서 바로 시험합니다).
  *
- * 피그마가 대지에서 하는 세 가지를 한다:
+ * 피그마가 대지에서 하는 세 가지를 합니다:
  *   ① 정렬선 — 끄는 요소의 왼·가운데·오른(위·가운데·아래)이 다른 요소나 판의 선과 맞으면 붙고,
- *      **두 요소를 잇는 선분**과 맞닿은 자리의 × 표시를 그린다. 맞는 선은 **전부** 보인다.
- *   ② 같은 간격 — 같은 줄(세로로 겹치는) 요소들 사이의 간격과 같아지면 붙고, 간격마다 빨간 숫자를 띄운다.
- *      두 이웃 사이 **한가운데**(양쪽 간격이 같아지는 자리)에도 붙는다. 세로 방향도 같다.
+ *      두 요소를 잇는 선분과 맞닿은 자리의 × 표시를 그립니다. 맞는 선은 전부 보입니다.
+ *   ② 같은 간격 — 같은 줄(세로로 겹치는) 요소들 사이의 간격과 같아지면 붙고, 간격마다 빨간 숫자를 띄웁니다.
+ *      두 이웃 사이 한가운데(양쪽 간격이 같아지는 자리)에도 붙습니다. 세로 방향도 같습니다.
  *   ③ 판의 선 — 가장자리·판면선(40)·가운데, 격자를 켰으면 단의 양쪽 선.
  *
  * 좌표는 전부 1240px 판 단위. 상자는 `{ key, x, y, w, h }`.
  */
 
-/** 선이 「맞았다」고 보는 차이 — 좌표를 정수로 반올림하므로 1 안쪽은 같은 선이다 */
+/** 선이 「맞았습니다」고 보는 차이 — 좌표를 정수로 반올림하므로 1 안쪽은 같은 선입니다 */
 const EPS = 1
 
 const ext = (b) => ({ ...b, r: b.x + b.w, bt: b.y + b.h, cx: b.x + b.w / 2, cy: b.y + b.h / 2 })
@@ -21,7 +21,7 @@ const crossY = (a, b) => a.y < b.bt && b.y < a.bt
 const crossX = (a, b) => a.x < b.r && b.x < a.r
 
 /**
- * 축 하나의 이름표 — 가로(x)와 세로(y)를 같은 코드로 다룬다.
+ * 축 하나의 이름표 — 가로(x)와 세로(y)를 같은 코드로 다룹니다.
  * lo=시작, hi=끝, mid=가운데, size=길이, cross=교차축에서 겹치는가
  */
 const AX = {
@@ -29,7 +29,7 @@ const AX = {
   y: { lo: 'y', hi: 'bt', mid: 'cy', size: 'h', cross: crossX, clo: 'x', chi: 'r' },
 }
 
-/** 같은 줄 요소들 사이의 간격 — 각 요소에서 **바로 다음** 요소까지만(건너뛴 간격은 간격이 아니다) */
+/** 같은 줄 요소들 사이의 간격 — 각 요소에서 바로 다음 요소까지만(건너뛴 간격은 간격이 아닙니다) */
 const pairGaps = (items, A) => {
   const out = []
   for (const a of items) {
@@ -75,14 +75,14 @@ const pick = (cands, lim) => {
   let best = null
   for (const c of cands) {
     if (Math.abs(c.d) > lim) continue
-    /* 같은 거리면 정렬선이 이긴다 — 줄 맞춤이 간격 맞춤보다 먼저 읽힌다 */
+    /* 같은 거리면 정렬선이 이깁니다 — 줄 맞춤이 간격 맞춤보다 먼저 읽힙니다 */
     if (!best || Math.abs(c.d) < Math.abs(best.d) - 1e-9 || (Math.abs(c.d) === Math.abs(best.d) && c.kind === 'align')) best = c
   }
   return best ? best.d : 0
 }
 
 /**
- * 끄는 상자를 붙인다.
+ * 끄는 상자를 붙입니다.
  * @param box    끄는 상자(붙이기 전 자리)
  * @param others 다른 요소 상자들
  * @param board  `{ w, h, xs, ys }` — xs·ys 는 판의 선(가장자리·판면선·가운데·격자)
@@ -96,7 +96,7 @@ export function snapMove(box, others, board, lim) {
   return { x: box.x + dx, y: box.y + dy }
 }
 
-/** 폭 손잡이 — 오른쪽 끝만 붙는다 */
+/** 폭 knob — 오른쪽 끝만 붙습니다 */
 export function snapRight(box, others, board, lim) {
   const b = ext(box)
   const targets = [...board.xs]
@@ -105,7 +105,7 @@ export function snapRight(box, others, board, lim) {
 }
 
 /**
- * 지금 자리에서 그릴 안내선 — **맞는 것 전부.**
+ * 지금 자리에서 그릴 안내선 — 맞는 것 전부.
  * @returns `{ lines: [{x1,y1,x2,y2}], marks: [{x,y}], gaps: [{x1,y1,x2,y2,value}] }`
  */
 export function guidesFor(box, others, board, mode = 'move') {
@@ -151,7 +151,7 @@ export function guidesFor(box, others, board, mode = 'move') {
     }
 
     if (mode !== 'move') continue
-    /* 같은 간격 — 끄는 상자와 이웃 사이 간격이 같은 줄의 다른 간격(또는 반대쪽 간격)과 같으면 전부 띄운다 */
+    /* 같은 간격 — 끄는 상자와 이웃 사이 간격이 같은 줄의 다른 간격(또는 반대쪽 간격)과 같으면 전부 띄웁니다 */
     const row = os.filter((o) => A.cross(o, b))
     const { before, after } = neighbors(b, row, A)
     const refs = pairGaps(row, A)
@@ -163,7 +163,7 @@ export function guidesFor(box, others, board, mode = 'move') {
       const id = `${p.a.key}>${p.b.key}`
       if (shown.has(id) || p.g < 1) return
       shown.add(id)
-      /* 선은 두 상자가 교차축에서 겹치는 구간의 가운데를 지난다 */
+      /* 선은 두 상자가 교차축에서 겹치는 구간의 가운데를 지납니다 */
       const c = (Math.max(p.a[A.clo], p.b[A.clo]) + Math.min(p.a[A.chi], p.b[A.chi])) / 2
       const s = p.a[A.hi]
       const e = p.b[A.lo]

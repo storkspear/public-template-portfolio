@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="지구">
+  <style>
+    /* 어두운 탭에서 검정은 사라진다. 눈에 보이는 쪽(밝은 탭)은 검정 그대로 두고,
+       어두운 탭에서만 흰색으로 뒤집는다. */
+    .s { fill: none; stroke: #0b0d10; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round }
+    @media (prefers-color-scheme: dark) { .s { stroke: #ffffff } }
+  </style>
+  <!-- 자동 생성 — tools/sync-favicons.mjs. 손으로 고치지 마세요.
+       출처: lucide-static@1.47.0 (ISC) — 메뉴 아이콘 'world' 과 같은 그림. -->
+  <g class="s"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></g>
+</svg>

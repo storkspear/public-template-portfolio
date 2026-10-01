@@ -1,0 +1,18 @@
+[
+  "* /api/posts",
+  "* /api/settings",
+  "DELETE one",
+  "GET /api/health",
+  "GET one",
+  "GET oneWork",
+  "POST /api/auth/logout",
+  "POST /api/auth/refresh",
+  "POST /api/favicon",
+  "POST /api/login",
+  "POST /api/media",
+  "POST /api/posts/reserve",
+  "POST /api/settings/undo",
+  "POST /api/works",
+  "POST /api/works/order",
+  "POST vis"
+]
