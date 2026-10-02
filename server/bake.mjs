@@ -28,7 +28,7 @@ import { MENU_ICON_OF } from '../shared/menu-icons.mjs'
 import { ymd } from '../shared/text.mjs'
 import { TAG, esc, summarize, unesc } from './html-text.mjs'
 import { nested, okSlug, realOf, unsafeBit, writeAtomic } from './bake-safety.mjs'
-import { emitOmit, fontStack, headVars, knobVars, lhVars, menuVars, outlineVars, pageFontVars, themeVars }
+import { emitOmit, fontStack, headVars, knobVars, lhVars, menuVars, outlineVars, pageFontVars, themeVars, tocVars }
   from '../shared/site-css.mjs'
 import { DUMMY_POSTS, DUMMY_WORKS } from './dummy.mjs'
 
@@ -283,6 +283,21 @@ const outlineStyle = (blog) => {
   if (blog.template !== 'outline') return ''
   const vars = emitOmit(outlineVars(blog.outline))
   return vars ? `<style data-outline>
+:root {
+${vars}}
+</style>
+` : ''
+}
+
+/**
+ * 문단 바로가기 표식의 색. **켜 둔 글에만** 냅니다.
+ * 비어 있으면 아무것도 안 내고, CSS 의 `var(--bj-ink, var(--fg))` 폴백이 사이트의 먹
+ * (곧 검정)을 씁니다. 여기서 기본색을 채우면 테마 색을 바꾼 사이트가 한 색으로 눌립니다.
+ */
+const tocStyle = (blog) => {
+  if (!blog.toc.show) return ''
+  const vars = emitOmit(tocVars(blog.toc))
+  return vars ? `<style data-toc>
 :root {
 ${vars}}
 </style>
@@ -680,7 +695,7 @@ const seedAttachments = (p) => {
   current = new Map((p.attachments || []).map((a) => [a.attachment_id, a.file_path]))
 }
 /**
- * 본문의 절 제목에 `id` 를 달고, 그 목록을 같이 돌려줍니다 — 「절 바로 가기」가 쓸 것입니다.
+ * 본문의 절 제목에 `id` 를 달고, 그 목록을 같이 돌려줍니다 — 「문단 바로가기」가 쓸 것입니다.
  *
  * **굽기에서 하는 까닭**: 편집기 라이브러리는 제목을 안 건드립니다(`toPublishedHtml` 은
  * 코드·다이어그램·그림·표만 굽습니다). 그쪽을 고치려면 편집기 스키마까지 손대야 하는데,
@@ -716,13 +731,30 @@ const withAnchors = (html) => {
 }
 
 /**
- * 절 바로 가기. 제목이 없으면 **아무것도 안 냅니다** — 빈 칸을 두면 본문 옆에 이유 없는
+ * 문단 바로가기. 제목이 없으면 **아무것도 안 냅니다** — 빈 칸을 두면 본문 옆에 이유 없는
  * 여백이 섭니다. 껍데기라도 내면 골든 쉰세 벌이 통째로 흔들립니다.
  * 이름이 「목차」가 아닌 까닭: 블로그 템플릿 `lines` 의 라벨이 이미 「목차」라 코드에서
  * 구별이 안 됩니다. 화면 조각의 `.s-jump` 와 같은 말을 씁니다.
  */
-const jumpHtml = (items) => (!items.length ? '' : `
-  <aside class="b-jump" aria-label="절 바로 가기">
+/**
+ * 좁은 화면에서는 같은 목록이 **아래에서 올라오는 시트**가 됩니다. 여닫는 것은 진짜
+ * checkbox 입니다 — 공개면에 JS 가 없으므로(규약) 그것 말고는 상태를 가질 그릇이 없습니다.
+ * 헤더 드로어(`.s-toggle`)와 같은 방식입니다.
+ *
+ * `:target` 은 **쓰면 안 됩니다.** 목록이 `#s1` 로 옮기는데 여닫기도 해시를 쓰면 둘이
+ * 싸우고, 주소와 히스토리가 더럽혀집니다(header.css 에 같은 경고가 있습니다).
+ *
+ * 차례가 중요합니다 — 뒤의 CSS 가 `~` 로 형제를 고릅니다. checkbox 가 맨 앞이어야 합니다.
+ * 막(`b-veil`)과 단추(`b-open`)와 닫기(`b-close`)는 전부 `<label for>` 라, 눌리면
+ * checkbox 가 뒤집힙니다. **링크를 눌러도 안 닫힙니다** — 켜 둔 채로 옮겨 다니고,
+ * 닫는 것은 시트 **밖**(막)을 누르는 일입니다.
+ */
+const jumpHtml = (items, toc) => (!items.length ? '' : `
+  <input type="checkbox" id="b-sw" class="b-sw" autocomplete="off" aria-label="문단 바로가기">
+  <label class="b-veil" for="b-sw" aria-hidden="true"></label>
+  <label class="b-open" for="b-sw" aria-hidden="true">☰ 문단</label>
+  <aside class="b-jump bj-${esc(toc.skin)}" aria-label="문단 바로가기">
+    <label class="b-close" for="b-sw" aria-hidden="true">✕</label>
     <nav>
 ${items.map((it) => `      <a href="#${esc(it.id)}"${it.sub ? ' class="sub"' : ''}>${esc(it.text)}</a>`).join('\n')}
     </nav>
@@ -754,6 +786,186 @@ const articleBody = (p) => withAnchors(resolveAttachments(toPublishedHtml(p.body
  * 조용히 갈라집니다. `tools/check-contract.mjs` 의 ⑤ 가 이 함수를 **직접 불러** 라이브러리의
  * `proseWidthStyle` 과 견줍니다(글꼴 시트에서 같은 종류의 결함을 겪고 세운 규약입니다).
  */
+/**
+ * 지금 읽는 자리를 **CSS 만으로** 따라갑니다. 공개면 JS 0바이트 규약을 지키려고
+ * 스크롤 추적을 스크립트 없이 합니다.
+ *
+ * 원리: 소제목마다 view timeline 을 하나씩 달고, 링크마다 **변수 둘**을 켭니다.
+ *
+ *   --bjp  내 소제목이 화면 위 임계선을 지났나
+ *   --bjq  다음 소제목이 지났나
+ *   --cur = --bjp − --bjq   → 1 인 링크가 언제나 정확히 하나
+ *
+ * 변수를 **둘로 나누는 것**이 핵심입니다. 하나에 켜기/끄기를 겹쳤더니 `fill:both` 가
+ * 범위 밖에서도 먹어 전부 덮어썼습니다. 빼는 쪽이 맞습니다.
+ *
+ * 임계선이 `cover 80%` 인 까닭: `entry 100%`(소제목이 완전히 보이는 순간)로 두면 늦습니다.
+ * 눌러서 뛰면 소제목이 화면 맨 위에 서는데 그때는 아직 「안 지난」 것으로 쳐서 한 칸 위가
+ * 켜집니다. `cover 80%` 는 화면 위 1/5 지점이 임계선입니다.
+ *
+ * 양 끝은 규칙이 다릅니다.
+ *   첫 절 — **켜질 조건이 없습니다.** 글 맨 위면 이미 그 절을 읽는 중인데, 위에 임계선을
+ *          넘길 자리가 없어 다른 절과 같은 규칙을 주면 조금 내리기 전까지 아무것도 안
+ *          켜집니다. 그래서 켜 두고 끄기만 합니다.
+ *   끝 절 — **끌 것이 없습니다**(다음 절이 없습니다). 그리고 글 끝이라 임계선까지 구를
+ *          자리가 없으므로 「보이기 시작하면 켜짐」으로 두고, **끄는 쪽도 같은 범위**를
+ *          써야 합니다. 짝이 안 맞으면 마지막 둘이 동시에 켜집니다(실측으로 드러났습니다).
+ *
+ * 한계 둘을 적어 둡니다.
+ *   · 파이어폭스는 `animation-timeline` 이 아직 플래그 뒤입니다(전체의 약 16%).
+ *     `@supports` 로 감싸 **안 되는 브라우저는 지금과 똑같이** 보입니다 — `--cur` 이 없어
+ *     폴백 0 이 되고 표식이 조용히 안 보일 뿐입니다.
+ *   · **CSS 로는 `aria-current` 를 못 붙입니다.** 표식은 눈에만 보이고 스크린리더에는
+ *     전달되지 않습니다. JS 를 안 들이는 대가입니다.
+ */
+/* 글쓴이가 손으로 넣은 id 가 섞일 수 있습니다(`withAnchors` 가 보존합니다).
+   따옴표나 공백이 든 id 는 선택자와 변수 이름을 깨뜨리므로, 하나라도 수상하면
+   **추적을 통째로 안 냅니다.** 일부만 빼면 다음 절을 못 가리켜 둘이 같이 켜집니다 */
+const SAFE_ID = /^[A-Za-z][\w-]*$/
+/* 임계선 — 소제목이 화면 위 이 지점을 지나면 「그 절을 읽는 중」입니다.
+   `entry 100%`(소제목이 완전히 보이는 순간)로 두면 늦습니다. 눌러서 뛰면 소제목이 맨 위
+   (scroll-margin-top 만큼 아래)에 서는데 그때는 아직 「안 지난」 것으로 쳐서 한 칸 위가
+   켜집니다. `cover 80%` 는 화면 위 1/5 지점이 임계선입니다. */
+const TL_AT = 'cover 0% cover 80%'
+/**
+ * 끝 절을 위한 **둘째 신호** — 글의 스크롤이 거의 바닥에 닿았는가.
+ *
+ * 끝 절은 임계선까지 구를 자리가 모자랄 수 있습니다. 글 끝이라 더 내릴 데가 없기 때문입니다.
+ * 처음에는 끝 절만 임계선을 `entry 100%`(보이기 시작하면 켜짐)로 낮췄는데, **끝에서 둘째가
+ * 통째로 건너뛰어졌습니다** — 끝 절 제목이 화면에 들어오기만 해도 켜지는데, 절 하나가
+ * 화면보다 짧으면 둘째를 읽는 내내 그렇기 때문입니다. 실측으로 드러났습니다
+ * (둘째 제목이 화면 맨 위 84px 에 있는데 끝 절이 켜져 있었습니다).
+ *
+ * 그래서 임계선은 **모두 같게** 두고, 끝 절에만 신호를 하나 더 겹칩니다. 둘 중 하나라도
+ * 서면 켜집니다(`max`). 끝 절이 길면 제 임계선이 먼저 서고, 짧으면 바닥 신호가 섭니다.
+ * 끝에서 둘째는 **끄는 쪽에 같은 신호**를 겹쳐야 합니다 — 짝이 안 맞으면 둘이 같이 켜집니다.
+ *
+ * **한 화면에 다 들어가는 짧은 글**에서는 끝 절이 켜집니다. 구를 자리가 없으면 타임라인이
+ * 전부 100% 로 읽혀(`--bje` 도 1) 앞 절들이 다 꺼지기 때문입니다 — 처음에 「비활성이라 0 으로
+ * 남는다」고 적었다가 재 보고 틀린 것을 알았습니다. 바닥 신호를 들이기 전에도 같았으므로
+ * (끝 절이 `entry 100%` 로 켜졌습니다) 이 신호가 만든 일은 아닙니다.
+ * 고치려면 「글이 구르는가」를 CSS 로 물어야 하는데 그런 질의가 없습니다. 글이 한 화면에
+ * 들어가면 목차의 모든 절이 이미 눈앞에 있으므로 그대로 둡니다.
+ */
+const TL_END = { a: 'bjEnd steps(1,end) both', t: 'scroll(root block)', r: '0% 99%' }
+export const tocTimelineCss = (items) => {
+  const ids = items.map((it) => it.id)
+  if (!ids.length || !ids.every((id) => SAFE_ID.test(id))) return ''
+  const 끝 = ids.length - 1
+  const rule = (id, n) => {
+    /* 첫 절은 켜질 조건이 없습니다 — 글 맨 위면 이미 그 절을 읽는 중인데 위에 임계선을
+       넘길 자리가 없습니다. 켜 두고 끄기만 합니다 */
+    const 켜기 = n === 0 ? null : { a: 'bjOn steps(1,end) both', t: `--tl-${id}`, r: TL_AT }
+    const nx = ids[n + 1]
+    const 끄기 = nx ? { a: 'bjOff steps(1,end) both', t: `--tl-${nx}`, r: TL_AT } : null
+    /* 바닥 신호는 끝 절(켜는 쪽)과 끝에서 둘째(끄는 쪽)에만 붙습니다 */
+    const 바닥 = (n === 끝 || n === 끝 - 1) ? TL_END : null
+    const 셋 = [켜기, 끄기, 바닥].filter(Boolean)
+    const 늘켜짐 = n === 0 ? '--bjp:1;' : ''
+    /* `--cur` 은 바탕 규칙이 맡고, 바닥 신호가 붙은 둘만 제 셈을 따로 적습니다 */
+    const 셈 = n === 끝 ? '--cur:max(var(--bjp),var(--bje));'
+      : n === 끝 - 1 ? '--cur:calc(var(--bjp) - max(var(--bjq),var(--bje)));' : ''
+    const anim = 셋.length
+      ? `animation:${셋.map((x) => x.a).join(',')};animation-timeline:${셋.map((x) => x.t).join(',')}`
+        + `;animation-range:${셋.map((x) => x.r).join(',')}`
+      : ''
+    return `.b-jump a[href="#${id}"]{${늘켜짐}${셈}${anim}}`
+  }
+  return `@property --bjp{syntax:'<number>';inherits:false;initial-value:0}
+@property --bjq{syntax:'<number>';inherits:false;initial-value:0}
+@property --bje{syntax:'<number>';inherits:false;initial-value:0}
+@supports (animation-timeline:view()){
+@keyframes bjOn{from{--bjp:0}to{--bjp:1}}@keyframes bjOff{from{--bjq:0}to{--bjq:1}}@keyframes bjEnd{from{--bje:0}to{--bje:1}}
+main.b-post{timeline-scope:${ids.map((i) => `--tl-${i}`).join(',')}}
+${ids.map((i) => `.prose-body #${i}{view-timeline-name:--tl-${i}}`).join('')}
+${ids.map(rule).join('')}
+.b-jump a{--cur:calc(var(--bjp) - var(--bjq))}}`
+}
+
+/**
+ * 문단 바로가기를 숨길 폭.
+ *
+ * blog.css 는 `@media (max-width:1080px)` 고정으로 숨겼는데, **글 폭이 글마다 다릅니다.**
+ * 68rem 글은 글줄만 1088px 이라 1080px 에서는 글줄조차 안 들어갑니다. 그래서 1080~1400px
+ * 구간에서 자리가 없는데도 목차가 그려졌습니다. 2026-10-02 에 실제로 잰 값입니다.
+ *
+ *   창 1280px → 목차 폭 40px (15rem 자리가 필요한데)
+ *   창 1120px → 목차 폭 0px, 상자만 남고 글줄은 1088 → 1040 으로 눌림
+ *
+ * 안쪽 `nav` 만 숨기는 `@container` 규칙이 있어 글씨는 사라지지만 상자는 남습니다.
+ * 그래서 빈 띠가 본문 옆에 섭니다.
+ *
+ * 그래서 글마다 제 글 폭에서 셈합니다 — 글줄 + 간격 2rem + 목차 15rem + 양쪽 가장자리.
+ * 전체폭 글은 여백이 처음부터 없으므로 아예 안 냅니다.
+ */
+const SHEET_CSS = `/* 시트 — 아래에서 올라옵니다. 머리(손잡이·닫기)는 안 구르고 목록만 구릅니다 */
+.b-post .b-jump{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:9;
+float:none;width:auto;max-width:none;height:min(46vh,24rem);max-height:none;margin:0;
+padding:0;overflow:hidden;display:flex;flex-direction:column;
+background:var(--bg);border-top:1px solid var(--line);border-radius:14px 14px 0 0;
+box-shadow:0 -10px 30px rgba(0,0,0,.08);
+transform:translateY(100%);visibility:hidden;
+transition:transform .22s cubic-bezier(.32,.72,0,1),visibility 0s linear .22s}
+.b-post .b-sw:checked~.b-jump{transform:translateY(0);visibility:visible;
+transition:transform .22s cubic-bezier(.32,.72,0,1),visibility 0s}
+/* 손잡이 — 안 구르는 머리 */
+.b-post .b-jump::before{content:'' / '';flex:0 0 auto;align-self:center;
+width:38px;height:4px;margin:.6rem 0 .1rem;border-radius:99px;background:var(--line)}
+/* 구르는 것은 목록뿐입니다. 스크롤 상자의 테두리는 내용 **위에** 그려지므로 선을 떼어
+바깥 상자가 그리게 합니다 — 안 그러면 선이 표식을 가로지릅니다 */
+.b-post .b-jump nav{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;
+margin:0 1.3rem 0 calc(1.9rem - var(--bjr,0px));
+padding:max(.9rem,var(--bjr,0px)) 0 1.6rem calc(var(--bjg,1rem) + var(--bjr,0px));
+border-left:0;scrollbar-width:none}
+.b-post .b-jump nav::-webkit-scrollbar{display:none}
+.b-post .b-jump::after{content:'' / '';position:absolute;z-index:0;left:1.9rem;top:1.7rem;bottom:0;
+width:1px;background:color-mix(in srgb,var(--bji) 16%,transparent)}
+.b-post .b-jump a{font-size:.95rem}
+/* 항목 사이는 **간격**으로 띄웁니다 — 링크에 위아래 패딩을 주면 표식이 그만큼 밀립니다 */
+.b-post .b-jump nav{gap:1.05rem}
+/* 단추 · 막 · 닫기 */
+/* 눈으로만 숨깁니다 — display:none 이면 초점을 못 받아 키보드로 열 방법이 없습니다
+(header.css 의 .s-toggle 과 같은 까닭). 넓은 화면에서는 바탕 규칙이 통째로 지웁니다 */
+.b-post .b-sw{display:block;position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;
+overflow:hidden;clip-path:inset(50%);white-space:nowrap;opacity:0}
+.b-post .b-open{display:flex;position:fixed;right:1rem;bottom:1.2rem;z-index:7}
+.b-post .b-sw:checked~.b-open{opacity:0;pointer-events:none}
+.b-post .b-sw:focus-visible~.b-open{outline:2px solid var(--fg);outline-offset:2px}
+/* 막은 **색을 거의 안 씁니다** — 시트는 열어 둔 채로 옮겨 다니는 물건이라 뒤를 가리면
+안 됩니다. 「밖을 누르면 닫힌다」를 위해 자리만 지킵니다 */
+.b-post .b-veil{display:block;position:fixed;inset:0;z-index:8;background:rgba(0,0,0,.04);
+opacity:0;pointer-events:none;transition:opacity .22s}
+.b-post .b-sw:checked~.b-veil{opacity:1;pointer-events:auto}
+.b-post .b-close{display:block;position:absolute;z-index:2;top:.55rem;right:1rem}
+@media (prefers-reduced-motion:reduce){
+.b-post .b-jump,.b-post .b-veil{transition:none}}`
+export const jumpModeCss = (width) => {
+  /* 전체폭 글은 옆에 여백이 처음부터 없습니다 — 폭과 무관하게 늘 시트입니다 */
+  if (width === 'full') return SHEET_CSS
+  const m = String(width || '38rem')
+  const rem = /^([\d.]+)rem$/.test(m) ? parseFloat(m)
+    : /^([\d.]+)px$/.test(m) ? parseFloat(m) / 16 : 38
+  /**
+   * 글줄은 화면 **가운데** 섭니다. 그래서 오른쪽에 남는 자리는 `(화면 − 글줄) ÷ 2` 이고,
+   * 목차가 옆에 서려면 그 절반 쪽이 목차 15rem + 간격 2rem + 가장자리 1.5rem 을 넘어야 합니다.
+   *
+   *   (화면 − 글줄) ÷ 2 ≥ 18.5rem   →   화면 ≥ 글줄 + 37rem
+   *
+   * 처음에는 셋을 한 번만 더해 `글줄 + 20rem` 으로 셈했습니다. 가운데 정렬이라 같은 자리가
+   * 왼쪽에도 있어야 한다는 것을 빠뜨린 것입니다. 그래서 그 사이 구간에서 목차가 **글자 없는
+   * 띠**로 남았습니다 — 상자는 서는데 너무 좁아 `@container` 가 목록을 지우기 때문입니다.
+   * 68rem 글을 1424px 에서 재니 상자 112px · 높이 0 · `nav` 가 `display:none` 이었습니다.
+   *
+   * 사이트 본문 폭(`--body-w`)은 셈에서 약분되어 사라집니다 — 목차가 본문 상자 밖(화면
+   * 여백)까지 빌려 쓰기 때문입니다.
+   *
+   * 그 아래로는 **숨기지 않고 시트로 바꿉니다.** 자리가 없다고 없애 버리면 좁은 화면에서
+   * 글이 길수록 길잡이가 없어집니다.
+   */
+  const need = Math.round((rem + 2 * (15 + 2 + 1.5)) * 16)
+  return `@media (max-width:${need - 1}px){\n${SHEET_CSS}}`
+}
+
 export const proseWidthVars = (width) => {
   const w = width === 'full' ? '100%' : width
   if (!w || !/^-?[\d.]+(px|rem|em|%|vw|ch)$/.test(w)) return null
@@ -787,7 +999,7 @@ const styleAttr = (vars) =>
  * ② `body { overflow-x: clip }` — ①의 대가를 갚습니다. html 이 제 overflow 를 가지면
  *    site.css 의 body 규칙(overflow-x: hidden)이 더는 화면으로 넘어가지 못하고 **body 가
  *    진짜 스크롤 상자**가 됩니다. 그런데 실제로 구르는 것은 화면이라, body 안의 sticky 는
- *    「한 번도 안 구르는 상자」를 기준으로 삼아 영영 안 붙습니다. 공통헤더와 절 바로 가기가
+ *    「한 번도 안 구르는 상자」를 기준으로 삼아 영영 안 붙습니다. 공통헤더와 문단 바로가기가
  *    **글 상세에서만** 안 따라오던 까닭입니다(목록·메인·작업에는 ①이 없어 멀쩡했습니다).
  *    clip 은 자르기만 하고 스크롤 상자를 만들지 않습니다. 실측으로 셋을 갈랐습니다 —
  *      body hidden  → 안 붙음 · 가로 넘침 0
@@ -799,7 +1011,7 @@ const styleAttr = (vars) =>
 export const postPage = (p, styleTag, conf = DEFAULTS) => {
   seedAttachments(p)                         /* 제목 배너도 이 표를 참조하므로 본문보다 먼저 준비합니다 */
   const { html: body, items } = articleBody(p)
-  const jump = conf.blog.toc.show ? jumpHtml(items) : ''
+  const jump = conf.blog.toc.show ? jumpHtml(items, conf.blog.toc) : ''
   const widthAttr = styleAttr(proseWidthVars(p.width))
   /**
    * 「전체폭」은 **화면 끝까지**입니다 — 편집 화면이 그렇게 보여 주고, 라이브러리도 그 값을
@@ -821,7 +1033,7 @@ export const postPage = (p, styleTag, conf = DEFAULTS) => {
                ` style="text-align:${t.align}">${ymd(p.published_at)}</time>`
   const head = '  ' + renderPostHead(t, 'viewport').replace(/<\/header>\s*$/, when + '</header>')
   return shell({
-    theme: styleTag + pageFontStyle(conf.blog.font),
+    theme: styleTag + pageFontStyle(conf.blog.font) + tocStyle(conf.blog),
     footer: conf.footer, colors: conf.theme,
     chrome: conf.blog.chrome,
     header: conf.header,
@@ -842,7 +1054,7 @@ export const postPage = (p, styleTag, conf = DEFAULTS) => {
 <style>
   /* 배너의 100vw 를 자릅니다. 둘은 한 짝입니다 — 까닭은 굽기의 postPage 주석에. */
   html { overflow-x: hidden; }
-  body { overflow-x: clip; }
+  body { overflow-x: clip; }${jump ? `\n${jumpModeCss(p.width)}\n${tocTimelineCss(items)}` : ''}
 </style>
 `,
     /* 갈래 이름을 안 답니다 — 글은 한 가지 모양입니다(위 postPage 주석).
@@ -1601,8 +1813,28 @@ export async function bakePreview(pool, conf) {
     }
   }
   await blog('real', rows)
-  /* 견본 글도 상세까지 생성합니다. 목록만 견본이면 제목을 눌렀을 때 404 가 표시됩니다 */
-  await blog('dummy', DUMMY_POSTS)
+  /**
+   * 견본 글도 상세까지 생성합니다. 목록만 견본이면 제목을 눌렀을 때 404 가 표시됩니다.
+   *
+   * 본문 폭만은 견본 제 값을 안 씁니다 — **이 사이트가 실제로 쓰는 폭**을 따라갑니다.
+   * 견본은 `width: null` 이라 라이브러리 기본(38rem)으로 떨어지는데, 글을 「가운데폭」
+   * (68rem)으로 쓰는 사이트에서는 미리보기가 실제보다 480px 좁게 보였습니다(사용자 지적).
+   * 폭이 틀리면 문단 바로가기가 설 자리도 틀리게 보입니다 — 그 자리는 화면 폭이 아니라
+   * **글 폭**에서 나오기 때문입니다(`jumpModeCss`). 미리보기가 실제보다 후한 그림을 줍니다.
+   *
+   * 값을 박지 않고 실제 글에서 가장 많이 쓰는 폭을 셉니다. 글이 하나도 없으면 아무것도
+   * 안 바꿉니다 — 그때는 견본의 기본값이 곧 새 글의 기본값이라 이미 맞습니다.
+   */
+  const 흔한폭 = (list) => {
+    const 센다 = new Map()
+    for (const p of list) 센다.set(p.width ?? null, (센다.get(p.width ?? null) || 0) + 1)
+    let 많은것 = null
+    let 많이 = 0
+    for (const [w, c] of 센다) if (c > 많이) { 많은것 = w; 많이 = c }
+    return 많은것
+  }
+  const 견본폭 = rows.length ? 흔한폭(rows) : null
+  await blog('dummy', DUMMY_POSTS.map((p) => ({ ...p, width: 견본폭 })))
   return { ...r, dummy: d.pages, blog: rows.length }
 }
 

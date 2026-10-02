@@ -267,7 +267,7 @@ body { overflow-x: hidden; }
 /* 어느 화면에 있는지 — 색만으로는 약해서 점을 찍습니다 */
 .s-nav a[aria-current='page']::before { content: '// '; font-family: var(--mono); font-size: 0.8em; color: var(--fg-3); }
 
-/* 절 바로 가기 — 포트폴리오에만 있습니다. 이름과 사이트 내비 사이 남는 공간 가운데에 둡니다.
+/* 문단 바로가기 — 포트폴리오에만 있습니다. 이름과 사이트 내비 사이 남는 공간 가운데에 둡니다.
    라벨이 전부 영문이라 모노를 씁니다(절 번호 라벨과 같은 결). 한글이 섞이면 모노를 쓰면 안 됩니다. */
 .s-jump { display: flex; flex: 1; justify-content: center; gap: clamp(0.85rem, 2.1vw, 1.9rem); }
 .s-jump a {

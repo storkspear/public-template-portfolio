@@ -48,7 +48,7 @@ body > * { width: 100%; }
 body > main { flex: 1 0 auto; }
 body > .p-contact { flex: none; }
 
-/* ── 절 바로 가기 — 본문 오른쪽 ──────────────────────────────────────
+/* ── 문단 바로가기 — 본문 오른쪽 ──────────────────────────────────────
  *
  * 관리자에서 켰을 때만 굽기가 냅니다(공통 → 블로그 → 상세페이지). 제목이 없는 글에는
  * 마크업 자체가 안 나옵니다 — 여기 규칙이 걸릴 상자가 아예 없습니다.
@@ -118,9 +118,162 @@ body > .p-contact { flex: none; }
   word-break: keep-all;               /* 한글은 어절 단위로 접습니다 */
   transition: color .15s ease;
 }
-.b-jump a:hover, .b-jump a:focus-visible { color: var(--accent, var(--fg)); }
+/**
+ * 손이 지나갈 때. 포인트색(빨강)을 쓰지 않습니다 — 표식이 이미 색을 쓰고 있어
+ * 손만 지나가도 「여기를 읽는 중」처럼 보입니다.
+ *
+ * **활성도(`--cur`)를 같이 봅니다.** `var(--fg)` 하나로 두면 명시도가 높아서 아래
+ * `.b-jump a` 의 색을 덮고, **지금 읽는 항목에 마우스를 올리는 순간 고른 색이 먹으로
+ * 떨어집니다**(사용자 지적). 읽던 자리가 사라진 것처럼 보입니다.
+ *
+ * 그래서 같은 색 식에 바닥만 올립니다 — 비활성은 고른 색 50%, 켜진 항목은 100% 그대로.
+ * 쉬는 색 → 옅은 고른 색 → 진한 고른 색으로 세 단계가 남습니다.
+ */
+.b-jump a:hover, .b-jump a:focus-visible {
+  color: color-mix(in srgb, var(--bji) calc(var(--cur, 0) * 50% + 50%), var(--fg-2));
+}
 /* h3 는 한 칸 들입니다 — 깊이를 설정으로 두는 대신 눈으로 가릅니다 */
 .b-jump a.sub { padding-left: .85rem; font-size: .78rem; }
+
+/* ── 지금 읽는 자리 표식 ──────────────────────────────────────────────
+ *
+ * 켜고 끄는 값은 `--cur` 입니다. 지금 읽는 절의 링크만 1, 나머지는 0 —
+ * **굽기가 글마다 찍어 넣는 타임라인 CSS** 가 정합니다(server/bake.mjs 의 tocTimelineCss).
+ * 그 규칙이 없거나 브라우저가 못 읽으면 `--cur` 이 없어 폴백 0 이 되고, 표식은 조용히
+ * 안 보입니다 — 지금까지와 똑같은 모양입니다.
+ *
+ * 색은 넷이 한 칸을 같이 봅니다. 비어 있으면 사이트의 먹입니다(곧 검정).
+ * 색 하나로만 말하지 않습니다 — `site.css` 의 「색만으로는 약합니다」. 모양이 서거나
+ * 반짝이고, 글자도 같이 짙어지고 굵어집니다.
+ */
+.b-jump { --bji: var(--bj-ink, var(--fg)); }
+
+/* ── 반짝이는 셋 — 마름모·동그라미·네모 ───────────────────────────
+ * 뼈대가 같습니다. 다른 것은 `border-radius` 와 `rotate` 뿐입니다.
+ */
+:is(.bj-diamond, .bj-circle, .bj-square) {
+  --bjg: 1.2rem;   /* 홈통 — 선에서 글자까지 */
+  --bjs: 5px;      /* 표식 한 변 (돌리기 전) */
+  --bjh: 7px;      /* 번지는 둘레가 가장 멀리 나갈 때 */
+  --bjz: 1.35;     /* 반짝일 때 가장 커지는 배율 */
+  --bjd: .5;       /* 가운데에서 가장자리까지의 계수 — 돌린 마름모만 다릅니다 */
+  /**
+   * 표식이 **선 한가운데에서 사방으로** 차지하는 반폭. 이만큼 자리를 비워 둡니다.
+   *
+   * 왜 필요한가: `.b-jump` 는 절이 많은 글에서 목록을 굴리려고 스크롤 상자인데,
+   * **스크롤 상자는 제 패딩 상자 밖을 잘라 냅니다** — 세로만 굴려도 네 방향이 다 잘립니다.
+   *
+   * 셈: 둘레는 사방으로 퍼지므로 한 변이 `--bjs + 2 × --bjh` 가 되고, 반짝일 때
+   * `--bjz` 배로 커집니다. 거기에 가운데에서 가장자리까지의 비율을 곱합니다 —
+   * 네모와 동그라미는 절반(.5), 45° 돌린 마름모는 **대각선이 가로폭**이라 √2÷2(≈.708).
+   *
+   * 두 번 틀렸습니다. 표식 크기(`--bjs`)로만 셈해 **왼쪽**이 깎였고, 왼쪽만 벌려
+   * 첫 항목의 **위쪽**이 깎였습니다. 잘리는 것은 표식이 아니라 그 둘레이고,
+   * 둘레는 한 방향이 아니라 사방으로 퍼집니다.
+   */
+  --bjr: calc((var(--bjs) + 2 * var(--bjh)) * var(--bjz) * var(--bjd));
+}
+.bj-diamond { --bjd: .708; }
+/* 왼쪽은 바깥 여백으로 — 선(nav 의 테두리)이 같이 들어와야 합니다.
+   위아래는 안쪽 여백으로 — 선은 제자리에 두고 글자만 내려야 합니다 */
+:is(.bj-diamond, .bj-circle, .bj-square) nav {
+  margin-left: var(--bjr);
+  padding: var(--bjr) 0 var(--bjr) var(--bjg);
+  border-left: 1px solid color-mix(in srgb, var(--bji) 16%, transparent);
+}
+/**
+ * 표식을 **기준선(baseline)** 에 맵니다. 상자 가운데도, 줄 상자 가운데도 아닙니다.
+ *
+ * 줄 상자 가운데가 안 되는 까닭: **한글에는 내려긋는 획이 없습니다.** 줄 상자는 영문의
+ * g·y 가 내려갈 자리까지 아래에 비워 두므로, 그 한가운데는 한글의 눈높이보다 아래입니다.
+ * 치우침은 글꼴마다 다릅니다 — 재 보면 Apple SD Gothic Neo·Noto Sans KR 은 1.0px 아래,
+ * Pretendard 는 0px 입니다. 블로그 글꼴은 **설정에서 고르는 값**이라 한 글꼴에 맞춘
+ * 보정값을 박을 수 없습니다.
+ *
+ * 그런데 기준선에서 한글 눈높이 가운데까지는 글꼴이 바뀌어도 거의 같습니다
+ * (0.367em vs 0.354em — 0.2px 차이). 그래서 그쪽에 맵니다. 비어 있는 상자의 기준선은
+ * 제 아래 모서리라, `align-items:baseline` 이면 표식 밑이 **첫 줄** 기준선에 앉습니다.
+ * 거기서 눈높이(0.36em)만큼 올리고 제 반지름을 되돌립니다.
+ * (`margin-bottom` 으로는 안 움직입니다 — 크롬이 여백이 아니라 테두리 모서리를
+ * 기준선으로 잡습니다. 재서 확인했습니다. 그래서 `top` 입니다.)
+ *
+ * 거기서 **1px 더 올립니다.** 자로 잰 가운데와 눈이 보는 가운데가 다릅니다 — 작은 표식은
+ * 글자 옆에서 제 자리보다 낮아 보입니다(한글은 받침이 가벼워 무게가 위에 쏠립니다).
+ *
+ * 가로는 왼쪽으로 홈통만큼 나가 선에 닿고 오른쪽으로 되돌려 **글자 자리는 그대로** 둡니다.
+ * 두 여백의 합이 표식 너비와 맞아떨어져(-(g+s/2) + s + (g-s/2) = 0) 글줄이 안 밀립니다.
+ */
+:is(.bj-diamond, .bj-circle, .bj-square) a { display: flex; align-items: baseline; }
+:is(.bj-diamond, .bj-circle, .bj-square) a::before {
+  content: '' / '';          /* 읽어 줄 글자가 없습니다 — 눈에만 보이는 표식입니다 */
+  flex: 0 0 auto; position: relative; z-index: 1;
+  margin-left: calc(-1 * var(--bjg) - var(--bjs) / 2);
+  margin-right: calc(var(--bjg) - var(--bjs) / 2);
+  top: calc(var(--bjs) / 2 - .36em - 1px);
+  width: var(--bjs); height: var(--bjs);
+  background: var(--bji);
+  opacity: var(--cur, 0);
+  animation: bjPulse 1.4s ease-in-out infinite;
+}
+.bj-diamond a::before { rotate: 45deg; border-radius: .5px; }
+.bj-circle  a::before { border-radius: 50%; }
+.bj-square  a::before { border-radius: 1px; }
+/* 선은 표식 **뒤로 이어서** 지나갑니다 — 끊지 않습니다. 표식이 그 위에 올라앉습니다.
+   둘레만 퍼뜨리면 5px 짜리 표식에서는 눈에 안 띕니다. 그래서 몸도 같이 키웁니다.
+   `rotate` 와 `scale` 은 서로 다른 속성이라 45° 돌린 채로 크기만 따로 움직입니다
+   (`transform` 한 줄로 썼으면 돌리기가 지워집니다). */
+@keyframes bjPulse {
+  0%, 100% { scale: 1;              box-shadow: 0 0 0 0 color-mix(in srgb, var(--bji) 45%, transparent); }
+  50%      { scale: var(--bjz, 1.35); box-shadow: 0 0 0 var(--bjh, 7px) transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.bj-diamond, .bj-circle, .bj-square) a::before { animation: none; }
+}
+
+/* ── 넷째 — 바 ────────────────────────────────────────────────────
+ * 반짝이지 않습니다. 선 위에 굵은 먹선이 서는 것이 전부입니다.
+ * `scaleY` 로 자라게 해 레이아웃을 안 건드립니다.
+ */
+/* 바도 `--bjg`·`--bjr` 을 갖습니다 — 시트 규칙이 넷을 한 가지 식으로 다루게 하려는 것입니다.
+   바는 번지는 둘레가 없어 선 밖으로 나가는 것이 먹선 절반(1px)뿐입니다 */
+.bj-bar { --bjg: 1rem; --bjr: 2px; }
+.bj-bar nav {
+  margin-left: 2px;          /* 먹선이 선 왼쪽으로 1px 나오므로 그만큼 */
+  padding: .15rem 0 .15rem 1rem;
+  border-left: 1px solid color-mix(in srgb, var(--bji) 16%, transparent);
+}
+.bj-bar a { position: relative; }
+.bj-bar a::before {
+  content: '' / '';
+  position: absolute; left: calc(-1rem - 2px);   /* 3px 먹선의 가운데가 선 위에 옵니다 */
+  top: .15em; bottom: .15em; width: 3px;
+  background: var(--bji);
+  transform: scaleY(var(--cur, 0)); transform-origin: center;
+  transition: transform .18s ease;
+}
+@media (prefers-reduced-motion: reduce) { .bj-bar a::before { transition: none; } }
+
+/* ── 시트 부품 ───────────────────────────────────────────────────────
+ * 좁은 화면에서만 쓰는 것들입니다. 넓은 화면에서는 **`display:none`** 이라
+ * 초점도 안 받습니다 — 눈에만 숨기면(`clip-path`) 보이지도 않는 checkbox 가
+ * Tab 차례를 가져갑니다. 좁아지면 굽기가 내는 시트 규칙이 되살립니다.
+ * 생김새만 여기 두고, 자리잡기(fixed·z-index)는 그 규칙이 맡습니다.
+ */
+.b-sw, .b-open, .b-close, .b-veil { display: none; }
+.b-open {
+  align-items: center; gap: .4rem;
+  padding: .6rem .9rem; border-radius: 999px; cursor: pointer;
+  background: var(--fg); color: var(--bg);
+  font-size: .8rem; line-height: 1;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .18);
+}
+.b-close { cursor: pointer; color: var(--fg-3); font-size: 1.3rem; line-height: 1; }
+
+/* 넷 모두: 지금 읽는 자리는 글자도 같이 짙어지고 굵어집니다 */
+.b-jump a {
+  color: color-mix(in srgb, var(--bji) calc(var(--cur, 0) * 100%), var(--fg-2));
+  font-weight: calc(400 + var(--cur, 0) * 300);
+}
 
 /* 헤더가 sticky 라, 눌러서 뛰면 절 제목이 헤더 밑에 깔립니다.
    site.css 의 `.p-sec` 와 같은 셈(헤더 높이 + 한 줄 숨)입니다. */
@@ -138,10 +291,12 @@ body > .p-contact { flex: none; }
  */
 @container (max-width: 9rem) { .b-jump nav { display: none } }
 
-/* 좁은 화면에는 안 냅니다 — 본문 옆에 자리가 없고, 위에 붙이면 글 읽기를 가로막습니다.
-   1080px 은 공통헤더의 메뉴가 둘째 줄로 접히는 그 지점입니다(site.css 와 같은 값). */
+/* 좁은 화면에서 옆에 세우지 않는 것은 여기서 정하지 **않습니다.**
+   자리가 있느냐는 화면 폭이 아니라 **그 글의 폭**이 정하므로, 굽기가 글마다 셈해
+   시트로 바꾸는 규칙을 냅니다(server/bake.mjs 의 `jumpModeCss`).
+   여기에 고정 폭으로 한 줄 더 두면 그 규칙과 싸웁니다 — 시트가 떠야 할 자리에서
+   `display:none` 이 이겨 아무것도 안 나옵니다. */
 @media (max-width: 1080px) {
-  .b-jump { display: none; }
   .b-post .prose-body :is(h2, h3) { scroll-margin-top: calc(var(--hd-h, 66px) + 40px); }
 }
 

@@ -77,9 +77,15 @@ const CASES = [
     if (k === 'shots' || k === 'slides') c.main.stage[k] = vocab.SAMPLE_SHOTS
   })),
   ...values('BLOG_TEMPLATES').map((v) => variant(`blog-${v}`, (c) => { c.blog.template = v })),
-  /* 글 상세의 절 바로 가기 — 켠 벌입니다. 기본이 꺼짐이라 위의 벌들은 전부 끈 쪽을 봅니다.
+  /* 글 상세의 문단 바로가기 — 켠 벌입니다. 기본이 꺼짐이라 위의 벌들은 전부 끈 쪽을 봅니다.
      이 한 벌이 <aside> 마크업과 제목의 id 주입을 지킵니다 */
   variant('blog-toc', (c) => { c.blog.toc.show = true }),
+  /* 표식 모양 — 기본(diamond)은 바로 위 `blog-toc` 가 봅니다. 나머지 셋만 봅니다.
+     마크업에서 달라지는 것은 <aside> 의 클래스 한 장입니다 */
+  ...values('TOC_SKINS').filter((v) => v !== 'diamond')
+    .map((v) => variant(`toc-${v}`, (c) => { c.blog.toc.show = true; c.blog.toc.skin = v })),
+  /* 색을 고친 벌 하나 — <style data-toc> 가 실제로 나가는지 지킵니다 */
+  variant('toc-tuned', (c) => { c.blog.toc.show = true; c.blog.toc.ink = '#bb3d30' }),
   /* 카드 갈래의 테마 — 기본(plain)은 위의 `blog-outline` 이 이미 봅니다. 나머지만 봅니다.
      클래스 한 장이 전부라 벌마다 달라지는 것은 <ul> 한 줄입니다 */
   ...values('OUTLINE_SKINS').filter((v) => v !== 'plain')

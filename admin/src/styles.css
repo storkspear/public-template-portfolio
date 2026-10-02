@@ -699,6 +699,25 @@ body{margin:0;background:var(--bg);color:var(--fg)}
 .lk .lkSkinChip i:nth-child(3){width:70%;height:2px;margin-top:.22rem;opacity:.45}
 .lk .lkSkins button[aria-pressed="true"] .lkSkinChip{outline:2px solid var(--fg);outline-offset:2px}
 
+/* ── 문단 바로가기 표식 고르기 ──
+   카드 테마 칩은 색과 질감을 보여 주지만, 여기 넷은 **색이 같고 모양만 다릅니다.**
+   그래서 실제로 보이는 그대로 그립니다 — 세로선 하나(u) 위에 표식(i), 옆에 글줄 둘(b). */
+.lk .lkTocChip{position:relative;display:block;width:100%;aspect-ratio:26/16;max-height:3.6rem;
+  margin-bottom:.45rem;padding:0;border:1px solid var(--line);border-radius:3px;background:#fff}
+.lk .lkTocChip u{position:absolute;left:26%;top:22%;bottom:22%;width:1px;
+  background:color-mix(in srgb,var(--c-ink) 22%,transparent)}
+.lk .lkTocChip i{position:absolute;left:26%;top:50%;width:6px;height:6px;
+  translate:-50% -50%;background:var(--c-ink)}
+.lk .lkTocChip b{position:absolute;left:38%;height:3px;border-radius:1px;background:var(--c-ink)}
+.lk .lkTocChip b:nth-of-type(1){top:calc(50% - 5px);width:40%;opacity:.9}
+.lk .lkTocChip b:nth-of-type(2){top:calc(50% + 2px);width:28%;opacity:.3}
+.lk .lkTocChip[data-skin="diamond"] i{rotate:45deg;border-radius:1px}
+.lk .lkTocChip[data-skin="circle"] i{border-radius:50%}
+.lk .lkTocChip[data-skin="square"] i{border-radius:1px}
+/* 바만 모양이 다릅니다 — 점이 아니라 선 위에 선 굵은 먹선입니다 */
+.lk .lkTocChip[data-skin="bar"] i{width:3px;height:42%;border-radius:0}
+.lk .lkSkins button[aria-pressed="true"] .lkTocChip{outline:2px solid var(--fg);outline-offset:2px}
+
 /* 영수증 칩은 테두리가 아니라 뜯긴 위아래여야 합니다 — 실제 테마가 그렇습니다.
    톱니를 12×6 으로 키웁니다. 8×4 로는 칩이 작아 스케치 칩과 구별이 안 됐습니다.
    가운데 점선은 인쇄 영역 구분선입니다 — 이게 영수증을 영수증으로 읽게 합니다 */
