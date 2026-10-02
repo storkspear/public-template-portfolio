@@ -16,13 +16,13 @@ import { api } from './api.js'
 import { EyeToggle } from './eye.jsx'
 import {
   PAGES, PAGE_MODES, PAGE_SAMPLES, PAGE_SOURCE_MINE, MAIN_TEMPLATES, BLOG_TEMPLATES, PORTFOLIO_TEMPLATES, WIDTHS, ZOOMS,
-  KNOBS, OUTLINE_SKINS, THEME_PRESETS, FONT_ROLES, contrast, mutedOn, headerContrast, buttonContrast, INK_MIN,
+  KNOBS, OUTLINE_SKINS, TOC_SKINS, THEME_PRESETS, FONT_ROLES, contrast, mutedOn, headerContrast, buttonContrast, INK_MIN,
   MENU_PLACES, ALIGNS, HEAD_WIDTHS, SIDEBARS, DRAWER_W, NAV_STYLES, DRAWER_STYLES, NAV_LINKS, FAVICONS, BUILTIN_FAVICON, inkOn, HEAD_SIZES, mainStart,
   ITEM_SIZES, ITEM_LINKS, SECTION_KINDS, TEMPLATE_ITEM_IDS, SHOT_KNOBS, SHOT_MAX, SAMPLE_SHOTS, STAGE_H, STAGE_W, BODY_W, HEAD_H, HEAD_SCALE, isExternal,
   FOOT_KINDS, FOOT_KNOBS, FOOT_SIZES, FOOT_H, FOOT_ICON, SERVICE_ICONS, ICON_OF, footStart, footerContrast,
 } from '../../shared/site-vocab.mjs'
 import { MENU_ICONS, MENU_ICON_GROUPS } from '../../shared/menu-icons.mjs'
-import { emitInitial, headVars, knobVars, lhVars, menuVars, outlineVars, themeVars } from '../../shared/site-css.mjs'
+import { emitInitial, headVars, knobVars, lhVars, menuVars, outlineVars, tocVars, themeVars } from '../../shared/site-css.mjs'
 
 import { attachStage, STACK_MQ } from './stage-editor.js'
 import { ALIGN_OPS, ColorField, FontPick, IconApply, IconPic, IconUndo, ItemName, MenuIcon,
@@ -145,6 +145,9 @@ const liveCss = (conf, pageKey) => {
     + emitInitial(themeVars(t, pg.font))
     + emitInitial(knobVars(conf.portfolio?.knobs))
     + emitInitial(outlineVars(conf.blog?.outline))
+    /* 문단 바로가기 표식 색 — 미리보기가 글 상세일 때만 쓰이지만, 변수는 늘 냅니다.
+       `emitInitial` 이라 비우면 `initial` 로 나가 CSS 폴백(사이트의 먹)이 살아납니다 */
+    + emitInitial(tocVars(conf.blog?.toc))
     + head
     + (pg.head ? emitInitial(lhVars(pg.head)) : '')
     + `}
@@ -387,7 +390,7 @@ export function Look({ onWorks }) {
 
   /**
    * 「다음 미리보기는 글 상세로」 한 번짜리 신호. 켜는 순간 바로 옮길 수는 없습니다 —
-   * 절 바로 가기는 마크업이 바뀌는 값이라 `shape` 가 흔들려 400ms 뒤 사이트를 다시 굽고,
+   * 문단 바로가기는 마크업이 바뀌는 값이라 `shape` 가 흔들려 400ms 뒤 사이트를 다시 굽고,
    * 그때 iframe 이 통째로 새 것이 되면서 `/blog/` 목록으로 돌아가기 때문입니다.
    *
    * **담는 값이 `bust` 번호인 까닭**: `true`/`false` 로 뒀더니 옮기자마자 되돌아왔습니다.
@@ -515,7 +518,7 @@ export function Look({ onWorks }) {
     }
     /**
      * 글 상세를 만졌으면 미리보기를 글 상세로 보냅니다 — 포트폴리오의 `showDetail` 과 같은
-     * 이유입니다. 블로그 미리보기는 `/blog/` 목록 고정이라, 절 바로 가기를 켜도 목록에는
+     * 이유입니다. 블로그 미리보기는 `/blog/` 목록 고정이라, 문단 바로가기를 켜도 목록에는
      * 아무 일도 안 일어납니다. 설정은 들어갔는데 화면이 그대로면 사람은 버그로 읽습니다.
      *
      * 글 카드가 **실제로 보일 때**만 씁니다. 다시 굽는 동안 이 함수는 아직 빈 문서(새
@@ -564,8 +567,12 @@ export function Look({ onWorks }) {
     conf.main.items.map((i) => [i.id, i.show, i.size, i.link, i.font, i.color].join(':')),
     conf.portfolio.zoom,
     headMarkup(conf.blog.head), headMarkup(conf.portfolio.head),
-    /* 글 상세의 절 바로 가기 — 켜면 `<aside>` 가 통째로 생깁니다 */
-    conf.blog.toc.show,
+    /* 글 상세의 문단 바로가기 — 켜면 `<aside>` 가 통째로 생깁니다.
+       표식 모양도 **여기 있어야 합니다** — `<aside>` 에 `bj-<모양>` 클래스 한 장이 붙는데,
+       클래스는 구운 HTML 에 박히므로 미리보기 CSS 만 갈아서는 안 바뀝니다(바로 아래
+       카드 테마와 같은 까닭입니다). 색(`toc.ink`)은 CSS 변수라 여기 없습니다 —
+       넣으면 색칸을 만질 때마다 사이트를 다시 굽습니다 */
+    conf.blog.toc.show, conf.blog.toc.skin,
     /* 카드 갈래의 테마 — 목록에 클래스 한 장이 붙습니다. 색·모서리는 CSS 변수라 여기 없습니다
        (넣으면 색칸을 만질 때마다 사이트를 다시 굽습니다) */
     conf.blog.outline.skin,
@@ -629,6 +636,14 @@ export function Look({ onWorks }) {
   const setSite = (patch) => set('site', patch)
   /* 카드 갈래의 손잡이. 색칸이 「비우면 무엇을 따르나」를 보여 주려면 지금 테마를 알아야 합니다 */
   const setOutline = (patch) => set('blog', { outline: { ...conf.blog.outline, ...patch } })
+  /* 고르면 미리보기를 첫 글로 보냅니다 — 표식은 글 상세에만 있어서 목록에 서 있으면
+     바뀐 것이 안 보입니다.
+     모양은 `shape` 에 들어갑니다(클래스라 다시 구워야 합니다). 색은 CSS 변수라 안 들어가고
+     즉시 반영됩니다 — 둘이 한 함수를 쓰지만 반영되는 길이 다릅니다 */
+  const setToc = (patch) => {
+    goPost.current = bust
+    set('blog', { toc: { ...conf.blog.toc, ...patch } })
+  }
   const skinNow = OUTLINE_SKINS.find((o) => o.value === conf.blog.outline.skin) || OUTLINE_SKINS[0]
   /* 색을 안 고르면 파비콘은 탭 배경에 맞춰 뒤집힙니다 — 밝으면 검정, 어두우면 흰색.
      색칸이 늘 검정을 가리키면 어두운 탭에서 보이는 것과 어긋납니다(흰 그림인데 검정이라 적힘).
@@ -1929,17 +1944,49 @@ export function Look({ onWorks }) {
               <h3>상세페이지</h3>
               <div className="lkLink lkEyeRow">
                 {/* 「목차」라 부르지 않습니다 — 목록 템플릿에 이미 「목차」가 있어 둘이 겹칩니다 */}
-                <EyeToggle shown={conf.blog.toc.show} what="절 바로 가기"
+                <EyeToggle shown={conf.blog.toc.show} what="문단 바로가기"
                            onToggle={() => {
                              /* 켜고 끈 결과는 목록이 아니라 글 안에 있습니다. 다시 구운 뒤
                                 미리보기를 첫 글로 보냅니다(paint 가 받습니다) */
                              goPost.current = bust
                              set('blog', { toc: { show: !conf.blog.toc.show } })
                            }} />
-                <span>절 바로 가기</span>
+                <span>문단 바로가기</span>
               </div>
               <p className="lkHint">글 오른쪽에 절 제목을 세웁니다. 누르면 그 자리로 옮깁니다.
                 {' '}본문에 제목이 있는 글에만 나오고, 좁은 화면에서는 나오지 않습니다.</p>
+
+              {/* ── 지금 읽는 자리 표식 ──
+                   켠 사람에게만 냅니다. 꺼 둔 채로 모양을 고르게 하면 눌러도 아무 데도
+                   안 나가는 칸이 열립니다(카드 테마와 같은 규칙) */}
+              {conf.blog.toc.show && (<>
+                <h3>지금 읽는 자리 표식</h3>
+                <div className="lkPick lkSkins lkTocPick">
+                  {TOC_SKINS.map((o) => (
+                    <button key={o.value} type="button"
+                            aria-pressed={conf.blog.toc.skin === o.value}
+                            onClick={() => conf.blog.toc.skin !== o.value && setToc({ skin: o.value })}>
+                      {/* 넷의 차이는 색이 아니라 **모양**입니다 — 색 막대로는 구별이 안 됩니다.
+                          선 하나에 표식을 올려 실제로 보이는 그대로 그립니다 */}
+                      <span className="lkTocChip" aria-hidden="true" data-skin={o.value}
+                            style={{ '--c-ink': conf.blog.toc.ink || 'var(--fg)' }}>
+                        <u /><i /><b /><b />
+                      </span>
+                      <b>{o.label}</b><em>{o.hint}</em>
+                    </button>
+                  ))}
+                </div>
+                <div className="lkRow">
+                  <ColorField id="bj-ink" label="표식 색" hint=""
+                              value={conf.blog.toc.ink}
+                              shown={conf.blog.toc.ink || '#101114'}
+                              onPick={(v) => setToc({ ink: v })}
+                              followLabel="검정으로" />
+                </div>
+                <p className="lkHint">지금 읽는 절을 표시합니다. 비우면 검정입니다.
+                  {' '}모양은 넷 다 글자도 같이 짙어지고 굵어집니다 — 색만으로는 약합니다.
+                  {' '}파이어폭스에서는 표식이 나오지 않습니다(브라우저가 아직 못 읽습니다).</p>
+              </>)}
             </>)}
 
             {/* ── 메인: 콘텐츠 영역 · 요소 · 목록 ──

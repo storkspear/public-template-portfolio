@@ -74,6 +74,9 @@ const INLINE_OK = new Set([
   'fgap', 'fline', 'fline-c', 'fbg', 'fg', 'fg-2', 'fg-3', 'line', 'accent', 'hd-bg',
   /* 글 본문 폭 — 글마다 저장돼 있습니다 */
   'measure-override',
+  /* 문단 바로가기의 위치 추적 — 링크마다 값이 다릅니다. 굽기가 글의 소제목 수만큼
+     규칙을 찍어 내므로 공유 모듈에 둘 수 없습니다(bake.mjs 의 tocTimelineCss) */
+  'bjp', 'bjq', 'bje', 'cur',
 ])
 const declared = (src) => new Set(
   [...src.matchAll(/--([a-z][a-z0-9-]*)\s*:/g)].map((m) => m[1]).filter((n) => !n.startsWith('lk-')),
@@ -105,6 +108,7 @@ const CLASS_OF = [
   ['SIDEBARS', (v) => `.s-drawer-${v}`, '사이드바 모양'],
   ['BLOG_TEMPLATES', (v) => `.bl-${v}`, '블로그 목록'],
   ['OUTLINE_SKINS', (v) => `.bo-${v}`, '카드 테마'],
+  ['TOC_SKINS', (v) => `.bj-${v}`, '문단 바로가기 표식'],
   ['PORTFOLIO_TEMPLATES', (v) => `.pf-${v}`, '포트폴리오 목록'],
 ]
 let checkedValues = 0

@@ -136,6 +136,19 @@ export const outlineVars = (o = {}) => [
   ['bo-radius', Number.isFinite(o?.radius) ? px(o.radius) : ''],
 ]
 
+/**
+ * 문단 바로가기의 표식 색. 모양 넷이 **한 색을 같이** 봅니다.
+ *
+ * 빈 값을 그대로 넘깁니다 — `emitOmit` 이 안 내므로 CSS 의 `var(--bj-ink, var(--fg))`
+ * 폴백이 살아 사이트의 먹(검정)을 따릅니다. 여기서 '#101114' 를 채우면 테마 색을 바꾼
+ * 사이트에서도 그 색이 박힙니다(`outlineVars` 가 같은 까닭으로 비워 둡니다).
+ *
+ * 이름을 작은따옴표 리터럴로 적습니다. 백틱으로 조립하면 `check-contract` ①이 못 읽습니다.
+ */
+export const tocVars = (t = {}) => [
+  ['bj-ink', t?.ink || ''],
+]
+
 /** 목록 제목(.lh)의 모양. 블로그와 포트폴리오가 값을 따로 갖습니다 */
 export const lhVars = (head) => [
   ['lh-size', { sm: '0.82', md: '1', lg: '1.35' }[head.size] || '1'],
