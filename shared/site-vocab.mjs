@@ -6,6 +6,7 @@
  */
 import { SERVICE_ICONS, ICON_OF } from './site-icons.mjs'
 import { MENU_ICONS } from './menu-icons.mjs'
+import { CATEGORY_ID, CATEGORY_LABEL_MAX, CATEGORY_MAX, DEFAULT_LABEL, slugProblem } from './category.mjs'
 
 /* 아이콘은 굽기와 관리자가 같이 렌더링합니다 — 어휘를 지나가게 해서 들여오는 곳을 하나로 둡니다 */
 export { SERVICE_ICONS, ICON_OF }
@@ -498,6 +499,46 @@ export const OUTLINE_SKINS = [
   { value: 'postit', label: '심플 포스트잇', hint: '노란 종이 한 장 · 테두리 없이 그림자로만',
     font: { display: 'Noto Sans KR', body: 'Nanum Gothic' },
     chip: ['#ffe97f', '#e0d26a', '#3b3524'] },
+]
+
+/**
+ * 블로그 목록 위에 서는 **카테고리 줄**의 모양.
+ *
+ * 카테고리마다 두지 않고 블로그 한 벌만 둡니다 — 줄은 카테고리를 **건너다니는** 길이라,
+ * 카테고리마다 모양이 다르면 옮길 때마다 길이 바뀝니다.
+ *
+ * **첫 값이 지금 모습(`dots`)이어야 합니다.** 기본이 현상 유지라야 쓰던 사람의 화면이
+ * 안 바뀌고, `check-contract` ②도 첫 값은 「바탕 규칙이 맡는다」고 보고 건너뜁니다.
+ */
+export const CAT_STRIP_STYLES = [
+  /**
+   * 설명 대신 그림입니다 — 템플릿 고르개와 같은 규약(`Shape`, [x,y,w,h,톤]).
+   *
+   * **줄만 그립니다.** 처음에는 밑에 글 목록 두 줄을 같이 깔았는데, 그 부분이 다섯 벌 모두
+   * 똑같아서 그림의 대부분이 같아 보였습니다(사용자 지적). 다른 데가 그림 전체가 되게
+   * 목록을 빼고 줄을 키웠습니다. 그래서 `iconH` 가 10 입니다 — 납작한 그림입니다.
+   *
+   * 톤: 1 = 고른 것(먹) · 0 = 나머지(옅음) · 2 = 흰 바탕에 테두리
+   */
+  { value: 'dots', label: '기본', iconH: 10,
+    icon: [[0, 3, 6, 4, 1], [7.8, 4.4, 1.3, 1.3, 0], [10.9, 3, 5, 4, 0],
+      [17.3, 4.4, 1.3, 1.3, 0], [20.4, 3, 3.6, 4, 0]] },
+  { value: 'pill', label: '라벨', iconH: 10,
+    icon: [[0, 1.8, 7.6, 6.4, 1], [9.2, 1.8, 6.8, 6.4, 2], [17.6, 1.8, 6.4, 6.4, 2]] },
+  { value: 'underline', label: '밑줄', iconH: 10,
+    icon: [[0, 2.2, 6, 4, 1], [8, 2.2, 5, 4, 0], [15, 2.2, 4.6, 4, 0],
+      [0, 6.9, 6, 1.3, 1]] },
+  { value: 'rule', label: '구분선', iconH: 10,
+    icon: [[0, 3, 5.5, 4, 1], [7.2, 1.4, 0.5, 7.2, 0], [9.4, 3, 5, 4, 0],
+      [16.1, 1.4, 0.5, 7.2, 0], [18.3, 3, 5.7, 4, 0]] },
+  { value: 'bracket', label: '대괄호', iconH: 10,
+    icon: [[0, 2.2, 0.7, 5.2, 1], [0, 2.2, 1.6, 0.7, 1], [0, 6.7, 1.6, 0.7, 1],
+      [2.4, 3, 5.4, 4, 1],
+      [8.6, 2.2, 0.7, 5.2, 1], [7.7, 2.2, 1.6, 0.7, 1], [7.7, 6.7, 1.6, 0.7, 1],
+      [11.6, 3, 5, 4, 0], [18.4, 3, 5.6, 4, 0]] },
+  { value: 'band', label: '띠', iconH: 10,
+    icon: [[0, 0.8, 24, 8.4, 3], [1.4, 2.6, 6.4, 4.8, 2], [9.6, 3, 5.4, 4, 0],
+      [16.8, 3, 5.8, 4, 0]] },
 ]
 
 /**
@@ -1097,61 +1138,152 @@ export const normalizeMain = (v, fonts = []) => {
   return { value: { mode, chrome, source, template, stage, sections, items, font }, problems: [...problems] }
 }
 
-/** 블로그에는 `mode` 가 없습니다 — 글이 DB 에서 오므로 목록을 코드가 꽂아야 합니다 */
+/**
+ * 블로그 한 벌의 **모양** — 공통헤더·갈래·글꼴·타이틀·문단 바로가기·카드 테마.
+ *
+ * 따로 떼어 둔 까닭: 이 여섯은 `/blog/`(기본)에도, 카테고리마다에도 **같은 모양으로** 붙습니다.
+ * 카테고리는 만들 때 기본의 이 블록을 통째로 베끼고(`blogLookOf`), 그 뒤로는 제 것을 따로
+ * 고칩니다. 그래서 「초기화」가 생긴다면 이 블록을 한 번 더 베끼는 한 줄이면 됩니다.
+ *
+ * `where` 는 문제 문장의 머리입니다 — 기본은 「블로그」, 카테고리는 「카테고리 「개발」」.
+ * 카테고리가 여럿이면 어느 것의 글꼴이 틀렸는지 머리가 없이는 알 수 없습니다.
+ */
+export const BLOG_LOOK_KEYS = ['chrome', 'template', 'font', 'head', 'toc', 'outline']
+const normBlogLook = (v, fonts, problems, where) => {
+  const src = asObject(v, problems, where)
+  const w = (s) => (s ? `${where} ${s}` : where)
+  return {
+    chrome: pickFlag(src.chrome, true, problems, w('공통헤더')),
+    template: pickOne(src.template, BLOG_TEMPLATES, BLOG_TEMPLATES[0].value, problems, w('')),
+    /* 목록 폭 — 포트폴리오·메인과 같은 말을 씁니다(`WIDTHS`).
+       기본은 좁게: 지금까지 블로그 목록은 늘 본문 폭이었고, 기본을 바꾸면 쓰던 사람의 화면이 흔들립니다 */
+    font: pickPageFont(src.font, fonts, problems, w('')),
+    head: pickHead(src.head, '글', problems, w('타이틀')),
+    /**
+     * 글 상세의 「문단 바로가기」 — 본문 오른쪽에 제목 목록을 띄웁니다.
+     *
+     * `head` 안에 못 넣습니다. `pickHead` 는 **포트폴리오와 함께 쓰는 부품**이라
+     * 여기 한 칸을 보태면 작업 목록에도 같은 칸이 생깁니다. `knobs` 도 안 됩니다 —
+     * `pickKnobs` 가 포트폴리오 전용 `KNOBS` 에 묶여 있습니다. 그래서 제 칸입니다.
+     *
+     * 기본은 **끕니다.** 켜 두면 쓰던 사람의 글이 한꺼번에 바뀝니다.
+     *
+     * 깊이는 설정으로 두지 않습니다 — h2·h3 를 늘 함께 내고 h3 를 한 칸 들입니다.
+     * 손잡이를 하나 더 두는 값보다, 고를 것이 없는 편이 낫습니다.
+     */
+    toc: {
+      show: pickFlag(src.toc?.show, false, problems, w('문단 바로가기')),
+      /**
+       * 지금 읽는 자리 표식의 모양과 색. 켜지 않았으면 읽히지 않고 잠자코 남습니다
+       * (카드 테마와 같은 규칙 — 껐다 켜도 고른 값이 안 날아갑니다).
+       *
+       * 색은 **비우는 것이 기본**입니다. 여기서 '#101114' 같은 값을 채우면 테마 색을
+       * 바꾼 사이트에서도 그 색이 박혀 버립니다. 빈 값은 `emitOmit` 이 안 내므로
+       * CSS 의 `var(--bj-ink, var(--fg))` 폴백이 살아 사이트의 먹을 따릅니다.
+       */
+      skin: pickOne(src.toc?.skin, TOC_SKINS, TOC_SKINS[0].value, problems, w('문단 바로가기 표식')),
+      ink: pickColor(src.toc?.ink, problems, w('문단 바로가기 표식 색')),
+    },
+    /**
+     * 「카드」 갈래의 테마와 손잡이. 다른 갈래를 고르면 읽히지 않고 잠자코 남습니다 —
+     * 갈래를 왔다 갔다 해도 고른 값이 안 날아갑니다.
+     *
+     * **넷 다 기본이 「안 정함」입니다.** 까닭 둘:
+     *   ① 쓰던 사람의 목록이 안 바뀝니다(`toc` 와 같은 규칙).
+     *   ② 빈 값은 `emitOmit` 이 안 내므로 골든 쉰네 벌이 하나도 안 흔들립니다.
+     * 실제 값은 CSS 의 폴백(스킨이 정한 기본)이 맡습니다 — 여기서 채우면 그 폴백이 죽습니다.
+     *
+     * 색은 `#rrggbb` 만 받습니다(`pickColor`). `color-mix(...)` 같은 CSS 함수 문자열을
+     * 허용하면 설정값이 그대로 스타일시트로 새는 길이 열립니다.
+     */
+    outline: {
+      skin: pickOne(src.outline?.skin, OUTLINE_SKINS, OUTLINE_SKINS[0].value, problems, w('카드 테마')),
+      ink: pickColor(src.outline?.ink, problems, w('카드 선 색')),
+      bg: pickColor(src.outline?.bg, problems, w('카드 배경색')),
+      radius: pickNum(src.outline?.radius, 0, 32, '', problems, w('카드 모서리')),
+    },
+  }
+}
+
+/** 블로그 설정에서 모양 여섯만 깊은 사본으로 — 카테고리를 만들 때 「기본을 통째로 베끼는」 그 한 줄입니다 */
+export const blogLookOf = (blog) =>
+  Object.fromEntries(BLOG_LOOK_KEYS.map((k) => [k, structuredClone(blog?.[k])]))
+
+/**
+ * 카테고리 목록. 배열 차례가 곧 화면 차례(목록 위의 줄·드로어의 하위 항목)입니다.
+ * `normItems` 와 같은 규약 — 식별자는 정규식으로, 겹치는 식별자는 뒤엣것을 버리고,
+ * 값 하나하나는 `pick*` 을 지나 문제를 문장으로 남깁니다.
+ *
+ * 「기본」은 여기 **없습니다.** `/blog/` 그 자체라 주소도 식별자도 없고, 이름을 바꾸거나
+ * 지우거나 숨길 수도 없습니다(사용자 결정). 그 모양은 블로그 설정의 윗단(여섯 키)입니다.
+ *
+ * 되돌리기(`POST /api/settings/undo`)가 옛 판을 다시 정규화하므로, 목록이 **없으면 조용히 빈
+ * 목록**입니다 — 여기서 「빠졌습니다」를 세우면 카테고리가 생기기 전의 판으로는 영영 못 돌아갑니다.
+ *
+ * 식별자가 없는 줄은 `normItems` 처럼 조용히 버리지 않고 **말합니다.** 글이 이 식별자로 카테고리를
+ * 가리키는데, 관리자 코드가 식별자를 빠뜨린 채 보내면 방금 만든 카테고리가 저장되는 순간 사라지고
+ * 아무 데도 자국이 안 남습니다.
+ */
+const normCategories = (src, fonts, problems) => {
+  if (src === undefined || src === null) return []
+  if (!Array.isArray(src)) { problems.push('카테고리: 목록의 모양이 다릅니다'); return [] }
+  if (src.length > CATEGORY_MAX) problems.push(`카테고리: ${CATEGORY_MAX}개까지입니다 (${src.length}개)`)
+  const seen = new Set()
+  const slugs = new Set()
+  const out = []
+  for (const row of src.slice(0, CATEGORY_MAX)) {
+    const one = asObject(row, problems, '카테고리')
+    const id = typeof one.id === 'string' && CATEGORY_ID.test(one.id) ? one.id : ''
+    if (!id) { problems.push('카테고리: 식별자가 없습니다 — 관리자를 새로고침한 뒤 다시 만들어 주세요'); continue }
+    if (seen.has(id)) continue
+    seen.add(id)
+    const label = plainText(one.label, CATEGORY_LABEL_MAX, problems, '카테고리 이름')
+    const where = `카테고리 「${label || id}」`
+    if (!label) problems.push(`${where}: 이름을 적어 주세요`)
+    /* 「기본」은 `/blog/` 의 이름입니다 — 같은 이름이 줄에 둘 서면 어느 쪽이 어디로 가는지 모릅니다 */
+    if (label === DEFAULT_LABEL) problems.push(`${where}: 「${DEFAULT_LABEL}」은 /blog/ 의 이름이라 쓸 수 없습니다`)
+    /* 주소는 받은 그대로 봅니다 — 조용히 다듬어 저장하면 적은 주소와 나가는 주소가 달라집니다 */
+    const slug = asText(one.slug, problems, `${where} 주소`)
+    const bad = slugProblem(slug)
+    /**
+     * 쓸 수 없는 주소나 **겹치는 주소**는 적어만 두지 않고 **행째 뺍니다.**
+     *
+     * 저장하는 문은 엄격해서 `problems` 가 하나라도 있으면 400 으로 돌려보냅니다 — 거기서는
+     * 적어 두는 것으로 충분합니다. 그런데 굽기는 같은 함수를 **관대하게** 씁니다(옛 판에서
+     * 저장된 행, 손으로 넣은 행). 겹친 주소를 그대로 들려 보내면 두 카테고리가 같은
+     * `/blog/<주소>/index.html` 을 쓰고 나중 것이 앞의 것을 말없이 덮습니다. 어느 쪽이 나갔는지는
+     * 디스크를 열어 봐야 압니다. 안 내보내는 쪽이 낫습니다.
+     */
+    if (bad) { problems.push(`${where} 주소: ${bad}`); continue }
+    if (slugs.has(slug)) { problems.push(`${where} 주소: 다른 카테고리와 겹칩니다 (/blog/${slug}/)`); continue }
+    slugs.add(slug)
+    out.push({
+      id,
+      label,
+      slug,
+      /* 비공개 — 「주소로도 안 열리게」. 굽기가 그 페이지도, 거기 속한 글도 안 씁니다 */
+      show: pickFlag(one.show, true, problems, `${where} 공개`),
+      look: normBlogLook(one.look, fonts, problems, where),
+    })
+  }
+  return out
+}
+
+/**
+ * 블로그에는 `mode` 가 없습니다 — 글이 DB 에서 오므로 목록을 코드가 꽂아야 합니다.
+ *
+ * 윗단 여섯 키가 **기본(= `/blog/`)의 모양**이고, `categories` 가 그 아래 카테고리들입니다.
+ * 기본에 둘째 사본을 두지 않습니다 — 한 페이지 뒤에 설정 블록이 둘이면 어느 것이 나가는지 모릅니다.
+ */
 export const normalizeBlog = (v, fonts = []) => {
   const problems = []
   const src = asObject(v, problems, '블로그')
   return {
     value: {
-      chrome: pickFlag(src.chrome, true, problems, '블로그 공통헤더'),
-      template: pickOne(src.template, BLOG_TEMPLATES, BLOG_TEMPLATES[0].value, problems, '블로그'),
-      /* 목록 폭 — 포트폴리오·메인과 같은 말을 씁니다(`WIDTHS`).
-         기본은 좁게: 지금까지 블로그 목록은 늘 본문 폭이었고, 기본을 바꾸면 쓰던 사람의 화면이 흔들립니다 */
-      font: pickPageFont(src.font, fonts, problems, '블로그'),
-      head: pickHead(src.head, '글', problems, '블로그 타이틀'),
-      /**
-       * 글 상세의 「문단 바로가기」 — 본문 오른쪽에 제목 목록을 띄웁니다.
-       *
-       * `head` 안에 못 넣습니다. `pickHead` 는 **포트폴리오와 함께 쓰는 부품**이라
-       * 여기 한 칸을 보태면 작업 목록에도 같은 칸이 생깁니다. `knobs` 도 안 됩니다 —
-       * `pickKnobs` 가 포트폴리오 전용 `KNOBS` 에 묶여 있습니다. 그래서 제 칸입니다.
-       *
-       * 기본은 **끕니다.** 켜 두면 쓰던 사람의 글이 한꺼번에 바뀝니다.
-       *
-       * 깊이는 설정으로 두지 않습니다 — h2·h3 를 늘 함께 내고 h3 를 한 칸 들입니다.
-       * 손잡이를 하나 더 두는 값보다, 고를 것이 없는 편이 낫습니다.
-       */
-      toc: {
-        show: pickFlag(src.toc?.show, false, problems, '블로그 문단 바로가기'),
-        /**
-         * 지금 읽는 자리 표식의 모양과 색. 켜지 않았으면 읽히지 않고 잠자코 남습니다
-         * (카드 테마와 같은 규칙 — 껐다 켜도 고른 값이 안 날아갑니다).
-         *
-         * 색은 **비우는 것이 기본**입니다. 여기서 '#101114' 같은 값을 채우면 테마 색을
-         * 바꾼 사이트에서도 그 색이 박혀 버립니다. 빈 값은 `emitOmit` 이 안 내므로
-         * CSS 의 `var(--bj-ink, var(--fg))` 폴백이 살아 사이트의 먹을 따릅니다.
-         */
-        skin: pickOne(src.toc?.skin, TOC_SKINS, TOC_SKINS[0].value, problems, '문단 바로가기 표식'),
-        ink: pickColor(src.toc?.ink, problems, '문단 바로가기 표식 색'),
-      },
-      /**
-       * 「카드」 갈래의 테마와 손잡이. 다른 갈래를 고르면 읽히지 않고 잠자코 남습니다 —
-       * 갈래를 왔다 갔다 해도 고른 값이 안 날아갑니다.
-       *
-       * **넷 다 기본이 「안 정함」입니다.** 까닭 둘:
-       *   ① 쓰던 사람의 목록이 안 바뀝니다(`toc` 와 같은 규칙).
-       *   ② 빈 값은 `emitOmit` 이 안 내므로 골든 쉰네 벌이 하나도 안 흔들립니다.
-       * 실제 값은 CSS 의 폴백(스킨이 정한 기본)이 맡습니다 — 여기서 채우면 그 폴백이 죽습니다.
-       *
-       * 색은 `#rrggbb` 만 받습니다(`pickColor`). `color-mix(...)` 같은 CSS 함수 문자열을
-       * 허용하면 설정값이 그대로 스타일시트로 새는 길이 열립니다.
-       */
-      outline: {
-        skin: pickOne(src.outline?.skin, OUTLINE_SKINS, OUTLINE_SKINS[0].value, problems, '카드 테마'),
-        ink: pickColor(src.outline?.ink, problems, '카드 선 색'),
-        bg: pickColor(src.outline?.bg, problems, '카드 배경색'),
-        radius: pickNum(src.outline?.radius, 0, 32, '', problems, '카드 모서리'),
-      },
+      ...normBlogLook(src, fonts, problems, '블로그'),
+      /* 줄 모양은 **카테고리 바깥**입니다 — 위 `CAT_STRIP_STYLES` 주석의 까닭대로 한 벌뿐입니다 */
+      catStrip: pickOne(src.catStrip, CAT_STRIP_STYLES, CAT_STRIP_STYLES[0].value, problems, '카테고리 줄 모양'),
+      categories: normCategories(src.categories, fonts, problems),
     },
     problems,
   }

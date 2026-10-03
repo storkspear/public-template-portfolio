@@ -44,6 +44,77 @@
   letter-spacing: .06em; color: var(--fg-3); font-variant-numeric: tabular-nums; }
 .bl > .b-year:first-child { padding-top: 0; }
 
+/* ── 카테고리 줄 — 「기본 · 개발 · 일상」. 목록 위 한 줄입니다 ─────────────────
+   「기본」이 /blog/ 로 가는 링크입니다. 지금 보는 것만 먹색·굵게, 나머지는 흐린 글자.
+   헤더 메뉴의 하위 메뉴로 두지 않은 까닭은 굽기의 `catStrip` 주석에 — 헤더와 드로어가 서로
+   배타라 어느 한쪽의 하위 메뉴는 다른 벌의 사이트에서 안 보입니다. 목록 위 한 줄이면 열두
+   갈래 어디서나 같은 자리에 섭니다.
+   가름표(·)는 글자가 아니라 CSS 가 그립니다 — 마크업에 넣으면 화면읽기가 점을 읽습니다.
+   `.bl-` 접두를 쓰지 않습니다: check-contract ④ 가 그 접두 규칙의 명시도를 바탕 `.bl .b-item` 과
+   견주는데, 이 줄은 목록 밖이라 견줄 바탕이 없습니다.
+   공개 카테고리가 없으면 굽기가 이 줄을 아예 안 냅니다 — 카테고리를 안 쓰는 사이트는 예전 그대로입니다. */
+.b-cats { display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem 0;
+  margin: 0 0 1.6rem; font-family: var(--sans); font-size: .9rem; font-synthesis: none; }
+.b-cats a { text-decoration: none; color: var(--fg-3); padding: .15rem 0; transition: color var(--t); }
+.b-cats a + a::before { content: '·'; content: '·' / ''; margin: 0 .9rem;
+  color: color-mix(in srgb, var(--fg) 30%, var(--bg)); }
+.b-cats a:hover, .b-cats a:focus-visible { color: var(--fg); }
+.b-cats a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.b-cats a[aria-current] { color: var(--fg); font-weight: 700; }
+
+/* ── 카테고리 줄 ② 알약 ──────────────────────────────────────────────
+   고른 것만 먹바탕. 가운뎃점을 지우고 테두리를 두릅니다.
+   `dots`(첫 값)는 바탕 규칙이 그대로 맡습니다 — 그래서 클래스가 없습니다. */
+.b-cats-pill { gap: .4rem; }
+.b-cats-pill a + a::before { content: none; }
+.b-cats-pill a { padding: .32rem .85rem; border: 1px solid var(--line); border-radius: 999px;
+  font-size: .84rem; transition: background-color var(--t), color var(--t), border-color var(--t); }
+.b-cats-pill a:hover, .b-cats-pill a:focus-visible { border-color: var(--fg); }
+.b-cats-pill a[aria-current] { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+
+/* ── ③ 밑줄 ──
+   고른 것 밑에만 먹선. **줄 전체에 선을 긋지 않습니다** — 바로 아래 목록 첫 행이 이미 제 선을
+   갖고 있어 두 줄이 겹쳐 보입니다(사용자 지적). 남는 것은 고른 것을 가리키는 짧은 선 하나뿐입니다 */
+.b-cats-underline { gap: 0 1.6rem; }
+.b-cats-underline a { position: relative; padding: .3rem 0 .55rem; }
+.b-cats-underline a + a::before { content: none; }
+/* 선을 늘 그려 두고 투명도만 바꿉니다 — 없다가 생기면 글자가 들썩입니다 */
+.b-cats-underline a::after { content: '' / ''; position: absolute; left: 0; right: 0; bottom: 0;
+  height: 2px; background: var(--fg); opacity: 0; transition: opacity var(--t); }
+.b-cats-underline a[aria-current]::after { opacity: 1; }
+
+/* ── ④ 구분선 ──
+   가운뎃점 대신 세로 헤어라인. 목록 행의 선과 **같은 재료**라 제일 조용합니다 */
+.b-cats-rule { gap: .35rem 0; }
+.b-cats-rule a { padding: .15rem 1rem; line-height: 1.15; }
+.b-cats-rule a:first-child { padding-left: 0; }
+.b-cats-rule a + a { border-left: 1px solid var(--line); }
+.b-cats-rule a + a::before { content: none; }
+
+/* ── ⑤ 대괄호 ──
+   고른 것을 고정폭 대괄호로 감쌉니다. 이 사이트는 번호·날짜를 고정폭으로 쓰는 곳이라
+   같은 말입니다. 선도 바탕도 안 쓰고 글자만으로 가리킵니다 */
+.b-cats-bracket { gap: .35rem 1.1rem; }
+.b-cats-bracket a + a::before { content: none; }
+.b-cats-bracket a[aria-current]::before,
+.b-cats-bracket a[aria-current]::after {
+  font-family: var(--mono); font-weight: 400; color: var(--fg-3); }
+.b-cats-bracket a[aria-current]::before { content: '['; content: '[' / ''; margin-right: .2rem; }
+.b-cats-bracket a[aria-current]::after { content: ']'; content: ']' / ''; margin-left: .2rem; }
+
+/* ── ⑥ 띠 ──
+   줄 전체가 옅은 판 위에 앉고, 고른 것만 바탕색으로 떠오릅니다. 조각 단추(segmented)와 같은 말이라
+   「여기 중에 하나를 고른다」가 한눈에 보입니다 — 여섯 중 가장 또렷합니다 */
+.b-cats-band { gap: .25rem; padding: .4rem; background: var(--bg-2);
+  border-radius: 10px; align-items: stretch;
+  /* 조각 단추는 제 내용만큼만 — 글줄 끝까지 늘리면 빈 판때기가 남습니다 */
+  width: fit-content; max-width: 100%; }
+.b-cats-band a + a::before { content: none; }
+.b-cats-band a { padding: .3rem .8rem; border-radius: 7px; transition: background-color var(--t), color var(--t); }
+.b-cats-band a[aria-current] { background: var(--bg); box-shadow: 0 1px 2px rgb(0 0 0 / .07); }
+/* 타이틀을 숨기면 이 줄이 맨 위에 섭니다 — 목록 대신 이 줄이 상단 여백(--lh-gap)을 받습니다(header.css 의 `.bl:first-child`) */
+main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
+
 /* ── ⓪ 기본 rows — 처음부터 쓰던 번호 행 목록. 글꼴도 사이트 기본을 따릅니다 ──
    값은 예전 「인덱스」와 같은 `rows` — 그 값으로 저장한 설정은 이 모양 그대로 나옵니다.
    번호·제목·날짜 한 줄씩, 행 사이 헤어라인. 호버는 옅은 띠 + 번호 accent + 제목 밑줄(옛 모습 그대로) */

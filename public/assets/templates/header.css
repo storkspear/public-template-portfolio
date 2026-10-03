@@ -200,6 +200,14 @@
 .s-drawer a:not([aria-current]) {
   color: color-mix(in srgb, var(--dr-fg, var(--hd-fg, var(--fg))) 80%, var(--dr-bg, var(--hd-bg, var(--bg))));
 }
+/* 드로어의 하위 항목 — 블로그 줄 밑에 선 카테고리(굽기의 `blogSubs`). 한 칸 들이고 조금 작게.
+   헤더 메뉴(`.s-nav`)에는 이 항목이 없습니다 — 정식 자리는 목록 위의 줄(blog.css 의 `.b-cats`)이고,
+   드로어는 세로로 서는 목록이라 들인 항목이 자연스러워 덤으로 냅니다. 카테고리가 없으면 안 나옵니다 */
+.s-drawer a.s-sub {
+  padding-left: calc(var(--dr-px, 0px) + 1.1rem);
+  font-size: calc(0.92rem * var(--hd-size, 1));
+  margin-top: -0.3rem;
+}
 
 /* 닫기 — 판 안 오른쪽 위 */
 .s-x {

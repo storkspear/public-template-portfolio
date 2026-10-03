@@ -141,3 +141,18 @@ alter table post_attachments add column if not exists h     int;
 -- 방문자가 그걸 다 내려받습니다. 만드는 곳은 브라우저(올릴 때), 서버에 의존성을 안 늘립니다.
 alter table post_attachments add column if not exists thumb text;
 create index if not exists post_attachments_ord_idx on post_attachments (post_id, ord);
+
+-- ── 글의 카테고리·태그 ─────────────────────────────────────────────────
+-- 새 열이 없습니다. 위에서 작업물용으로 파 두고 아무 문도 안 쓰던 `meta` / `draft_meta` 에
+-- `{ "category": <식별자>, "tags": [...] }` 가 앉습니다(서버의 `normalizeMeta` 가 모양을 못 박습니다).
+-- `category` 는 site_settings 의 `blog.categories[].id` 를 가리킵니다 — 이름이나 주소가 아니라
+-- 식별자라, 카테고리 이름을 바꿔도 글이 고아가 되지 않습니다. 초안 그림자 규약은 본문과 같습니다:
+-- 고치는 동안은 `draft_meta`, 발행하면 `meta` 로 옮겨 가고 `draft_meta` 는 비워집니다.
+--
+-- 이미 있는 글에 찍을 도장은 없습니다. 「기본」은 /blog/ 그 자체라(모든 글이 실립니다) 제 식별자가
+-- 없고, 카테고리를 안 정한 글(`meta->>'category'` 가 비거나 없음)이 곧 기본입니다 — 지금 그대로가
+-- 그 상태입니다. 여기서 `meta` 를 `{}` 로 채우면 모양만 바뀌고 뜻은 하나도 안 바뀝니다.
+--
+-- 굽기와 관리자가 `meta->>'category'` 로 거릅니다 — 비공개 카테고리의 글 빼기, 카테고리별 목록,
+-- 카테고리마다 편수. 식 인덱스라 `->>` 그대로 적어야 질의가 탑니다.
+create index if not exists posts_category_idx on posts (kind, (meta->>'category'));

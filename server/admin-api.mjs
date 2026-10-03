@@ -25,6 +25,7 @@ import { LOCAL, ORIGIN, WEAK, mustBeStrong, pgSsl } from './local.mjs'
 import { svgUnsafe } from './bake-safety.mjs'
 import { cleanSlug } from '../shared/text.mjs'
 import { KEYS, normalize, headerContrast, buttonContrast, footerContrast, INK_MIN } from '../shared/site-vocab.mjs'
+import { CATEGORY_ID } from '../shared/category.mjs'
 import { configureFonts, FONT_VALUES } from './vendor/post-editor-core/vocab.js'
 import { SITE_FONTS } from '../site.fonts.mjs'
 
@@ -411,19 +412,18 @@ const normalizeImages = (list, no) => {
 }
 
 /**
- * 주소로 쓸 수 없는 낱말. 글 주소는 시퀀스가 준 정수뿐이라 부딪힐 일이 없었지만, 작업물은
- * 슬러그를 직접 받습니다 — `works` 를 가져가면 관리자의 작업 목록이 그 글로 덮이고,
- * `assets` 는 공개면의 CSS 자리를 가립니다.
- */
-/**
  * 판을 하나 쌓습니다 — `max(rev)+1` 은 동시에 부르면 같은 번호를 두 번 계산합니다.
  * READ COMMITTED 에서 실제로 났습니다: 다섯을 동시에 보내니 하나가 기본키 충돌로 500 이었습니다.
  * 트랜잭션을 여는 대신 진 쪽이 다시 세게 합니다 — 판은 늘 하나씩 늘어납니다.
+ *
+ * `db` 는 보통 풀입니다. 카테고리 삭제처럼 **글을 고치는 것과 한 트랜잭션**이어야 하는 자리는
+ * 제 커넥션을 넘깁니다 — 설정만 먼저 바뀌고 글이 안 바뀐 채 끝나면 그 사이 굽기가 그 글을
+ * 「기본」으로 읽어 `/blog/` 에 내보냅니다(비공개 카테고리였다면 그 순간 새어 나갑니다).
  */
-const appendRev = async (key, value, by, via = null, tries = 5) => {
+const appendRev = async (key, value, by, via = null, tries = 5, db = pool) => {
   for (let i = 0; ; i++) {
     try {
-      return await pool.query(
+      return await db.query(
         `insert into site_settings (key, rev, value, created_by, via)
          select $1, coalesce(max(rev), 0) + 1, $2::jsonb, $3, $4 from site_settings where key = $1
          returning rev`, [key, JSON.stringify(value), by, via])
@@ -433,8 +433,102 @@ const appendRev = async (key, value, by, via = null, tries = 5) => {
   }
 }
 
-const RESERVED = new Set(['new', 'works', 'look', 'api', 'assets', 'fonts', 'media', 'blog',
-  'portfolio', 'index', 'admin', 'preview', 'uploads', 'favicon'])
+/* 주소로 쓸 수 없는 낱말(`RESERVED`)은 `shared/category.mjs` 로 갔습니다 — 카테고리 주소를 관리자가
+   저장 전에 같은 목록으로 거르려면 브라우저도 알아야 해서입니다. 여기서는 안 씁니다: 글 주소는
+   시퀀스가 준 정수뿐이고, 카테고리 주소는 정규화(`normCategories`)가 그 목록으로 거릅니다 */
+
+/**
+ * 글에 붙는 것 둘 — 카테고리(식별자 하나)와 태그(글자 목록). `posts.meta` / `draft_meta` 에 앉습니다.
+ *
+ * 이 두 열은 작업물용으로 파 두고 **아무 문도 안 쓰던** 자리였습니다 — 받는 값을 거르는 곳도
+ * 없었습니다. jsonb 라 아무 모양이나 들어가므로 여기서 모양을 못 박습니다: `{ category, tags }`.
+ * 둘 다 비면 `null` — 카테고리를 안 쓰는 글의 행은 지금과 같은 모습으로 남습니다.
+ *
+ * 카테고리는 **식별자**로 가리킵니다(이름·주소가 아니라). 이름을 바꿔도 글이 고아가 안 됩니다.
+ * 지금 설정에 없는 식별자는 거절합니다 — 관리자가 들고 있던 목록이 낡았을 수 있어서(다른 탭에서
+ * 지웠거나), 조용히 받으면 「개발에 넣었다」고 믿은 글이 `/blog/` 에만 나갑니다.
+ *
+ * 태그는 **입력과 저장까지만**입니다 — 태그 페이지도 목록도 아직 없습니다(사용자 결정).
+ * 대소문자만 다른 태그는 하나로 봅니다. `< >` 는 거절합니다 — 언젠가 화면에 찍힐 값입니다.
+ *
+ * 「안 보냈다」와 「비웠다」를 **가려서** 돌려줍니다(`sent`·`empty`). 초안 열은 발행본 위에
+ * `coalesce(draft_meta, meta)` 로 겹쳐 읽히기 때문입니다 — 비운 초안을 null 로 저장하면
+ * 발행본의 카테고리가 도로 비쳐, 글을 다시 열었을 때 분명히 뺀 카테고리가 그대로 있습니다.
+ * 초안은 비워도 **빈 객체**를 적어 발행본을 가려야 합니다. 부르는 쪽이 그 판단을 합니다.
+ */
+const TAG_MAX = 20
+const TAG_LEN = 30
+const normalizeMeta = (raw, knownIds) => {
+  const problems = []
+  /* 주석에 「엄격한 문」이라 적어 두고 모양이 틀린 값을 조용히 빈 것으로 읽고 있었습니다 —
+     `meta:"cgaebal"` 을 보내면 200 에 카테고리만 사라졌습니다. `normalizeImages` 와 같은 규율로 맞춥니다 */
+  const 객체 = raw === undefined || raw === null || (typeof raw === 'object' && !Array.isArray(raw))
+  if (!객체) problems.push('카테고리·태그는 { category, tags } 꼴이어야 합니다')
+  const src = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}
+  let category = ''
+  if (src.category !== undefined && src.category !== null && src.category !== '') {
+    if (typeof src.category !== 'string' || !CATEGORY_ID.test(src.category)) problems.push('카테고리 식별자가 이상합니다')
+    else if (!knownIds.has(src.category)) problems.push('없는 카테고리입니다 — 홈디자인 → 블로그에서 먼저 만들어 주세요')
+    else category = src.category
+  }
+  const tags = []
+  if (src.tags !== undefined && src.tags !== null) {
+    if (!Array.isArray(src.tags)) problems.push('태그는 목록이어야 합니다')
+    else {
+      const seen = new Set()
+      for (const t of src.tags) {
+        /* 글자 단위로 자릅니다 — UTF-16 단위로 자르면 이모지 반쪽이 남아 JSON 저장이 500 으로 실패합니다 */
+        const one = [...String(t ?? '').trim()].slice(0, TAG_LEN).join('')
+        if (!one) continue
+        if (/[<>]/.test(one)) { problems.push(`태그에 < > 는 쓸 수 없습니다 (${one})`); continue }
+        const key = one.toLowerCase()
+        if (seen.has(key)) continue
+        seen.add(key)
+        tags.push(one)
+      }
+      if (tags.length > TAG_MAX) problems.push(`태그는 ${TAG_MAX}개까지입니다 (${tags.length}개)`)
+    }
+  }
+  const sent = raw !== undefined && raw !== null
+  return { value: { category, tags }, sent, empty: !category && !tags.length, problems }
+}
+
+/** 지금 설정의 카테고리 식별자들 — 글이 가리켜도 되는 것 */
+const knownCategoryIds = async () =>
+  new Set(((await loadConf(pool)).blog.categories || []).map((c) => c.id))
+
+/**
+ * 「이 블로그 설정을 넣으면 **주인 잃은 글**이 생기는가」를 묻습니다. 생기면 저장을 막습니다.
+ *
+ * 카테고리를 제대로 지우는 문(`POST /api/categories/delete`)은 한 트랜잭션으로 그 글들을 초안으로
+ * 내려 이 구멍을 막아 둡니다. 그런데 **블로그 설정을 그냥 저장하거나 되돌리면** 그 보호가 없습니다 —
+ * 카테고리만 목록에서 빠지고 글의 `meta.category` 는 그대로 남습니다.
+ *
+ * 남으면 굽기가 그 글을 「모르는 식별자」로 읽습니다. 비공개 카테고리의 글이었다면 그 순간
+ * 공개 목록에 실립니다 — 「주소로도 안 열리게」가 거짓이 됩니다. 도달하는 길이 둘 있습니다:
+ *   · 관리자 「되돌리기」 한 번 (카테고리가 생기기 전 판으로 가면 전부 주인을 잃습니다)
+ *   · 오래 열어 둔 탭의 「사이트에 적용」 (그 탭이 모르는 카테고리가 목록에서 빠집니다)
+ *
+ * 그래서 **여기가 난간입니다.** 지우려면 카테고리 삭제 문으로 가야 합니다 — 거기가 글을 챙깁니다.
+ * 초안은 공개면이 없으므로 세지 않습니다.
+ */
+const orphanedByBlog = async (nextBlog) => {
+  const keep = new Set((nextBlog.categories || []).map((c) => c.id))
+  const { rows } = await pool.query(
+    `select meta->>'category' as id, count(*)::int as n
+       from posts
+      where kind = 'post' and published_at is not null and meta->>'category' is not null
+      group by 1`)
+  const now = (await loadConf(pool)).blog.categories || []
+  const 이름 = new Map(now.map((c) => [c.id, c.label]))
+  return rows.filter((r) => r.id && !keep.has(r.id))
+    .map((r) => ({ id: r.id, label: 이름.get(r.id) || r.id, n: r.n }))
+}
+
+/** 난간에 걸렸을 때 사람에게 보일 한 줄 */
+const orphanError = (lost, what) =>
+  `${what} 「${lost.map((o) => `${o.label}」의 발행 글 ${o.n}편`).join(', 「')}이 주인을 잃습니다`
+  + ' — 카테고리를 지우려면 그 줄의 × 를 쓰세요(글을 초안으로 내려 줍니다)'
 
 createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x')
@@ -561,6 +655,94 @@ createServer(async (req, res) => {
       return json(res, 200, { no: await reserveNo() })
     }
 
+    /**
+     * 여러 글의 카테고리를 한 번에 — 카테고리를 지우면 거기 있던 글이 전부 초안이 되는데,
+     * 그걸 한 편씩 열어 다시 앉히게 두면 열 편만 돼도 일입니다. 목록에서 골라 한 번에 보냅니다.
+     * 빈 카테고리(`''`)는 「기본」 — 카테고리에서 뺍니다.
+     *
+     * `meta` 와 `draft_meta` **둘 다** 고칩니다. 목록·편집기는 `coalesce(draft_meta, meta)` 를 보고,
+     * 발행 때 편집기가 들고 있던 값이 `meta` 로 옮겨 갑니다 — 한쪽만 고치면 고치던 초안이 있는 글은
+     * 화면에 옛 카테고리가 남고 다음 발행에 되돌아갑니다. 태그는 그대로 둡니다.
+     * 한 문장으로 끝내려고 `unnest` 로 폅니다(`/api/works/order` 와 같은 수법).
+     *
+     * `/api/posts/:slug` 보다 **앞**에 있어야 합니다 — 그 정규식이 `category` 도 글 주소로 읽습니다.
+     */
+    if (req.method === 'POST' && p === '/api/posts/category') {
+      if (!auth(req)) return json(res, 401, { error: '로그인이 필요합니다' })
+      const b = await readBody(req)
+      const slugs = Array.isArray(b.slugs) ? b.slugs.map(String).slice(0, 500) : null
+      if (!slugs?.length) return json(res, 400, { error: '고른 글이 없습니다' })
+      /* 「빼기」(`''`)는 명시적 선택이어야 합니다. 누락의 기본값이 파괴적이면, 키 하나 빠진 요청이
+         고른 글 전부를 말없이 「기본」으로 내립니다 — 글 메타는 판을 안 쌓아 되돌릴 문이 없습니다 */
+      if (b.category === undefined) return json(res, 400, { error: '어느 카테고리로 옮길지 안 보냈습니다 (빼려면 빈 문자열)' })
+      const { value, problems } = normalizeMeta({ category: b.category }, await knownCategoryIds())
+      if (problems.length) return json(res, 400, { error: problems.join(' / '), problems })
+      const category = value.category
+      const { rowCount } = await pool.query(
+        `update posts p
+            set meta = jsonb_set(coalesce(p.meta, '{}'::jsonb), '{category}', to_jsonb($2::text)),
+                draft_meta = case when p.draft_meta is null then null
+                                  else jsonb_set(p.draft_meta, '{category}', to_jsonb($2::text)) end
+           from (select unnest($1::text[]) as slug) x
+          where p.slug = x.slug and p.kind = 'post'`, [slugs, category])
+      /* 발행된 글이 섞여 있으면 카테고리 페이지가 바뀝니다 — 다시 굽습니다 */
+      let bakeError = null
+      try { await bake(pool) } catch (e) { bakeError = String(e.message || e); console.error(e) }
+      return json(res, 200, { ok: true, count: rowCount, category, bakeError })
+    }
+
+    /**
+     * 카테고리 삭제 — 설정에서 빼는 것과 거기 있던 글을 **한 트랜잭션**으로 묶습니다.
+     *
+     * 왜 `/api/settings` 로 안 하는가: 설정 저장은 값을 쌓을 뿐 글을 모릅니다. 카테고리만 먼저
+     * 사라지면 그 사이 굽기가 그 글을 「모르는 식별자 → 기본」으로 읽어 `/blog/` 에 내보냅니다 —
+     * 비공개 카테고리였다면 지우는 순간 새어 나가는 셈입니다. 그래서 글을 먼저 초안으로 돌리고
+     * 같은 트랜잭션에서 판을 쌓습니다.
+     *
+     * 거기 있던 글은 **초안**이 됩니다(`published_at = null`). 「기본」으로 옮기지 않는 까닭:
+     * 카테고리를 지운 사람이 그 글들을 어디에 둘지는 그 사람이 정할 일이고, 조용히 `/blog/` 에
+     * 내보내면 지운 줄 알았던 글이 공개면에 남습니다. 지워진 글이 아니므로 폴더(사진)는 그대로이고
+     * 굽기가 `index.html` 만 치웁니다. 어디에 둘지는 목록의 「카테고리 지정」이 맡습니다.
+     *
+     * 저장된 판(`loadConf`)에서 뺍니다 — 관리자가 아직 반영 안 한 다른 수정을 같이 저장해 버리지
+     * 않으려고. 관리자는 돌려받은 값으로 「마지막 반영」만 갱신하고 제 수정은 그대로 둡니다.
+     */
+    if (req.method === 'POST' && p === '/api/categories/delete') {
+      if (!auth(req)) return json(res, 401, { error: '로그인이 필요합니다' })
+      const b = await readBody(req)
+      const id = String(b.id || '')
+      const conf = await loadConf(pool)
+      const cat = (conf.blog.categories || []).find((c) => c.id === id)
+      if (!cat) return json(res, 404, { error: '없는 카테고리입니다' })
+      const next = { ...conf.blog, categories: conf.blog.categories.filter((c) => c.id !== id) }
+      const c = await pool.connect()
+      let drafted = 0
+      let rev = null
+      try {
+        await c.query('begin')
+        /* 발행 중이던 글 수 — 화면이 「N편이 초안이 됐습니다」를 말하려고 */
+        const was = await c.query(
+          `select count(*)::int as n from posts
+            where kind = 'post' and published_at is not null and meta->>'category' = $1`, [id])
+        drafted = was.rows[0].n
+        /* 발행본(meta)이 이 카테고리면 초안으로. 초안 그림자(draft_meta)의 참조도 같이 지웁니다 —
+           식별자가 남으면 다음 발행 때 「없는 카테고리」로 400 이 나서 발행이 막힙니다 */
+        await c.query(
+          `update posts
+              set published_at = case when meta->>'category' = $1 then null else published_at end,
+                  meta = case when meta->>'category' = $1 then meta - 'category' else meta end,
+                  draft_meta = case when draft_meta->>'category' = $1 then draft_meta - 'category' else draft_meta end
+            where kind = 'post' and (meta->>'category' = $1 or draft_meta->>'category' = $1)`, [id])
+        const { rows } = await appendRev('blog', next, auth(req)?.sub || null, null, 5, c)
+        rev = rows[0].rev
+        await c.query('commit')
+      } catch (e) { await c.query('rollback').catch(() => {}); throw e } finally { c.release() }
+      /* 굽기가 옛 `/blog/<slug>/index.html` 을 치웁니다(bake.mjs 의 `sweepCategories`) */
+      let bakeError = null
+      try { await bake(pool) } catch (e) { bakeError = String(e.message || e); console.error(e) }
+      return json(res, 200, { ok: true, rev, value: next, drafted, bakeError })
+    }
+
     if (p === '/api/posts') {
       if (!auth(req)) return json(res, 401, { error: '로그인이 필요합니다' })
 
@@ -620,39 +802,59 @@ createServer(async (req, res) => {
          * 이제 초안은 `draft_*` 에만 앉고, 발행을 누를 때 본 열로 옮겨 갑니다.
          */
         const publish = b.publish !== false
+        /* 카테고리·태그 — 초안이면 `draft_meta`, 발행이면 `meta` 에 앉습니다(본문과 같은 초안 그림자).
+           여기가 엄격한 문입니다: 모양이 틀리면 고쳐서 저장하지 않고 돌려보냅니다 */
+        const { value: meta, sent: metaSent, empty: metaEmpty, problems: metaProblems } =
+          normalizeMeta(b.meta, await knownCategoryIds())
+        if (metaProblems.length) return json(res, 400, { error: metaProblems.join(' / '), problems: metaProblems })
+        /**
+         * 발행 열(`meta`)은 아래에 겹쳐 읽는 것이 없으므로 비면 null 로 둡니다 — 카테고리를 안 쓰는
+         * 글의 행이 예전과 같은 모습으로 남습니다.
+         *
+         * 초안 열(`draft_meta`)은 다릅니다. **비웠다는 사실 자체를 적어야** 합니다 —
+         * null 로 두면 `coalesce(draft_meta, meta)` 가 발행본의 카테고리를 끌어올려, 카테고리를
+         * 빼고 저장한 글을 다시 열면 뺀 적이 없는 것처럼 보입니다. 저장은 되는데 되읽기가 안 되는
+         * 꼴이라 화면만 보고는 못 알아챕니다. 안 보낸 요청(옛 화면)은 예전처럼 null 입니다.
+         */
+        const metaJson = metaEmpty && (publish || !metaSent) ? null : JSON.stringify(meta)
         const { rows } = publish
           ? await pool.query(
-              `insert into posts (no, slug, title, body, doc, width, title_doc, published_at)
-                    values ($1, $2, $3, $4, $5::jsonb, $6, $7::jsonb, now())
+              `insert into posts (no, slug, title, body, doc, width, title_doc, published_at, meta)
+                    values ($1, $2, $3, $4, $5::jsonb, $6, $7::jsonb, now(), $8::jsonb)
                on conflict (slug) do update
                     set title = excluded.title, body = excluded.body, doc = excluded.doc,
                         width = excluded.width, title_doc = excluded.title_doc,
+                        -- 안 보냈으면 그대로 둡니다. 조건 없이 덮으면 meta 를 안 싣는 도구가
+                        -- (tools/draft-to-post.mjs) 글을 다시 발행할 때 카테고리를 말없이 지웁니다.
+                        -- 그 카테고리가 비공개였다면 다음 굽기에 그 글이 공개 목록으로 새어 나갑니다.
+                        meta = case when $9 then excluded.meta else posts.meta end,
                         published_at = coalesce(posts.published_at, excluded.published_at),
                         -- 발행했으니 들고 있던 초안은 비운다. 안 비우면 다음에 열 때
                         -- 방금 내보낸 글이 아니라 옛 초안이 뜬다
                         draft_body = null, draft_doc = null, draft_title = null,
                         draft_title_doc = null, draft_width = null, draft_meta = null, draft_at = null
                  where posts.kind = 'post'
-                 returning id, no, slug, title, published_at, hidden, kind`,
+                 returning id, no, slug, title, published_at, hidden, kind, meta`,
               [no, slug, title, String(b.body || ''), b.doc ? JSON.stringify(b.doc) : null,
-               b.width ? String(b.width) : null, b.titleDoc ? JSON.stringify(b.titleDoc) : null],
+               b.width ? String(b.width) : null, b.titleDoc ? JSON.stringify(b.titleDoc) : null, metaJson,
+               metaSent],
             )
           : await pool.query(
               /* 새 글의 첫 초안은 본 열을 비운 채 행만 만듭니다 — 발행 전에는 공개면이 없습니다 */
               `insert into posts (no, slug, title, body, draft_body, draft_doc, draft_title,
-                                  draft_title_doc, draft_width, draft_at)
-                    values ($1, $2, $3, '', $4, $5::jsonb, $3, $6::jsonb, $7, now())
+                                  draft_title_doc, draft_width, draft_at, draft_meta)
+                    values ($1, $2, $3, '', $4, $5::jsonb, $3, $6::jsonb, $7, now(), $8::jsonb)
                on conflict (slug) do update
                     set draft_body = excluded.draft_body, draft_doc = excluded.draft_doc,
                         draft_title = excluded.draft_title, draft_title_doc = excluded.draft_title_doc,
-                        draft_width = excluded.draft_width, draft_at = now(),
+                        draft_width = excluded.draft_width, draft_meta = excluded.draft_meta, draft_at = now(),
                         -- 발행 전(published_at is null)인 글은 목록에 제목이 보여야 하므로
                         -- 제목만 본 열에도 같이 둔다. 발행된 글은 건드리지 않는다
                         title = case when posts.published_at is null then excluded.title else posts.title end
                  where posts.kind = 'post'
-                 returning id, no, slug, title, published_at, hidden, kind`,
+                 returning id, no, slug, title, published_at, hidden, kind, coalesce(draft_meta, meta) as meta`,
               [no, slug, title, String(b.body || ''), b.doc ? JSON.stringify(b.doc) : null,
-               b.titleDoc ? JSON.stringify(b.titleDoc) : null, b.width ? String(b.width) : null],
+               b.titleDoc ? JSON.stringify(b.titleDoc) : null, b.width ? String(b.width) : null, metaJson],
             )
 
         /* 첨부 기록을 본문 기준으로 다시 맞춥니다. 넣었다가 지운 사진은 여기서 제외되고,
@@ -979,9 +1181,26 @@ createServer(async (req, res) => {
            화면이 같은 반영에 들어간 키만 골라 되돌리는 데 씁니다 */
         const { rows: hist } = await pool.query(
           `select key, count(*)::int as revs from site_settings group by key`)
+        /**
+         * 카테고리마다 글이 몇 편인가 — 관리자가 지우기 전에 「N편이 초안이 됩니다」를 말해야 합니다.
+         * 발행 글은 발행본(`meta`)의 카테고리를, 초안은 고치던 초안(`coalesce(draft_meta, meta)`)의
+         * 카테고리를 셉니다 — 목록 화면이 보는 값과 같아야 숫자가 맞습니다. 빈 키는 「기본」입니다.
+         */
+        const { rows: cc } = await pool.query(
+          `select coalesce(meta->>'category', '') as pid,
+                  coalesce(coalesce(draft_meta, meta)->>'category', '') as did,
+                  (published_at is not null) as pub
+             from posts where kind = 'post'`)
+        const categoryCounts = {}
+        for (const r of cc) {
+          const k = r.pub ? r.pid : r.did
+          const at = (categoryCounts[k] ??= { published: 0, drafts: 0 })
+          if (r.pub) at.published += 1; else at.drafts += 1
+        }
         return json(res, 200, {
           settings: now, revs, updated,
           history: Object.fromEntries(hist.map((h) => [h.key, h.revs])),
+          categoryCounts,
           /* 메인 무대의 기본 글자 — 편집기에서 글자를 다 지우면 이것이 보여야 공개면과 같습니다 */
           stageText: stageDefaults(),
           /* 푸터의 상자도 비우면 사이트 값이 나갑니다 — 편집기가 「다 지우면 무엇이 보이나」를 알아야 합니다 */
@@ -1006,6 +1225,12 @@ createServer(async (req, res) => {
            조용히 고치면 고른 사람은 제가 고른 대로 저장된 줄 압니다. 굽기는 반대로 관대합니다. */
         const { value, problems } = normalize(key, b.value, FONT_VALUES)
         if (problems.length) return json(res, 400, { error: problems.join(' / '), problems })
+
+        /* 미리보기는 디스크에만 그리므로 막지 않습니다 — 막는 것은 **저장**뿐입니다 */
+        if (key === 'blog' && b.preview !== true) {
+          const lost = await orphanedByBlog(value)
+          if (lost.length) return json(res, 400, { error: orphanError(lost, '이 설정을 넣으면') })
+        }
 
         /* 미리보기는 저장하지 않습니다. 같은 굽기 함수를 다른 폴더로 한 번 더 돌립니다 —
            렌더러를 두 벌 만들면 미리보기와 진짜가 갈라지고, 그 순간 미리보기를 믿을 수 없게 됩니다. */
@@ -1103,6 +1328,11 @@ createServer(async (req, res) => {
       /* 옛 판도 다시 다듬어서 넣습니다 — 어휘가 바뀐 뒤라면 그때 값이 지금은 이상할 수 있습니다 */
       const { value: backValue, problems: backProblems } = normalize(key, back.value, FONT_VALUES)
       if (backProblems.length) return json(res, 400, { error: `이전 판을 쓸 수 없습니다: ${backProblems.join(' / ')}` })
+      /* 카테고리가 생기기 전 판으로 가면 거기 있던 글이 전부 주인을 잃습니다 — 저장 문과 같은 난간 */
+      if (key === 'blog') {
+        const lost = await orphanedByBlog(backValue)
+        if (lost.length) return json(res, 400, { error: orphanError(lost, '이전 판으로 가면') })
+      }
       /* 되돌리기도 합쳐서 봅니다 — 테마만 옛 판으로 가면 지금 헤더·푸터와 부딪힐 수 있습니다.
          설정은 한 번만 읽습니다(저장 쪽과 같은 이유) */
       if (key === 'theme' || key === 'header' || key === 'footer') {

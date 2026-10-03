@@ -8,8 +8,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@storkspear/post-editor-core": "^0.2.0",
-    "@storkspear/post-editor-react": "^0.2.0",
+    "@storkspear/post-editor-core": "^0.3.0",
+    "@storkspear/post-editor-react": "^0.3.0",
     "@tiptap/pm": "^3.31.3",
     "@tiptap/react": "^3.31.3",
     "react": "^19.2.8",

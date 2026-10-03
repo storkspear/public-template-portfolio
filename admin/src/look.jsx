@@ -13,14 +13,16 @@
   */
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { api } from './api.js'
-import { EyeToggle } from './eye.jsx'
-import {
+import { Eye, EyeToggle } from './eye.jsx'
+import { CAT_STRIP_STYLES,
   PAGES, PAGE_MODES, PAGE_SAMPLES, PAGE_SOURCE_MINE, MAIN_TEMPLATES, BLOG_TEMPLATES, PORTFOLIO_TEMPLATES, WIDTHS, ZOOMS,
   KNOBS, OUTLINE_SKINS, TOC_SKINS, THEME_PRESETS, FONT_ROLES, contrast, mutedOn, headerContrast, buttonContrast, INK_MIN,
   MENU_PLACES, ALIGNS, HEAD_WIDTHS, SIDEBARS, DRAWER_W, NAV_STYLES, DRAWER_STYLES, NAV_LINKS, FAVICONS, BUILTIN_FAVICON, inkOn, HEAD_SIZES, mainStart,
   ITEM_SIZES, ITEM_LINKS, SECTION_KINDS, TEMPLATE_ITEM_IDS, SHOT_KNOBS, SHOT_MAX, SAMPLE_SHOTS, STAGE_H, STAGE_W, BODY_W, HEAD_H, HEAD_SCALE, isExternal,
   FOOT_KINDS, FOOT_KNOBS, FOOT_SIZES, FOOT_H, FOOT_ICON, SERVICE_ICONS, ICON_OF, footStart, footerContrast,
+  blogLookOf,
 } from '../../shared/site-vocab.mjs'
+import { autoSlug, CATEGORY_LABEL_MAX, CATEGORY_MAX, DEFAULT_LABEL, newCategoryId, slugProblem } from '../../shared/category.mjs'
 import { MENU_ICONS, MENU_ICON_GROUPS } from '../../shared/menu-icons.mjs'
 import { emitInitial, headVars, knobVars, lhVars, menuVars, outlineVars, tocVars, themeVars } from '../../shared/site-css.mjs'
 
@@ -169,7 +171,7 @@ const fillText = (st, stage, foot) => ({
     .map(([k, v]) => [k, { ...v, items: withText(v.items, foot) }])) : st.footer,
 })
 
-export function Look({ onWorks }) {
+export function Look({ onWorks, onCats }) {
   const [conf, setConf] = useState(null)
   /**
     * 되돌리기는 마지막 반영에 포함된 키만 되돌립니다. 반영할 때 변경된 키만 보내고 그 목록을
@@ -193,6 +195,33 @@ export function Look({ onWorks }) {
   /* 공통 탭의 2단계 탭. tab 과 별도 상태로 둡니다. bad, changed, undoKeys, 미리보기 iframe 의
      key 가 전부 1차원 tab 에 묶여 있어서, 여기 값을 섞으면 TABS.find 가 실패합니다 */
   const [sub, setSub] = useState('menu')
+  /**
+   * 블로그 탭이 지금 고치는 카테고리 — 식별자 하나, `null` 이면 「기본」(= `/blog/`).
+   * `sub` 와 같은 까닭으로 `tab` 에 섞지 않습니다: `TABS.find(t => t.key === tab)` 이 실패하면
+   * 렌더링이 통째로 멈춥니다. 셋째 축입니다.
+   * 식별자만 듭니다 — 객체를 들면 반영 뒤 서버가 돌려준 값과 어긋난 사본이 남습니다.
+   */
+  const [cat, setCat] = useState(null)
+  /**
+   * 카테고리 **편집모드**. 평소에는 보기만 합니다 — 줄을 눌러 고르는 일만 되고, 이름·차례·지우기는
+   * 손댈 수 없습니다. 고르는 것과 고치는 것이 같은 자리에 있으면 고르려다 이름이 바뀝니다
+   * (실제로 그 모양이었고 사용자가 잡았습니다).
+   *
+   * `cat`·`sub`·`tab` 과 섞지 않습니다 — 저 셋은 「무엇을 보고 있나」이고 이것은 「고칠 수 있나」라,
+   * 탭을 옮겼다고 편집모드가 따라다니면 안 됩니다. 탭이 바뀌면 꺼집니다(아래 effect).
+   */
+  const [catEdit, setCatEdit] = useState(false)
+  /* 탭을 옮기면 편집모드를 끕니다. **early return 앞에** 있어야 합니다 —
+     `if (!conf) return` 아래에 두었더니 첫 렌더에선 안 불리고 두 번째엔 불려
+     「Rendered more hooks than during the previous render」 로 화면이 통째로 죽었습니다 */
+  useEffect(() => { setCatEdit(false) }, [tab])
+  /* 고른 카테고리의 지금 값. 지워졌으면 「기본」으로 떨어집니다 */
+  const catNow = (conf && cat && (conf.blog.categories || []).find((c) => c.id === cat)) || null
+  /* 이 세션에서 막 만든 카테고리 — 이름을 치는 동안 주소가 따라옵니다(로마자). 저장돼 있던
+     카테고리는 안 따라갑니다: 이름을 고쳤다고 주소가 바뀌면 바깥에 적힌 링크가 다 죽습니다 */
+  const freshCats = useRef(new Set())
+  /* 카테고리마다 글 편수 — 지우기 전에 「N편이 초안이 됩니다」를 말하려고. `/api/settings` 가 셉니다 */
+  const [catCounts, setCatCounts] = useState({})
   /* 아이콘 선택기. 한 번에 하나만 엽니다. 링크 키를 갖고 있고 빈 값이면 닫힌 상태입니다 */
   const [iconFor, setIconFor] = useState('')
   /* 드로어 icon 스타일 여부. 사이드바를 쓰고 그 스타일일 때만 아이콘이 화면에 출력됩니다 */
@@ -272,8 +301,20 @@ export function Look({ onWorks }) {
   const paintRef = useRef(null)
   /* 왼쪽 글자 필드를 비운 채 포커스를 잃을 때 복원할 값. .lkSelText 의 onBlur 가 씁니다 */
   const textWas = useRef('')
-  const previewPath = tab === 'common' ? commonPath : PAGE[tab].path
-  const previewKey = KEY_OF_PATH[previewPath]
+  /**
+   * 블로그 탭에서 카테고리를 골랐으면 미리보기도 그 페이지(`/blog/<slug>/`)로 — 고른 것과 보이는
+   * 것이 같아야 합니다.
+   *
+   * **이름이 빈 줄이면 `/blog/` 에 머뭅니다.** 미리보기를 구울 때 이름 없는 카테고리는 빼므로
+   * (바로 아래 `paint` 의 `filter`) 그 페이지가 디스크에 없고, 그리로 보내면 404 가 뜹니다.
+   * 주소만 보고 판단하면 안 됩니다 — 주소는 `autoSlug` 가 늘 유효하게 만들어 주므로
+   * ＋ 를 누른 직후 빈 줄에서도 통과해 버립니다(실제로 404 를 띄웠습니다).
+   */
+  const previewPath = tab === 'common' ? commonPath
+    : tab === 'blog' && catNow && catNow.label && !slugProblem(catNow.slug) ? `/blog/${catNow.slug}/`
+    : PAGE[tab].path
+  /* 카테고리 페이지는 표에 없습니다 — `/blog/` 아래는 전부 블로그입니다 */
+  const previewKey = KEY_OF_PATH[previewPath] || pageOf(previewPath)
   /**
    * 어느 푸터를 편집하는지는 현재 보고 있는 화면이 정합니다. 별도 상태로 두면 「메인 푸터」를
    * 선택했는데 미리보기에는 블로그가 표시되는 불일치가 생깁니다. 그래서 선택기가 commonPath 를
@@ -319,6 +360,8 @@ export function Look({ onWorks }) {
         setFootText(d.footText || {})
         setFootIcon(d.footIcon || {})
         setSiteText(d.siteText || {})
+        setCatCounts(d.categoryCounts || {})
+        onCats?.(d.settings.blog?.categories || [])
         saved.current = Object.fromEntries(ALL_KEYS.map((k) => [k, JSON.stringify(filled[k])]))
         /* 화면을 처음 열었을 때의 반영 그룹은 저장 시각으로 추정합니다. 한 번의 반영은 몇 초
            안에 끝나고 사용자가 두 번 반영하는 간격은 그보다 깁니다. 이전 리비전이 있는 키만 셉니다 */
@@ -413,7 +456,10 @@ export function Look({ onWorks }) {
     const path = barePath(frame.current?.contentWindow?.location.pathname)
     const liveKey = KEY_OF_PATH[path] || (path.startsWith('/portfolio/') ? 'portfolio'
                   : path.startsWith('/blog/') ? 'blog' : previewKey)
-    el.textContent = liveCss(conf, liveKey)
+    /* 블로그는 고른 카테고리의 모양으로 — 미리보기가 그 카테고리 페이지를 보고 있습니다.
+       기본이면 윗단 그대로. 굽기의 `confFor` 와 같은 치환입니다 */
+    const seen = liveKey === 'blog' && catNow ? { ...conf, blog: { ...conf.blog, ...catNow.look } } : conf
+    el.textContent = liveCss(seen, liveKey)
     /* 새로 추가한 박스가 iframe 에 나타나면 그때 선택합니다. 추가만 하고 어디 생겼는지
        모르면 의미가 없습니다 */
     const want = wantSel.current
@@ -576,6 +622,13 @@ export function Look({ onWorks }) {
     /* 카드 갈래의 테마 — 목록에 클래스 한 장이 붙습니다. 색·모서리는 CSS 변수라 여기 없습니다
        (넣으면 색칸을 만질 때마다 사이트를 다시 굽습니다) */
     conf.blog.outline.skin,
+    /* 카테고리 — 줄·페이지·드로어 하위 항목이 전부 마크업입니다. 모양 여섯 중 마크업인 것
+       (갈래·공통헤더·타이틀·바로가기·카드 테마)도 카테고리마다 따로 봅니다. 색은 여기 없습니다 */
+    /* 줄 모양도 **마크업**입니다 — `<nav>` 에 클래스 한 장이 붙습니다. 여기 없으면 눌러도
+       미리보기가 안 바뀝니다(CSS 변수가 아니라 클래스라 즉시 반영이 안 됩니다). 실제로 그랬습니다 */
+    conf.blog.catStrip,
+    (conf.blog.categories || []).map((c) => [c.id, c.label, c.slug, c.show, c.look.template, c.look.chrome,
+      headMarkup(c.look.head), c.look.toc.show, c.look.toc.skin, c.look.outline.skin].join(':')).join('|'),
     /* 탭 이름과 파비콘. 둘 다 <head> 로 나가므로 마크업입니다.
        파비콘 색도 여기 있어야 합니다 — 색을 고르면 굽기가 그림을 다시 그려 data: 주소로 박으므로
        CSS 변수처럼 iframe 에 바로 먹지 않습니다(빼 두면 색만 바꿀 때 미리보기가 안 바뀝니다) */
@@ -613,9 +666,16 @@ export function Look({ onWorks }) {
       try {
         /* 한 요청에 키를 전부 전송합니다. 미리보기 생성은 사이트 한 벌을 통째로 만드는
            작업이라, 키마다 따로 보내면 뒤 요청이 앞 요청의 값을 저장된 값으로 덮습니다 */
+        /**
+         * 아직 이름·주소가 안 된 카테고리는 미리보기에서 뺍니다. 서버는 그 줄을 400 으로 거절하는데
+         * (저장은 그래야 맞습니다), 미리보기까지 거절하면 ＋ 를 누르는 순간부터 이름을 다 칠 때까지
+         * 패널 맨 위에 빨간 줄이 서고 화면이 옛것에 멈춥니다 — 실제로 그랬습니다. 그 줄은 제 자리의
+         * 「이름 없음」·「주소 없음」이 이미 말해 줍니다.
+         */
+        const blog = { ...conf.blog, categories: (conf.blog.categories || []).filter((c) => c.label && !slugProblem(c.slug)) }
         const d = await api('/settings', { method: 'POST', body: JSON.stringify({
           key: 'theme', value: conf.theme, preview: true,
-          also: Object.fromEntries(ALL_KEYS.map((k) => [k, conf[k]])),
+          also: { ...Object.fromEntries(ALL_KEYS.map((k) => [k, conf[k]])), blog },
         }) })
         setWarn(d?.warn || [])
         /* iframe 이 교체되기 직전에 편집 중이던 글자와 드래그 위치를 확정합니다.
@@ -634,17 +694,107 @@ export function Look({ onWorks }) {
     ...c, portfolio: { ...c.portfolio, knobs: { ...c.portfolio.knobs, [k]: v } },
   }))
   const setSite = (patch) => set('site', patch)
+  /* ── 블로그 탭이 지금 고치는 모양 ──
+     기본(= /blog/)이면 블로그 윗단, 카테고리를 골랐으면 그 카테고리의 `look`. 같은 여섯 키라
+     아래 조작은 전부 이 둘을 지나서만 읽고 씁니다 — `conf.blog.X` 를 직접 읽는 자리를 하나라도
+     남기면 카테고리를 골랐는데 기본을 고치는 조작이 생깁니다. */
+  const cats = conf.blog.categories || []
+  const blogLook = catNow ? catNow.look : conf.blog
+  const setBlogLook = (patch) => setConf((c) => (catNow
+    ? { ...c, blog: { ...c.blog, categories: (c.blog.categories || []).map((x) =>
+        (x.id === catNow.id ? { ...x, look: { ...x.look, ...patch } } : x)) } }
+    : { ...c, blog: { ...c.blog, ...patch } }))
+  /* 화면별 탭이 고치는 블록 — 메인·포트폴리오는 제 키, 블로그는 위의 둘 중 하나 */
+  const page = tab === 'common' ? null : tab === 'blog' ? blogLook : conf[tab]
+  const setPage = (patch) => (tab === 'blog' ? setBlogLook(patch) : set(tab, patch))
+  const setCats = (fn) => setConf((c) => ({ ...c, blog: { ...c.blog, categories: fn(c.blog.categories || []) } }))
+  const setCatRow = (id, patch) => setCats((list) => list.map((x) => (x.id === id ? { ...x, ...patch } : x)))
+  /**
+   * 새 카테고리 — 기본의 모양을 **통째로 베껴** 시작합니다(`blogLookOf`). 그 뒤로는 제 것을 따로 고칩니다.
+   * 「초기화」가 생긴다면 같은 한 줄을 다시 부르면 됩니다. 만들자마자 고릅니다 — 더해 놓고 어디 갔는지
+   * 모르면 소용이 없습니다(상자 더하기와 같은 규약).
+   */
+  const addCat = () => {
+    const id = newCategoryId()
+    freshCats.current.add(id)
+    setCats((list) => [...list,
+      { id, label: '', slug: autoSlug('', list.map((x) => x.slug), id), show: true, look: blogLookOf(conf.blog) }])
+    setCat(id)
+  }
+  const moveCat = (i, d) => setCats((list) => {
+    const next = [...list]
+    const j = i + d
+    if (j < 0 || j >= next.length) return list
+    ;[next[i], next[j]] = [next[j], next[i]]
+    return next
+  })
+  /**
+   * 이름을 치면 주소가 따라옵니다 — **이 세션에서 만든 것만**(`freshCats`).
+   * 한 번 반영한 카테고리는 이름을 바꿔도 주소가 그대로입니다: 밖에 적어 둔 링크가 다 죽습니다.
+   *
+   * 주소를 손으로 고치는 길은 없습니다. 사용자 지시가 「카테고리명과 공개 여부만」이었고,
+   * `autoSlug` 가 겹침·예약어·숫자를 스스로 비켜 가므로 사람이 손댈 거리가 남지 않습니다.
+   */
+  const renameCat = (c, label) => setCatRow(c.id, {
+    label,
+    ...(freshCats.current.has(c.id)
+      ? { slug: autoSlug(label, cats.filter((x) => x.id !== c.id).map((x) => x.slug), c.id) }
+      : {}),
+  })
+  /**
+   * 지금 고른 카테고리의 편수 — 「3편 · 초안 1」. 비면 아무 말도 안 합니다.
+   *
+   * **기본은 더해서 셉니다.** 기본은 `/blog/` 그 자체라 모든 글이 실리는데,
+   * `categoryCounts['']` 는 분류를 안 한 글만 셉니다. 그것을 그대로 쓰면 「2편」이라 적어 놓고
+   * 여덟 편을 싣는 꼴이 됩니다.
+   */
+  const catCountLabel = (() => {
+    const 센다 = catNow
+      ? (catCounts[catNow.id] || { published: 0, drafts: 0 })
+      : Object.values(catCounts).reduce((a, n) => ({
+        published: a.published + (n.published || 0), drafts: a.drafts + (n.drafts || 0),
+      }), { published: 0, drafts: 0 })
+    return [센다.published ? `${센다.published}편` : '', 센다.drafts ? `초안 ${센다.drafts}` : '']
+      .filter(Boolean).join(' · ')
+  })()
+  /** 서버에 저장돼 있는 카테고리인가 — 아직 반영 안 한 것은 서버에 지우라고 할 것이 없습니다 */
+  const savedCat = (id) => {
+    try { return (JSON.parse(saved.current.blog || 'null')?.categories || []).some((x) => x.id === id) } catch { return false }
+  }
+  /**
+   * 카테고리 지우기. 서버가 설정에서 빼고 거기 있던 글을 초안으로 돌립니다 — 한 트랜잭션입니다
+   * (`POST /api/categories/delete`). 돌려받은 값은 **저장된 판**이라 「마지막 반영」만 갱신하고,
+   * 여기 있는 다른 수정(아직 반영 안 한 것)은 그대로 둡니다. 반영한 적 없는 줄은 그냥 뺍니다.
+   */
+  const dropCat = async (c) => {
+    setAsk(null)
+    if (cat === c.id) setCat(null)
+    freshCats.current.delete(c.id)
+    if (!savedCat(c.id)) { setCats((list) => list.filter((x) => x.id !== c.id)); return }
+    setErr(''); setBusy('cat')
+    try {
+      const d = await api('/categories/delete', { method: 'POST', body: JSON.stringify({ id: c.id }) })
+      setCats((list) => list.filter((x) => x.id !== c.id))
+      saved.current.blog = JSON.stringify(d.value)
+      onCats?.(d.value?.categories || [])
+      /* 편수를 다시 셉니다 — 초안이 된 글이 「카테고리 없음」으로 옮겨 갔습니다 */
+      api('/settings').then((r) => setCatCounts(r.categoryCounts || {})).catch(() => {})
+      say(d.drafted ? `「${c.label}」을 지웠습니다 — 글 ${d.drafted}편이 초안이 됐습니다` : `「${c.label}」을 지웠습니다`)
+      if (d?.bakeError) throw new Error('지웠지만 화면을 굽지 못했습니다: ' + d.bakeError)
+      setBust((n) => n + 1)
+    } catch (e) { fail(e) } finally { setBusy('') }
+  }
   /* 카드 갈래의 손잡이. 색칸이 「비우면 무엇을 따르나」를 보여 주려면 지금 테마를 알아야 합니다 */
-  const setOutline = (patch) => set('blog', { outline: { ...conf.blog.outline, ...patch } })
+  const setOutline = (patch) => setBlogLook({ outline: { ...blogLook.outline, ...patch } })
   /* 고르면 미리보기를 첫 글로 보냅니다 — 표식은 글 상세에만 있어서 목록에 서 있으면
      바뀐 것이 안 보입니다.
      모양은 `shape` 에 들어갑니다(클래스라 다시 구워야 합니다). 색은 CSS 변수라 안 들어가고
      즉시 반영됩니다 — 둘이 한 함수를 쓰지만 반영되는 길이 다릅니다 */
   const setToc = (patch) => {
     goPost.current = bust
-    set('blog', { toc: { ...conf.blog.toc, ...patch } })
+    setBlogLook({ toc: { ...blogLook.toc, ...patch } })
   }
-  const skinNow = OUTLINE_SKINS.find((o) => o.value === conf.blog.outline.skin) || OUTLINE_SKINS[0]
+  const skinNow = OUTLINE_SKINS.find((o) => o.value === blogLook.outline.skin) || OUTLINE_SKINS[0]
   /* 색을 안 고르면 파비콘은 탭 배경에 맞춰 뒤집힙니다 — 밝으면 검정, 어두우면 흰색.
      색칸이 늘 검정을 가리키면 어두운 탭에서 보이는 것과 어긋납니다(흰 그림인데 검정이라 적힘).
      그래서 관리자를 보고 있는 이 브라우저의 설정을 그대로 따릅니다 */
@@ -998,7 +1148,8 @@ export function Look({ onWorks }) {
     if (o.knobs) next.knobs = { ...o.knobs, detailGap: conf[which].knobs?.detailGap ?? 0, detailTop: conf[which].knobs?.detailTop ?? 48 }
     /* 블로그 템플릿은 글꼴 짝을 들고 옵니다 — 누르면 글꼴 칸도 그 짝으로 */
     if (o.font) next.font = { display: o.font.display, body: o.font.body }
-    set(which, next)
+    /* 블로그는 고른 카테고리(또는 기본)의 블록으로 — `set('blog', …)` 로 두면 늘 기본만 바뀝니다 */
+    if (which === 'blog') setBlogLook(next); else set(which, next)
     setAsk(null)
   }
 
@@ -1011,12 +1162,12 @@ export function Look({ onWorks }) {
     const o = OUTLINE_SKINS.find((x) => x.value === value)
     const next = { outline: { skin: value, ink: '', bg: '', radius: '' } }
     if (o?.font) next.font = { display: o.font.display, body: o.font.body }
-    set('blog', next)
+    setBlogLook(next)
     setAsk(null)
   }
   /* 색·모서리를 하나라도 고쳤으면 「손댐」입니다. 테마는 저장된 값이 곧 표시라 비교할 것이 없습니다 */
   const willLoseSkin = () => {
-    const o = conf.blog.outline
+    const o = blogLook.outline
     return !!(o.ink || o.bg || o.radius !== '')
   }
 
@@ -1038,7 +1189,7 @@ export function Look({ onWorks }) {
 
   const tabDef = TABS.find((t) => t.key === tab)
   const here = { ...tabDef, path: previewPath }
-  const setHead = (patch) => set(tab, { head: { ...conf[tab].head, ...patch } })
+  const setHead = (patch) => setPage({ head: { ...page.head, ...patch } })
   /**
    * 상세 knob 을 조작하면 상세 화면을 엽니다. 포트폴리오 미리보기는 목록이라 상단 여백과
    * 상하 간격이 보일 자리가 없습니다. 설정은 적용되는데 화면에 보이지 않으면 사용자는 버그로 읽습니다.
@@ -1055,10 +1206,43 @@ export function Look({ onWorks }) {
     if (href.startsWith('#')) win.location.hash = href.slice(1)
     else win.location.href = href
   }
-  const setFont = (patch) => set(tab, { font: { ...conf[tab].font, ...patch } })
+  const setFont = (patch) => setPage({ font: { ...page.font, ...patch } })
 
   /** 현재 탭에서 변경된 키만 전송합니다. 같은 값의 리비전을 쌓지 않습니다 */
   const changed = here.keys.filter((k) => JSON.stringify(conf[k]) !== saved.current[k])
+  /**
+   * 카테고리는 **따로 저장합니다** — 「사이트에 적용」과 별개입니다.
+   *
+   * 카테고리는 설정 키 `blog` 안에 살지만, 하는 일이 다릅니다: 페이지와 메뉴를 만들고 지웁니다.
+   * 이름만 쳐 놓고 저장됐는지 알 수 없으면 쓸 수가 없습니다(사용자 지적).
+   *
+   * 저장할 때 **나머지는 저장된 값 그대로** 두고 `categories` 만 갈아 보냅니다. 그래서 템플릿이나
+   * 문단 바로가기를 고치던 중에 카테고리를 저장해도 그쪽은 안 나갑니다 — 그것들은 여전히
+   * 「사이트에 적용」이 맡습니다.
+   */
+  const catsDirty = (() => {
+    try { return JSON.stringify(JSON.parse(saved.current.blog || 'null')?.categories || [])
+      !== JSON.stringify(conf.blog.categories || []) } catch { return true }
+  })()
+  const saveCats = async () => {
+    setErr(''); setBusy('catsave')
+    try {
+      const base = JSON.parse(saved.current.blog || 'null') || conf.blog
+      const value = { ...base, categories: conf.blog.categories || [] }
+      const d = await api('/settings', { method: 'POST', body: JSON.stringify({
+        key: 'blog', value, also: { theme: conf.theme, header: conf.header, footer: conf.footer },
+      }) })
+      /* 서버가 정규화한 카테고리만 받아 옵니다. 나머지(아직 반영 안 한 모양)는 손대지 않습니다 */
+      const got = d?.value?.categories || []
+      saved.current.blog = JSON.stringify(d.value)
+      setConf((c) => ({ ...c, blog: { ...c.blog, categories: got } }))
+      onCats?.(got)
+      api('/settings').then((r) => setCatCounts(r.categoryCounts || {})).catch(() => {})
+      say('카테고리를 저장했습니다')
+      if (d?.bakeError) throw new Error('저장은 됐지만 화면을 굽지 못했습니다: ' + d.bakeError)
+      setBust((n) => n + 1)
+    } catch (e) { fail(e) } finally { setBusy('') }
+  }
   const apply = async () => {
     setErr(''); setBusy('apply')
     const sent = []
@@ -1081,6 +1265,8 @@ export function Look({ onWorks }) {
         /* 작업물 목록의 공개 여부 표시는 실제로 반영된 값을 기준으로 합니다.
            선택만 한 값으로 표시하면 실제 상태와 다릅니다 */
         if (key === 'portfolio') onWorks?.((d.value ?? conf.portfolio)?.mode === 'template')
+        /* 글 목록·편집기가 들고 있는 카테고리 목록도 같이 — 반영한 뒤 글쓰기로 가면 새 카테고리가 보여야 합니다 */
+        if (key === 'blog') { freshCats.current.clear(); onCats?.((d.value ?? conf.blog)?.categories || []) }
         sent.push(key)
         if (d?.bakeError) throw new Error('저장은 됐지만 화면을 굽지 못했습니다: ' + d.bakeError)
       }
@@ -1118,6 +1304,7 @@ export function Look({ onWorks }) {
           setConf((c) => ({ ...c, [key]: d.value }))
           saved.current[key] = JSON.stringify(d.value)
           if (key === 'portfolio') onWorks?.(d.value?.mode === 'template')
+          if (key === 'blog') onCats?.(d.value?.categories || [])
         } catch (e) {
           if (/이전 판이 없습니다/.test(e.message || '')) { skipped.push(key); continue }
           throw e
@@ -1688,13 +1875,108 @@ export function Look({ onWorks }) {
           <div className="lkTop">
             <h3 className="lkGroup lkFirst">헤더</h3>
             <div className="lkLink lkChrome">
-              <EyeToggle shown={conf[tab].chrome} what="공통헤더"
-                         onToggle={() => set(tab, { chrome: !conf[tab].chrome })} />
+              <EyeToggle shown={page.chrome} what="공통헤더"
+                         onToggle={() => setPage({ chrome: !page.chrome })} />
               <span>사용유무</span>
             </div>
             {/* 막지 않고 알립니다 — 스위치는 늘 먹고, 무엇을 하면 되는지만 일러 줍니다 */}
             {warn.map((w) => <p key={w} className="lkHint warn">{w}</p>)}
           </div>
+          {/* ── 블로그: 카테고리 ──
+               맨 위에 둡니다. 아래 설정 전부가 「어느 줄을 골랐나」에 걸리므로 고르는 자리가 먼저여야 합니다.
+
+               한 줄이 한 카테고리입니다. 줄 안에서 이름을 고치고, 눈으로 공개를 가르고, ↑↓ 로 차례를
+               옮기고, × 로 지웁니다. **고치는 자리가 한 군데뿐입니다** — 전에는 줄에도 입력칸이 있고
+               그 아래 또 이름·주소 칸이 있어 같은 것을 두 군데서 쳤습니다(사용자 지적).
+
+               **주소 칸은 없습니다.** 이름에서 자동으로 만듭니다(`autoSlug`). 사용자 지시가
+               「카테고리명과 공개 여부만」이었는데 제가 중간에 주소 칸을 끼워 넣었던 것을 되돌린 것입니다.
+               주소는 「여기로 갑니다」를 알려 주는 회색 글자로만 보여 줍니다.
+
+               「기본」은 /blog/ 그 자체라 이름도 주소도 공개도 못 고칩니다 — 고를 수만 있습니다. */}
+          {tab === 'blog' && (
+            <div className="lkCatsBox">
+              {/* 편집 단추는 제목 오른쪽에 — 「이 목록을 고친다」는 뜻이라 목록 바로 위가 맞습니다 */}
+              {/* 편수는 **머리줄 한 곳**에서만 말합니다 — 고른 카테고리의 것입니다.
+                  줄마다 적으면 목록이 숫자로 가득하고, 무엇보다 「기본」 줄의 숫자가 거짓말을 합니다:
+                  `categoryCounts['']` 는 분류를 안 한 글만 세는데 기본은 `/blog/` 라 **모든 글**이
+                  실리기 때문입니다(2편이라 적고 8편을 싣습니다). 여기서는 그 뜻대로 셉니다 */}
+              <h3 className="lkGroup lkFirst lkCatHead">카테고리
+                <span className="lkCatMeta">
+                  {catCountLabel && <em>{catCountLabel}</em>}
+                  {/* 저장은 **편집 중에만** 보입니다. 고칠 수 없는 상태에서 저장 단추가 서 있으면
+                      무엇이 저장되는지가 안 붙습니다. 안 바뀌었으면 「저장됨」이라고 말합니다 */}
+                  {catEdit && (catsDirty
+                    ? <button type="button" className="lkCatSave" disabled={busy === 'catsave'}
+                              onClick={saveCats}>{busy === 'catsave' ? '저장 중' : '저장'}</button>
+                    : <em className="lkCatSaved">저장됨</em>)}
+                  <button type="button" className={'lkCatMode' + (catEdit ? ' is-on' : '')}
+                          aria-pressed={catEdit} onClick={() => setCatEdit((v) => !v)}>
+                    {catEdit ? '편집 중' : '편집'}
+                  </button>
+                </span>
+              </h3>
+              <ul className={'lkCats' + (catEdit ? ' is-edit' : '')}>
+                <li className="is-fixed" aria-current={!catNow || undefined}>
+                  {/* 기본은 숨길 수 없습니다 — 눈을 흐리게 세워 자리와 뜻을 같이 지킵니다 */}
+                  <span className="lkCatEye" aria-hidden="true"><Eye /></span>
+                  <button type="button" className="lkCatPick" onClick={() => setCat(null)}>{DEFAULT_LABEL}</button>
+                  <span className="lkCatUrl">/blog/</span>
+                </li>
+                {cats.map((c, i) => (
+                  <li key={c.id} className={c.show ? undefined : 'is-off'}
+                      aria-current={catNow?.id === c.id || undefined}>
+                    {/* 비공개 — 「주소로도 안 열리게」. 그 페이지도 거기 속한 글도 안 나갑니다.
+                        보기 상태에서는 상태만 보여 주고 누를 수 없습니다 */}
+                    {catEdit
+                      ? <EyeToggle shown={c.show} what={c.label || '이름 없는 카테고리'}
+                                   onToggle={() => setCatRow(c.id, { show: !c.show })} />
+                      : <span className="lkCatEye" aria-hidden="true"><Eye off={!c.show} /></span>}
+                    {catEdit
+                      ? <input className="lkCatName" type="text" maxLength={CATEGORY_LABEL_MAX}
+                               value={c.label} placeholder="카테고리 이름"
+                               onFocus={() => setCat(c.id)}
+                               onChange={(e) => renameCat(c, e.target.value)} />
+                      : <button type="button" className="lkCatPick" onClick={() => setCat(c.id)}>
+                          {c.label || <span className="lkCatNone">이름 없음</span>}
+                        </button>}
+                    <span className="lkCatUrl">/blog/{c.slug}/</span>
+                    {/* 차례·지우기는 편집 중에만 — 평소에 늘 서 있으면 줄이 단추로 가득합니다 */}
+                    {catEdit && (<>
+                      <button type="button" className="lkCatMini" disabled={i === 0}
+                              aria-label={`${c.label || '카테고리'} 위로`} onClick={() => moveCat(i, -1)}>↑</button>
+                      <button type="button" className="lkCatMini" disabled={i === cats.length - 1}
+                              aria-label={`${c.label || '카테고리'} 아래로`} onClick={() => moveCat(i, 1)}>↓</button>
+                      <button type="button" className="lkCatMini lkX" title="지우기"
+                              aria-label={`${c.label || '카테고리'} 지우기`} disabled={busy === 'cat'}
+                              onClick={() => setAsk({ tab, kind: 'cat', value: c.id })}>×</button>
+                    </>)}
+                  </li>
+                ))}
+              </ul>
+              {/* 더하기도 편집 중에만. 목록 끝에 둡니다 — 제목 옆에 두면 무엇에 더하는지가 안 붙습니다 */}
+              {catEdit && (
+                <button type="button" className="lkCatAdd" disabled={cats.length >= CATEGORY_MAX}
+                        onClick={addCat}>＋ 카테고리 추가</button>
+              )}
+              {/* 줄 모양 — 카테고리가 하나라도 있어야 줄이 서므로 그때만 냅니다.
+                  카테고리마다가 아니라 블로그 한 벌입니다(줄은 카테고리를 건너다니는 길입니다).
+                  `set('blog', …)` 로 저장합니다 — 카테고리 전용 저장과 달리 이것은 모양이라
+                  「사이트에 적용」이 맡습니다 */}
+              {cats.length > 0 && (<>
+                <h4 className="lkCatSub">카테고리 디자인</h4>
+                {/* 여섯이 세 벌씩 두 줄로 섭니다 — `two` 를 안 줍니다. 두 벌씩이면 석 줄이고
+                    썸네일이 줄 모양이라 가로가 짧으면 무엇인지 안 보입니다 */}
+                <Pick list={CAT_STRIP_STYLES} value={conf.blog.catStrip}
+                      onPick={(v) => set('blog', { catStrip: v })} />
+              </>)}
+              {/* 구분선은 집에서 쓰는 것 하나입니다 — 1px 옅은 선(`.lkRule`).
+                  「기본」과 「상세페이지」 사이에 쓰는 바로 그것이라 패널 안에 한 결만 남습니다.
+                  제목(`h3.lkGroup`)의 굵은 먹선을 쓰면 여기만 두꺼워집니다(사용자 지적).
+                  위쪽 경계는 안 그립니다 — 바로 앞 `.lkTop` 이 제 아래 선을 갖고 있어 겹칩니다 */}
+              <hr className="lkRule" />
+            </div>
+          )}
 
           {/* ── 이 화면을 누가 만드는가 ─────────────────────────────────
                블로그에는 없습니다: 글이 DB 에서 오므로 목록을 코드가 꽂아야 합니다 */}
@@ -1784,38 +2066,38 @@ export function Look({ onWorks }) {
             {(tab === 'blog' || tab === 'portfolio') && (<>
               <h3>타이틀</h3>
               <div className="lkLink">
-                <EyeToggle shown={conf[tab].head.show} what="타이틀"
-                           onToggle={() => setHead({ show: !conf[tab].head.show })} />
-                <input type="text" maxLength={20} value={conf[tab].head.name}
-                       disabled={!conf[tab].head.show} aria-label="타이틀 이름"
+                <EyeToggle shown={page.head.show} what="타이틀"
+                           onToggle={() => setHead({ show: !page.head.show })} />
+                <input type="text" maxLength={20} value={page.head.name}
+                       disabled={!page.head.show} aria-label="타이틀 이름"
                        onChange={(e) => setHead({ name: e.target.value })} />
               </div>
               {/* 타이틀을 숨기면 사이즈·정렬·갯수는 뜻이 없고, 대신 공통헤더와 콘텐츠 사이를 정합니다.
                    보일 때는 타이틀 제 여백이 있어 이 값을 더하면 두 번 띄웁니다 */}
-              {!conf[tab].head.show && (
+              {!page.head.show && (
                 <label className="lkSlide">
-                  <span>상단 여백 <b>{conf[tab].head.gap}px</b></span>
-                  <input type="range" min="0" max="160" step="4" value={conf[tab].head.gap}
+                  <span>상단 여백 <b>{page.head.gap}px</b></span>
+                  <input type="range" min="0" max="160" step="4" value={page.head.gap}
                          onChange={(e) => setHead({ gap: +e.target.value })} />
                 </label>
               )}
-              {conf[tab].head.show && (<>
+              {page.head.show && (<>
                 {/* 갯수는 타이틀에 붙는 것이라 타이틀 바로 밑에 둡니다 */}
                 <div className="lkLink lkEyeRow">
-                  <EyeToggle shown={conf[tab].head.count} what="콘텐츠 갯수"
-                             onToggle={() => setHead({ count: !conf[tab].head.count })} />
+                  <EyeToggle shown={page.head.count} what="콘텐츠 갯수"
+                             onToggle={() => setHead({ count: !page.head.count })} />
                   <span>콘텐츠 갯수 표시</span>
                 </div>
                 {/* 사이즈는 슬라이더 — 다른 수치 knob 과 같은 모양으로.
                      세 칸(작게·보통·크게)이라 눈금은 셋입니다 */}
                 <label className="lkSlide">
-                  <span>타이틀 사이즈 <b>{HEAD_SIZES.find((z) => z.value === conf[tab].head.size)?.label}</b></span>
+                  <span>타이틀 사이즈 <b>{HEAD_SIZES.find((z) => z.value === page.head.size)?.label}</b></span>
                   <input type="range" min="0" max={HEAD_SIZES.length - 1} step="1"
-                         value={Math.max(0, HEAD_SIZES.findIndex((z) => z.value === conf[tab].head.size))}
+                         value={Math.max(0, HEAD_SIZES.findIndex((z) => z.value === page.head.size))}
                          onChange={(e) => setHead({ size: HEAD_SIZES[+e.target.value].value })} />
                 </label>
                 <h4>타이틀 정렬</h4>
-                <Pick list={ALIGNS.slice(0, 2).map((a) => ({ ...a, hint: '', icon: null }))} value={conf[tab].head.align}
+                <Pick list={ALIGNS.slice(0, 2).map((a) => ({ ...a, hint: '', icon: null }))} value={page.head.align}
                       onPick={(v) => setHead({ align: v })} two />
               </>)}
             </>)}
@@ -1826,7 +2108,7 @@ export function Look({ onWorks }) {
               <h3>글꼴</h3>
               <div className="lkRow">
                 {FONT_ROLES.map(({ key, label }) => (
-                  <FontPick key={key} label={label} value={conf[tab].font[key]} onPick={(v) => setFont({ [key]: v })} />
+                  <FontPick key={key} label={label} value={page.font[key]} onPick={(v) => setFont({ [key]: v })} />
                 ))}
               </div>
             </>
@@ -1835,9 +2117,9 @@ export function Look({ onWorks }) {
             <div className="lkPick lkShapes">
               {TEMPLATES[tab].map((o) => (
                 <button key={o.value} type="button"
-                        aria-pressed={conf[tab].template === o.value}
+                        aria-pressed={page.template === o.value}
                         /* 커스텀은 고르는 것이 아니라 닿는 곳입니다 — 배치를 고치면 켜집니다 */
-                        disabled={o.value === 'custom' && conf[tab].template !== 'custom'}
+                        disabled={o.value === 'custom' && page.template !== 'custom'}
                         onClick={() => {
                           /* 세 탭이 같은 규칙입니다.
                                지금 것              아무 일 없음
@@ -1848,7 +2130,7 @@ export function Look({ onWorks }) {
                              고른 것을 한 번 더 고른 사람이 기대할 동작이 아닙니다 — 베한스를 골라
                              간격을 맞춰 둔 사람이 베한스를 다시 누르면 그 간격이 말없이 사라졌습니다.
                              되돌리려면 다른 것을 눌렀다가 돌아오면 됩니다(그때는 확인창이 섭니다) */
-                          if (o.value === conf[tab].template) return
+                          if (o.value === page.template) return
                           if (willLose(tab)) { setAsk({ tab, value: o.value }); return }
                           applyTemplate(tab, o.value)
                         }}>
@@ -1865,7 +2147,18 @@ export function Look({ onWorks }) {
                    aria-label={tab === 'main' ? '배치 되돌리기' : '설정 되돌리기'}
                    onClick={(e) => { if (e.target === e.currentTarget) setAsk(null) }}>
                 <div>
-                  {ask.kind === 'skin'
+                  {ask.kind === 'cat'
+                    ? (() => {
+                        const c = cats.find((x) => x.id === ask.value)
+                        const n = catCounts[ask.value]?.published || 0
+                        /* 무엇이 없어지는지 데이터가 문장을 정합니다(글 목록의 `lossOf` 와 같은 규약) */
+                        return <p><b>{c?.label || '이 카테고리'}</b>{eul(c?.label || '이 카테고리')} 지웁니다.
+                          {' '}주소 <b>/blog/{c?.slug}/</b> 는 없어지고,
+                          {n ? <> 거기 있던 글 <b>{n}편</b>은 초안이 됩니다(글은 사라지지 않습니다 — 목록에서 다시 앉히면 됩니다).</>
+                             : ' 거기 있던 발행 글은 없습니다.'}
+                          {' '}이 일은 바로 서버에 반영됩니다.</p>
+                      })()
+                    : ask.kind === 'skin'
                     ? <p><b>{OUTLINE_SKINS.find((o) => o.value === ask.value)?.label}</b>의 기본 모양으로 바꿉니다.
                         고쳐 둔 선 색·배경색·모서리는 사라지고, 글꼴도 그 테마의 짝으로 바뀝니다.</p>
                     : tab === 'main'
@@ -1878,7 +2171,9 @@ export function Look({ onWorks }) {
                   <div className="lkAskBtns">
                     <button type="button" onClick={() => setAsk(null)}>취소</button>
                     <button type="button" className="primary"
-                            onClick={() => (ask.kind === 'skin' ? applySkin(ask.value) : applyTemplate(ask.tab, ask.value))}>되돌리고 바꾸기</button>
+                            onClick={() => (ask.kind === 'cat' ? dropCat(cats.find((x) => x.id === ask.value))
+                              : ask.kind === 'skin' ? applySkin(ask.value) : applyTemplate(ask.tab, ask.value))}>
+                      {ask.kind === 'cat' ? '카테고리 지우기' : '되돌리고 바꾸기'}</button>
                   </div>
                 </div>
               </div>
@@ -1887,15 +2182,15 @@ export function Look({ onWorks }) {
             {/* ── 카드 갈래의 테마 ──
                  고른 갈래일 때만 냅니다. 늘 띄워 두면 다른 갈래를 고른 사람에게
                  눌러도 아무 데도 안 나가는 칸이 열립니다. */}
-            {tab === 'blog' && conf.blog.template === 'outline' && (<>
+            {tab === 'blog' && blogLook.template === 'outline' && (<>
               <h3>카드 테마</h3>
               <div className="lkPick lkSkins">
                 {OUTLINE_SKINS.map((o) => (
                   <button key={o.value} type="button"
-                          aria-pressed={conf.blog.outline.skin === o.value}
+                          aria-pressed={blogLook.outline.skin === o.value}
                           onClick={() => {
                             /* 템플릿과 같은 세 규칙입니다 */
-                            if (o.value === conf.blog.outline.skin) return
+                            if (o.value === blogLook.outline.skin) return
                             if (willLoseSkin()) { setAsk({ tab, kind: 'skin', value: o.value }); return }
                             applySkin(o.value)
                           }}>
@@ -1912,23 +2207,23 @@ export function Look({ onWorks }) {
               {/* 색은 비우면 테마가 정한 색을 따릅니다 — 푸터 색과 같은 규약(ColorField 의 followLabel) */}
               <div className="lkRow">
                 <ColorField id="bo-ink" label="선 색" hint=""
-                            value={conf.blog.outline.ink}
-                            shown={conf.blog.outline.ink || skinNow.chip[1]}
+                            value={blogLook.outline.ink}
+                            shown={blogLook.outline.ink || skinNow.chip[1]}
                             onPick={(v) => setOutline({ ink: v })}
                             followLabel="테마 기본으로" />
                 <ColorField id="bo-bg" label="배경색" hint=""
-                            value={conf.blog.outline.bg}
-                            shown={conf.blog.outline.bg || skinNow.chip[0]}
+                            value={blogLook.outline.bg}
+                            shown={blogLook.outline.bg || skinNow.chip[0]}
                             onPick={(v) => setOutline({ bg: v })}
                             followLabel="테마 기본으로" />
               </div>
 
               <label className="lkSlide">
-                <span>모서리 <b>{conf.blog.outline.radius === '' ? '테마 기본' : `${conf.blog.outline.radius}px`}</b></span>
-                <input type="range" min="0" max="32" value={conf.blog.outline.radius === '' ? 12 : conf.blog.outline.radius}
+                <span>모서리 <b>{blogLook.outline.radius === '' ? '테마 기본' : `${blogLook.outline.radius}px`}</b></span>
+                <input type="range" min="0" max="32" value={blogLook.outline.radius === '' ? 12 : blogLook.outline.radius}
                        onChange={(e) => setOutline({ radius: +e.target.value })} />
               </label>
-              {conf.blog.outline.radius !== '' && (
+              {blogLook.outline.radius !== '' && (
                 <button type="button" className="lkReset lkResetRow"
                         onClick={() => setOutline({ radius: '' })}>모서리를 테마 기본으로</button>
               )}
@@ -1944,12 +2239,11 @@ export function Look({ onWorks }) {
               <h3>상세페이지</h3>
               <div className="lkLink lkEyeRow">
                 {/* 「목차」라 부르지 않습니다 — 목록 템플릿에 이미 「목차」가 있어 둘이 겹칩니다 */}
-                <EyeToggle shown={conf.blog.toc.show} what="문단 바로가기"
+                <EyeToggle shown={blogLook.toc.show} what="문단 바로가기"
                            onToggle={() => {
                              /* 켜고 끈 결과는 목록이 아니라 글 안에 있습니다. 다시 구운 뒤
                                 미리보기를 첫 글로 보냅니다(paint 가 받습니다) */
-                             goPost.current = bust
-                             set('blog', { toc: { show: !conf.blog.toc.show } })
+                             setToc({ show: !blogLook.toc.show })
                            }} />
                 <span>문단 바로가기</span>
               </div>
@@ -1959,17 +2253,17 @@ export function Look({ onWorks }) {
               {/* ── 지금 읽는 자리 표식 ──
                    켠 사람에게만 냅니다. 꺼 둔 채로 모양을 고르게 하면 눌러도 아무 데도
                    안 나가는 칸이 열립니다(카드 테마와 같은 규칙) */}
-              {conf.blog.toc.show && (<>
+              {blogLook.toc.show && (<>
                 <h3>지금 읽는 자리 표식</h3>
                 <div className="lkPick lkSkins lkTocPick">
                   {TOC_SKINS.map((o) => (
                     <button key={o.value} type="button"
-                            aria-pressed={conf.blog.toc.skin === o.value}
-                            onClick={() => conf.blog.toc.skin !== o.value && setToc({ skin: o.value })}>
+                            aria-pressed={blogLook.toc.skin === o.value}
+                            onClick={() => blogLook.toc.skin !== o.value && setToc({ skin: o.value })}>
                       {/* 넷의 차이는 색이 아니라 **모양**입니다 — 색 막대로는 구별이 안 됩니다.
                           선 하나에 표식을 올려 실제로 보이는 그대로 그립니다 */}
                       <span className="lkTocChip" aria-hidden="true" data-skin={o.value}
-                            style={{ '--c-ink': conf.blog.toc.ink || 'var(--fg)' }}>
+                            style={{ '--c-ink': blogLook.toc.ink || 'var(--fg)' }}>
                         <u /><i /><b /><b />
                       </span>
                       <b>{o.label}</b><em>{o.hint}</em>
@@ -1978,8 +2272,8 @@ export function Look({ onWorks }) {
                 </div>
                 <div className="lkRow">
                   <ColorField id="bj-ink" label="표식 색" hint=""
-                              value={conf.blog.toc.ink}
-                              shown={conf.blog.toc.ink || '#101114'}
+                              value={blogLook.toc.ink}
+                              shown={blogLook.toc.ink || '#101114'}
                               onPick={(v) => setToc({ ink: v })}
                               followLabel="검정으로" />
                 </div>

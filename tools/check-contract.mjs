@@ -24,6 +24,7 @@ import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { execFileSync } from 'node:child_process'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const read = (rel) => readFile(join(ROOT, rel), 'utf8')
@@ -76,7 +77,7 @@ const INLINE_OK = new Set([
   'measure-override',
   /* 문단 바로가기의 위치 추적 — 링크마다 값이 다릅니다. 굽기가 글의 소제목 수만큼
      규칙을 찍어 내므로 공유 모듈에 둘 수 없습니다(bake.mjs 의 tocTimelineCss) */
-  'bjp', 'bjq', 'bje', 'cur',
+  'bjp', 'bjq', 'bje', 'bjk', 'cur',
 ])
 const declared = (src) => new Set(
   [...src.matchAll(/--([a-z][a-z0-9-]*)\s*:/g)].map((m) => m[1]).filter((n) => !n.startsWith('lk-')),
@@ -109,6 +110,7 @@ const CLASS_OF = [
   ['BLOG_TEMPLATES', (v) => `.bl-${v}`, '블로그 목록'],
   ['OUTLINE_SKINS', (v) => `.bo-${v}`, '카드 테마'],
   ['TOC_SKINS', (v) => `.bj-${v}`, '문단 바로가기 표식'],
+  ['CAT_STRIP_STYLES', (v) => `.b-cats-${v}`, '카테고리 줄 모양'],
   ['PORTFOLIO_TEMPLATES', (v) => `.pf-${v}`, '포트폴리오 목록'],
 ]
 let checkedValues = 0
@@ -260,6 +262,69 @@ if (!LIB) {
   }
   if (expectFound('⑤ 본문 폭', sameCount, WIDTHS_TO_TRY.length)) {
     notes.push(`⑤ 본문 폭 어휘 ${sameCount}가지가 라이브러리와 같은 값을 낸다`)
+  }
+}
+
+/* ── ⑥ 코드 언어마다 발행본에 색이 나가는가 ───────────────────────────
+   편집 화면은 ProseMirror 데코레이션으로 색을 입히고, 발행본은 굽기가 `<span class="hljs-…">`
+   을 미리 박습니다. 둘은 다른 경로라 한쪽만 되는 상태가 **에러 없이** 성립합니다.
+
+   실제로 그랬습니다 — 굽기가 문법을 안 싣고 `toPublishedHtml` 을 불러 rust·go·csharp·
+   markdown·nginx·php 여섯이 흑백으로 나갔습니다. 글쓴이 화면에는 색이 보여서 몇 달을 몰랐습니다.
+
+   그래서 두 가지를 봅니다. 문법을 싣기 전에는 **반드시 몇 종이 깜깜해야** 하고(안 그러면
+   이 검사는 아무것도 안 재고 있는 것입니다), 싣고 나면 **한 종도 깜깜하면 안 됩니다.**
+   싣는 일은 굽기 모듈이 해야 하므로 그 호출이 거기 적혀 있는지도 글자로 확인합니다. */
+{
+  const HL = pathToFileURL(join(ROOT, 'server/vendor/post-editor-core/highlight.js')).href
+  const { LANGUAGES, preloadLanguages } = await import(HL)
+  const SER = pathToFileURL(join(ROOT, 'server/vendor/post-editor-core/serialize.js')).href
+  const { toPublishedHtml } = await import(SER)
+  /* 표본은 그 언어가 토큰으로 읽을 만한 몇 줄이면 됩니다 — 「무엇이 몇 개」가 아니라 「0인가」만 봅니다 */
+  const 표본 = [
+    '{ "a": 1, "b": "두" }', 'if (a == 1) { return "hi"; }', '# 주석 한 줄',
+    '<a href="/b">다</a>', 'SELECT 1 FROM t WHERE x = 2;', '@@ -1,2 +1,2 @@', '+더한 줄', '-뺀 줄',
+  ].join('\n')
+  const 깜깜 = () => {
+    const out = []
+    for (const l of LANGUAGES) {
+      const id = typeof l === 'string' ? l : (l.id ?? l.value)
+      if (!id) continue
+      const html = `<details data-code="" data-lang="${id}"><summary><span class="cb-lang">x</span></summary>`
+        + `<pre><code>${표본.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</code></pre></details>`
+      if (!/hljs-/.test(toPublishedHtml(html))) out.push(id)
+    }
+    return out
+  }
+  /* 「싣기 전」은 **딴 프로세스**에서 잽니다. 이 프로세스는 ⑤ 에서 이미 굽기 모듈을 들여왔고
+     그 모듈이 최상단에서 문법을 싣기 때문에, 여기서 재면 늘 0 이 나옵니다 — 그러면 이 검사는
+     아무것도 안 재면서 초록입니다. 깨끗한 프로세스를 하나 띄워 「고치기 전의 상태」를 확인합니다. */
+  const 전 = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', `
+    const { LANGUAGES } = await import(${JSON.stringify(HL)})
+    const { toPublishedHtml } = await import(${JSON.stringify(SER)})
+    const 표본 = ${JSON.stringify(표본)}
+    const out = []
+    for (const l of LANGUAGES) {
+      const id = typeof l === 'string' ? l : (l.id ?? l.value)
+      if (!id) continue
+      const html = '<details data-code="" data-lang="' + id + '"><summary><span class="cb-lang">x</span></summary>'
+        + '<pre><code>' + 표본.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</code></pre></details>'
+      if (!/hljs-/.test(toPublishedHtml(html))) out.push(id)
+    }
+    process.stdout.write(JSON.stringify(out))
+  `], { encoding: 'utf8' }))
+  if (!전.length) fail('⑥ 문법을 싣기 전인데 깜깜한 언어가 하나도 없습니다 — 이 검사가 죽었습니다')
+  await preloadLanguages()
+  const 후 = 깜깜()
+  if (후.length) fail(`⑥ 발행본에 색이 안 나가는 언어 ${후.length}종 — ${후.join(' · ')}`)
+  /* 싣는 일은 굽기가 해야 합니다. 여기서 부른 것으로 통과하면 굽기가 안 불러도 초록입니다 */
+  const bakeSrc = await read('server/bake.mjs')
+  if (!/^await preloadLanguages\(\)/m.test(bakeSrc)) {
+    fail('⑥ server/bake.mjs 가 최상단에서 `await preloadLanguages()` 를 안 부릅니다')
+  }
+  const 센것 = LANGUAGES.length
+  if (expectFound('⑥ 코드 언어', 센것, 20) && !후.length) {
+    notes.push(`⑥ 코드 언어 ${센것}종 — 싣기 전 ${전.length}종이 깜깜, 싣고 나면 0종`)
   }
 }
 

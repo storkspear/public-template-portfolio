@@ -35,19 +35,30 @@ const TMP = await mkdtemp(join(tmpdir(), 'bake-golden-'))
 process.env.BLOG_DIR = join(TMP, 'blog')
 process.env.PAGES_DIR = join(TMP, 'www')
 
-const { bakePages, listPage, postPage, themeStyle, headStyle, SITE_DEFAULTS } = await import('../server/bake.mjs')
+const { bakePages, blogPages, listPage, postPage, themeStyle, headStyle, SITE_DEFAULTS } = await import('../server/bake.mjs')
 const { DUMMY_POSTS } = await import('../server/dummy.mjs')
 const vocab = await import('../shared/site-vocab.mjs')
 
 /** 깊은 사본 — 축을 바꿀 때 기본 설정을 훼손하지 않습니다 */
 const clone = (v) => structuredClone(v)
 
-/** 설정 한 축을 바꾼 벌 하나 */
-const variant = (name, patch) => {
+/** 설정 한 축을 바꾼 벌 하나. `posts` 를 주면 블로그를 `blogPages` 로 굽습니다(아래 카테고리 벌) */
+const variant = (name, patch, posts = null) => {
   const conf = clone(SITE_DEFAULTS)
   patch(conf)
-  return { name, conf }
+  return { name, conf, posts }
 }
+
+/**
+ * 카테고리 벌에 쓰는 카테고리 둘. 모양은 기본을 통째로 베낀 것(`blogLookOf`) — 관리자가 만드는 그대로.
+ * 견본 글은 1번 → 개발, 2번 → 일상, 3번 → 카테고리 없음. 셋이 다른 자리에 있어야 「/blog/ 에는 전부,
+ * 카테고리에는 제 것만, 없음은 /blog/ 에만」을 한 벌로 지킵니다.
+ */
+const CATS = () => [
+  { id: 'cgaebal', label: '개발', slug: 'gaebal', show: true, look: vocab.blogLookOf(SITE_DEFAULTS.blog) },
+  { id: 'cilsang', label: '일상', slug: 'ilsang', show: true, look: vocab.blogLookOf(SITE_DEFAULTS.blog) },
+]
+const CAT_POSTS = DUMMY_POSTS.map((p, i) => ({ ...p, meta: i === 0 ? { category: 'cgaebal' } : i === 1 ? { category: 'cilsang' } : null }))
 
 const values = (list) => vocab[list].map((x) => x.value)
 
@@ -86,6 +97,13 @@ const CASES = [
     .map((v) => variant(`toc-${v}`, (c) => { c.blog.toc.show = true; c.blog.toc.skin = v })),
   /* 색을 고친 벌 하나 — <style data-toc> 가 실제로 나가는지 지킵니다 */
   variant('toc-tuned', (c) => { c.blog.toc.show = true; c.blog.toc.ink = '#bb3d30' }),
+  /* 카테고리 줄 모양 — 첫 값(dots)은 위의 `cats-strip` 이 이미 봅니다. 나머지만 봅니다 */
+  ...values('CAT_STRIP_STYLES').filter((v) => v !== 'dots')
+    .map((v) => variant(`cats-${v}`, (c) => {
+      c.blog.catStrip = v
+      c.blog.categories = [{ id: 'cgaebal', label: '개발', slug: 'gaebal', show: true,
+        look: vocab.blogLookOf(SITE_DEFAULTS.blog) }]
+    })),
   /* 카드 갈래의 테마 — 기본(plain)은 위의 `blog-outline` 이 이미 봅니다. 나머지만 봅니다.
      클래스 한 장이 전부라 벌마다 달라지는 것은 <ul> 한 줄입니다 */
   ...values('OUTLINE_SKINS').filter((v) => v !== 'plain')
@@ -101,6 +119,26 @@ const CASES = [
   ...values('SIDEBARS').map((v) => variant(`sidebar-${v}`, (c) => { c.header.menu = 'sidebar'; c.header.sidebar.kind = v })),
   ...values('ALIGNS').map((v) => variant(`align-${v}`, (c) => { c.header.align = v })),
   ...values('WIDTHS').map((v) => variant(`width-${v}`, (c) => { c.header.width = v })),
+  /* ── 카테고리 ──
+     위 벌들은 카테고리가 없어 줄도 카테고리 페이지도 드로어 하위 항목도 안 나옵니다 — 그래서 한 바이트도
+     안 흔들립니다. 아래 벌만 공개 굽기와 같은 길(`blogPages`)을 지나 그 셋을 지킵니다. */
+  /* 줄이 서고, 카테고리 페이지가 제 글만 싣고, 글의 「← 목록」이 제 카테고리로 돌아갑니다 */
+  variant('cats-strip', (c) => { c.blog.categories = CATS() }, CAT_POSTS),
+  /* 비공개 — 「일상」의 페이지도 그 글(2번)도 디스크에 안 씁니다. 줄에도 /blog/ 에도 없습니다 */
+  variant('cats-private', (c) => { c.blog.categories = CATS(); c.blog.categories[1].show = false }, CAT_POSTS),
+  /* 드로어 — 블로그 줄 밑에 하위 항목이 섭니다(메인·포트폴리오 화면에도) */
+  variant('cats-drawer', (c) => { c.blog.categories = CATS(); c.header.menu = 'sidebar' }, CAT_POSTS),
+  /* 카테고리마다 제 모양 — 「개발」만 카드·터미널·바로가기 켬·타이틀 이름·공통헤더 끔.
+     /blog/ 와 「일상」은 기본 그대로여야 합니다(한 페이지 뒤에 설정 블록이 하나뿐인지) */
+  variant('cats-look', (c) => {
+    c.blog.categories = CATS()
+    Object.assign(c.blog.categories[0].look, {
+      template: 'outline', chrome: false,
+      outline: { ...c.blog.categories[0].look.outline, skin: 'terminal' },
+      toc: { ...c.blog.categories[0].look.toc, show: true },
+      head: { ...c.blog.categories[0].look.head, name: '개발 노트' },
+    })
+  }, CAT_POSTS),
 ]
 
 /** 비교에서 빼는 값 — 코드와 무관하게 바뀌는 것들 */
@@ -123,10 +161,15 @@ const collect = async (dir, base = dir) => {
  * bakePages 는 메인과 포트폴리오만 굽습니다. 블로그 목록·상세는 미리보기 굽기가 부르는
  * 렌더러를 여기서 직접 불러 같은 자리에 담습니다 — 안 그러면 블로그 템플릿 열두 벌이 검사 밖입니다.
  */
-const render = async (name, conf) => {
+const render = async (name, conf, posts = null) => {
   const into = join(TMP, 'out', name)
   await bakePages(null, { into, conf, dummy: true })
   const style = themeStyle(conf.theme) + headStyle(conf.header, conf.theme)
+  /* 카테고리 벌은 공개 굽기와 같은 함수로 — 어느 페이지가 만들어지고 어느 글이 안 만들어지는지까지 봅니다 */
+  if (posts) {
+    for (const [rel, html] of blogPages(posts, style, conf)) await put(join(into, rel), html)
+    return collect(into)
+  }
   await mkdir(join(into, 'blog'), { recursive: true })
   await writeFile(join(into, 'blog/index.html'), listPage(DUMMY_POSTS, style, conf))
   await writeFile(join(into, 'blog/post.html'), postPage(DUMMY_POSTS[0], style, conf))
@@ -146,16 +189,19 @@ const firstDiff = (a, b) => {
 
 let pass = 0
 const fails = []
+/* 구운 것을 모아 둡니다 — 골든 비교와 별개로 전수로 세는 검사가 아래에 있습니다 */
+const baked = []
 
-for (const { name, conf } of CASES) {
+for (const { name, conf, posts } of CASES) {
   let files
   try {
-    files = await render(name, conf)
+    files = await render(name, conf, posts)
   } catch (e) {
     fails.push(`${name}: 굽기가 실패했습니다 — ${e.message}`)
     continue
   }
   if (!files.length) { fails.push(`${name}: 구운 파일이 0개입니다`); continue }
+  baked.push([name, files])
 
   if (UPDATE) {
     await rm(join(GOLDEN, name), { recursive: true, force: true })
@@ -183,6 +229,27 @@ for (const { name, conf } of CASES) {
   }
   if (bad.length) fails.push(`${name}: HTML 이 달라졌습니다\n${bad.join('\n')}`)
   else pass++
+}
+
+/* ── 블로그 면에 JS 가 한 바이트도 안 섞였는가 ────────────────────────
+   글 페이지가 JS 를 0바이트로 나가는 것은 이 사이트의 약속입니다 — 코드 색칠도 문단 바로가기도
+   스크롤 추적도 전부 굽기나 CSS 가 합니다. 그런데 약속은 주석에만 적혀 있었습니다.
+   `<script>` 한 줄을 어디선가 템플릿에 넣어도 골든은 그걸 「바뀐 HTML」로만 보고,
+   `--update` 한 번이면 조용히 기준이 됩니다. 그래서 따로 셉니다 — 굽힌 적 없는 수입니다. */
+{
+  const jsIn = []
+  let 센면 = 0
+  for (const [name, files] of baked) {
+    for (const [rel, html] of files) {
+      if (!rel.startsWith('blog/')) continue
+      센면++
+      const n = (html.match(/<script\b/gi) || []).length
+      if (n) jsIn.push(`${name}/${rel} — <script> ${n}개`)
+    }
+  }
+  if (!센면) fails.push('블로그 면을 한 장도 못 찾았습니다 — JS 검사가 죽었습니다')
+  else if (jsIn.length) fails.push(`블로그 면에 JS 가 들어갔습니다\n${jsIn.map((x) => `    ${x}`).join('\n')}`)
+  else console.log(`블로그 면 ${센면}장 — <script> 0개`)
 }
 
 await rm(TMP, { recursive: true, force: true })
