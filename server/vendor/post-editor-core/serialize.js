@@ -1,8 +1,9 @@
 import { fromHtml } from 'hast-util-from-html';
 import { toHtml } from 'hast-util-to-html';
 import { safeSvg } from './svg.js';
-import { normalizeLang, parseRanges, tokens, parseNotes } from './highlight.js';
+import { langLabel, normalizeLang, parseRanges, tokens, parseNotes } from './highlight.js';
 import { isRef, resolveSrc } from './attachments.js';
+import { migrateCode } from './vocab.js';
 /**
  * 발행용 HTML 보정 — editor.getHTML() 결과를 "편집 화면과 같은 DOM" 으로 맞춘다.
  *
@@ -108,19 +109,47 @@ const text = (value) => ({ type: 'text', value });
  * 색은 prose.css 의 `.hljs-*` 한 곳에서 나오므로 편집과 발행이 같은 색을 쓴다.
  *
  * 겉상자는 늘 펼쳐 둔다 — 접기는 쓰지 않기로 했다.
+ *
+ * **옛 속성도 여기서 옮긴다.** 사이트의 정본은 HTML(`posts.body`)이라 발행은 Tiptap 의
+ * parseHTML 을 거치지 않는다 — 편집기만 이주하면 발행면은 영원히 `data-theme="terminal"` 을
+ * 들고 새 CSS 를 못 탄다. 그래서 `migrateCode`(종류·테마)·`normalizeLang`(언어)·복사 버튼 떼기를
+ * 굽기에서도 한다. 세 관문(parseHTML·normalizeDoc·여기)이 같은 함수를 부른다.
  */
 function bakeCode(details) {
-    const props = details.properties ?? {};
+    const props = (details.properties ?? {});
     const lang = normalizeLang(String(props['dataLang'] ?? '') || null);
     const hl = parseRanges(String(props['dataHl'] ?? '') || null);
     const notes = parseNotes(String(props['dataNotes'] ?? '') || null);
-    const out = { ...details, properties: { ...props } };
-    out.properties.open = true;
+    const { kind, theme } = migrateCode({ kind: props['dataKind'] ?? null, theme: props['dataTheme'] ?? null });
+    const { dataLang: _l, ...rest } = props;
+    void _l;
+    const out = {
+        ...details,
+        properties: { ...rest, dataKind: String(kind), dataTheme: String(theme), open: true, ...(lang ? { dataLang: lang } : {}) },
+    };
+    /* 머리띠: 옛 글에 남은 복사 버튼을 떼고, 언어 라벨은 **정규 이름**으로 다시 쓴다.
+       옛 글은 `nginx` 처럼 어휘 밖 이름을 라벨에 그대로 박아 두었다 — 편집기에서 다시 열면
+       「텍스트」가 될 것을 발행면만 다르게 보이면 안 된다. */
+    const summary = out.children.find((c) => c.type === 'element' && c.tagName === 'summary');
+    if (summary) {
+        const bar = {
+            ...summary,
+            children: summary.children
+                .filter((c) => !(isElement(c) && hasClass(c, 'cb-copy')))
+                .map((c) => (isElement(c) && hasClass(c, 'cb-lang') ? { ...c, children: [text(langLabel(lang))] } : c)),
+        };
+        out.children = out.children.map((c) => (c === summary ? bar : c));
+    }
     const pre = out.children.find((c) => c.type === 'element' && c.tagName === 'pre');
     const code = pre?.children.find((c) => c.type === 'element' && c.tagName === 'code');
     if (!code)
         return out;
-    const src = code.children.map(textOf).join('');
+    /* 이미 구운 것을 또 구워도 같은 것이 나와야 한다 — `toPublishedHtml` 은 멱등이어야 한다.
+       줄번호(`cb-ln`)는 빈 span 이라 글자를 안 더하지만 **줄 설명(`cb-note`)은 글자를 갖는다.**
+       그대로 `textOf` 하면 설명이 코드 안으로 섞여 들어가고, 한 번 더 구우면 또 섞인다.
+       실측: `ls -al` 이 두 번째 굽기에서 `여기서 받습니다ls -al` 이 됐다. */
+    const raw = code.children.filter((c) => !(isElement(c) && (hasClass(c, 'cb-ln') || hasClass(c, 'cb-note'))));
+    const src = raw.map(textOf).join('');
     const marks = tokens(lang, src);
     // 토큰 구간을 span 으로, 줄 시작마다 번호 span 을 끼운다
     const lineStarts = [0];
@@ -128,31 +157,39 @@ function bakeCode(details) {
         if (src[i] === '\n')
             lineStarts.push(i + 1);
     const startSet = new Map(lineStarts.map((p, i) => [p, i + 1]));
-    // 줄 설명은 **다음 줄 첫머리**(개행 바로 뒤, 마지막 줄은 문서 끝)에 놓는다 —
-    // 편집면 위젯과 같은 자리다. 개행 앞에 두면 빈 줄이 하나 더 생긴다.
+    const lastLine = lineStarts.length;
+    // 줄 설명은 **다음 줄 첫머리**(개행 바로 뒤)에 놓는다 — 편집면 위젯과 같은 자리다.
+    // 개행 앞에 두면 빈 줄이 하나 더 생긴다. 마지막 줄은 개행이 없으므로 여기 안 넣고 끝에서 따로 단다 —
+    // 전에는 마지막 줄도 `src.length` 에 넣었는데, 코드가 개행으로 끝나면 끝에서 두 번째 줄의
+    // 「개행 뒤」도 `src.length` 라 두 줄의 설명이 한 키를 두고 다퉈 앞 줄 설명이 사라졌다.
     const noteSpots = new Map();
     lineStarts.forEach((p, i) => {
         const nl = src.indexOf('\n', p);
-        noteSpots.set(nl === -1 ? src.length : nl + 1, i + 1);
+        if (nl !== -1)
+            noteSpots.set(nl + 1, i + 1);
     });
     const kids = [];
     let cursor = 0;
-    const noteAt = (i) => {
-        const n = noteSpots.get(i);
-        const v = n === undefined ? undefined : notes.get(n);
+    const noteFor = (n) => {
+        const v = notes.get(n);
         if (!v)
             return;
         kids.push({ type: 'element', tagName: 'span',
             properties: { className: ['cb-note'], dataTone: v.tone }, children: [text(v.text)] });
     };
+    const noteAt = (i) => {
+        const n = noteSpots.get(i);
+        if (n !== undefined)
+            noteFor(n);
+    };
+    const gutter = (n) => kids.push({ type: 'element', tagName: 'span',
+        properties: { className: ['cb-ln', ...(hl.has(n) ? ['is-hl'] : [])], dataN: String(n) }, children: [] });
     const emit = (from, to, cls) => {
         let i = from;
         while (i < to) {
             const n = startSet.get(i);
-            if (n !== undefined) {
-                kids.push({ type: 'element', tagName: 'span',
-                    properties: { className: ['cb-ln', ...(hl.has(n) ? ['is-hl'] : [])], dataN: String(n) }, children: [] });
-            }
+            if (n !== undefined)
+                gutter(n);
             const nextStart = lineStarts.find((p) => p > i && p < to);
             const end = nextStart ?? to;
             const chunk = src.slice(i, end);
@@ -182,10 +219,24 @@ function bakeCode(details) {
     }
     if (cursor < src.length)
         emit(cursor, src.length, null);
-    if (kids.length === 0)
-        emit(0, src.length, null);
-    noteAt(src.length); // 마지막 줄은 개행이 없다
-    const newCode = { ...code, children: kids };
+    noteFor(lastLine); // 마지막 줄은 개행이 없다 — 문서 끝에
+    /**
+     * 코드가 개행으로 끝나면(또는 비었으면) 마지막 줄은 **글자가 없는 줄**이다. `emit` 은 글자 구간을
+     * 따라가므로 그 줄의 시작을 못 만나 번호를 안 그렸다. 편집면은 `split('\n')` 의 마지막 빈 조각에도
+     * 번호 위젯을 그리므로 발행면이 한 줄 짧았다 — 소스코드에서는 빈 줄이라 눈에 안 띄다가,
+     * 터미널의 커서(`code::after`)가 그 줄에 서면서 드러났다. 순서는 편집면과 같다:
+     * 그 줄의 설명 → 번호(위젯 side -2 → -1).
+     */
+    if (lineStarts[lastLine - 1] === src.length)
+        gutter(lastLine);
+    // `class="language-…"` 도 정규 이름으로 — 어휘 밖 언어는 class 자체를 뗀다(라벨·data-lang 과 한 몸)
+    const { className: _cn, ...codeProps } = (code.properties ?? {});
+    void _cn;
+    const newCode = {
+        ...code,
+        properties: { ...codeProps, ...(lang ? { className: [`language-${lang}`] } : {}) },
+        children: kids,
+    };
     const newPre = { ...pre, children: [newCode] };
     out.children = out.children.map((c) => (c === pre ? newPre : c));
     return out;

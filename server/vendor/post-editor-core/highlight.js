@@ -44,18 +44,45 @@ const LAZY = {
     scss: () => import('highlight.js/lib/languages/scss'),
     graphql: () => import('highlight.js/lib/languages/graphql'),
     dockerfile: () => import('highlight.js/lib/languages/dockerfile'),
+    // 운영 글에 `language-nginx` 가 이미 있었다(2026-10 실측) — 서버 설정은 블로그 소재다
+    nginx: () => import('highlight.js/lib/languages/nginx'),
 };
-/** 별칭 정규화 — ts/tsx → typescript 등 */
+/**
+ * 실을 수 있는 문법 전부 — `LANGUAGES` 의 id 는 반드시 여기 있어야 한다
+ * (`tools/check-boundary.mjs` 가 본다). 목록에는 있는데 문법이 없으면 「고를 수는 있는데
+ * 색은 안 나오는」 언어가 된다.
+ */
+const KNOWN = new Set([...Object.keys(EAGER), ...Object.keys(LAZY)]);
+/**
+ * 지연 문법을 **한꺼번에** 싣는다. 발행 굽기(`toPublishedHtml`)는 동기 함수라 그 안에서
+ * 기다릴 수 없다 — 그래서 사이트의 굽기 모듈이 최상단에서 `await preloadLanguages()` 하고
+ * 시작한다. 안 하면 LAZY 열다섯 언어는 **색 없이** 발행된다(실측: rust·go·csharp·markdown 0 span).
+ * 인자를 주면 그것만, 안 주면 LAZY 전부.
+ */
+export async function preloadLanguages(ids = Object.keys(LAZY)) {
+    await Promise.all(ids.map((id) => ensureLanguage(id)));
+}
+/** 별칭 — ts/tsx → typescript 등 */
 const ALIAS = {
     ts: 'typescript', tsx: 'typescript', js: 'javascript', jsx: 'javascript',
     sh: 'bash', shell: 'bash', zsh: 'bash', yml: 'yaml', html: 'xml', md: 'markdown',
     'c++': 'cpp', 'c#': 'csharp', py: 'python', kt: 'kotlin', rs: 'rust', golang: 'go',
 };
+/**
+ * 별칭 정규화 **+ 어휘 검증** — ts/tsx → typescript, 모르는 이름 → null(텍스트).
+ *
+ * 전에는 별칭만 풀고 아무 문자열이나 통과시켰다. 그래서 운영 글에 `language-nginx` 가 들어왔다 —
+ * `normalizeDoc` 은 codeBlock 의 language 를 아예 안 봤고, parseHTML 도 `data-lang` 을 그대로 믿었다.
+ * 결과는 「라벨은 nginx 라고 말하는데 색은 한 톨도 없는」 블록 — 고장인지 그런 언어인지 아무도 모른다.
+ * 모르는 언어는 여기서 null 로 접는다: 라벨 「텍스트」, 색 없음. 어휘의 다른 열거 속성과 같은 규약이다
+ * (`oneOf`: 한 번 접히면 그 뒤로는 안 바뀐다).
+ */
 export function normalizeLang(lang) {
     if (!lang)
         return null;
     const k = String(lang).toLowerCase().replace(/[^a-z0-9+#.-]/g, '');
-    return ALIAS[k] ?? k ?? null;
+    const id = ALIAS[k] ?? k;
+    return KNOWN.has(id) ? id : null;
 }
 export function isLoaded(lang) {
     return !!lang && lowlight.registered(lang);
@@ -84,7 +111,17 @@ export const LANGUAGES = [
     { id: 'scss', label: 'SCSS' }, { id: 'graphql', label: 'GraphQL' },
     { id: 'dockerfile', label: 'Dockerfile' }, { id: 'ini', label: 'INI / TOML' },
     { id: 'diff', label: 'Diff' }, { id: 'markdown', label: 'Markdown' },
+    { id: 'nginx', label: 'Nginx' },
 ];
+const LABEL = new Map(LANGUAGES.map((l) => [l.id, l.label]));
+/**
+ * 화면에 보이는 언어 이름. 편집기의 머리띠와 발행 굽기가 **같은 함수**를 쓴다 —
+ * 전에는 편집기만 라벨표를 갖고 있어, 굽기는 옛 글의 머리띠 글자를 손대지 못했다.
+ */
+export function langLabel(lang) {
+    const l = normalizeLang(lang);
+    return (l && LABEL.get(l)) || '텍스트';
+}
 /** hast 트리를 "글자 구간 + 클래스" 목록으로 편다 (편집 데코레이션용) */
 export function tokens(lang, code) {
     const l = normalizeLang(lang);

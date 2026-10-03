@@ -633,30 +633,46 @@
 
 /* ══ 코드 블록 ══
    편집과 발행이 같은 <details> 구조를 쓴다. 접기는 브라우저 기본 동작이라 JS 가 없다.
-   하이라이팅 색은 여기 한 곳에만 있다 — 편집(데코레이션)과 발행(구운 span)이 같은 규칙을 탄다. */
+   하이라이팅 색은 여기 한 곳에만 있다 — 편집(데코레이션)과 발행(구운 span)이 같은 규칙을 탄다.
+
+   종류(`data-kind`)가 둘이다 — 소스코드(`code`)와 터미널(`terminal`). 노드는 하나고 속성으로
+   갈린다(`vocab.ts` 의 CODE_KINDS). 겉모습(`data-theme`)은 종류마다 목록이 다르다.
+
+   **색은 전부 변수다.** 글자 색 규칙(`.hljs-*`, 이 절 끝)은 `var(--tk-*)` 만 읽고, 테마는 그 변수를
+   `details[data-code][data-theme='…']` 에서 한 벌씩 갈아 끼운다. 전에는 `.hljs-*` 규칙에 색이 박혀
+   있어 테마를 골라도 **글자 색이 똑같았다** — 테마가 바꾸는 건 머리띠뿐이었다(2026-10 실측).
+   아래 기본값이 곧 `plain` 테마다. 안 칠하는 자리는 `currentColor`(= 본문 색을 물려받는다). */
 .prose details[data-code] {
-  margin: 1.8em auto; background: #1c1d21; border-radius: 10px; overflow: hidden;
+  margin: 1.8em auto; border-radius: 10px; overflow: hidden;
+  background: var(--cb-bg);
   --cb-gutter: 3.7em;   /* 줄 번호(세 자리까지) + 설명 달기 `+` 자리 */
+  /* 틀 */
+  --cb-bg: #1c1d21; --cb-ink: #e6e6e6; --cb-bar-bg: #24262b; --cb-bar-ink: #9aa0aa;
+  --cb-title: #cfd4dc; --cb-ln: #565c66;
+  /* 글자 — 차분한 톤 */
+  --tk-comment: #6b727e; --tk-keyword: #c792ea; --tk-literal: #c792ea;
+  --tk-string: #a5d6a7; --tk-number: #f5c17b;
+  --tk-title: #82aaff; --tk-name: #82aaff; --tk-fn: #82aaff; --tk-class: #ffcb6b;
+  --tk-type: #ffcb6b; --tk-builtin: #ffcb6b;
+  --tk-attr: #7fdbca; --tk-attribute: #7fdbca; --tk-variable: #7fdbca;
+  --tk-regexp: currentColor; --tk-subst: currentColor; --tk-tag: currentColor;
+  --tk-meta: #8a92a0; --tk-del: #ff8a8a; --tk-add: #a5d6a7;
 }
 
 .prose .cb-bar {
   display: flex; align-items: center; gap: 8px; list-style: none; cursor: default;
-  padding: 0.55em 0.9em; background: #24262b; color: #9aa0aa; font-size: 0.76rem;
+  padding: 0.55em 0.9em; background: var(--cb-bar-bg); color: var(--cb-bar-ink); font-size: 0.76rem;
   font-family: Pretendard, system-ui, sans-serif;
 }
 .prose .cb-bar::-webkit-details-marker { display: none; }
-.prose .cb-title { color: #cfd4dc; font-weight: 600; }
+.prose .cb-title { color: var(--cb-title); font-weight: 600; }
 .prose .cb-lang { margin-left: auto; opacity: .8; font-variant: small-caps; letter-spacing: .04em; }
-.prose .cb-copy {
-  border: 1px solid #3a3d45; background: transparent; color: #9aa0aa; cursor: pointer;
-  border-radius: 6px; padding: 3px 9px; font-size: 0.72rem; font-family: inherit;
-}
-.prose .cb-copy:hover { background: #2e3138; color: #e6e6e6; }
-/* JS 가 없으면 복사 버튼을 숨긴다 — 눌러도 안 되는 버튼을 보이지 않게. 기하에는 영향 없음 */
-html:not(.js) .prose .cb-copy { visibility: hidden; }
+/* 복사 버튼은 없앴다(2026-10). 한 번도 동작한 적이 없었다 — `html:not(.js)` 뒤에 숨겼는데
+   `.js` 를 다는 코드가 어디에도 없었고, `data-copy` 를 받는 핸들러도 없었다. 눌러도 안 되는
+   버튼은 없는 것보다 나쁘다. 옛 글에 남은 `<button class="cb-copy">` 는 굽기(`bakeCode`)가 뗀다. */
 
-/* ══ 코드 블록 테마 ══
-   `data-theme` 하나로 갈린다. **편집과 발행이 같은 규칙을 탄다** — 테마를 고르는 자리만
+/* ══ 종류 · 테마 ══
+   `data-kind` 와 `data-theme` 으로 갈린다. **편집과 발행이 같은 규칙을 탄다** — 고르는 자리만
    편집기에 있고, 그려지는 건 이 CSS 한 곳이다.
 
    신호등(.cb-dots)은 **항상 그려 두고 테마에서 보인다.** 있다 없다 하면 제목의 가운데가
@@ -664,18 +680,121 @@ html:not(.js) .prose .cb-copy { visibility: hidden; }
 .prose .cb-dots { display: none; gap: 6px; flex: none; }
 .prose .cb-dots i { width: 11px; height: 11px; border-radius: 50%; display: block; }
 
-/* ── mac — macOS 창 ──
-   언어 라벨을 감춘다. 신호등 옆에 라벨이 붙으면 창이 아니라 코드 위젯으로 되돌아간다.
-   언어는 편집 중엔 블록 위 바에서 고르고, 발행면에서는 문법 색과 파일명이 말해 준다. */
-.prose details[data-code][data-theme='mac'] {
-  border-radius: 12px;
+/* ── 소스코드 테마 다섯 — highlight.js 의 스타일시트에서 옮겨 적었다 ──
+   출처(highlight.js 11.11, BSD-3): darcula·dracula·solarized = styles/base16/{darcula,dracula,
+   solarized-dark}.css, onedark = styles/atom-one-dark.css, monokai = styles/monokai.css.
+   (hljs 의 Dracula·Monokai 는 base16/고전 포팅이라 공식 팔레트와 몇 색이 다르다 — 이름이
+   가리키는 것은 「hljs 가 그 이름으로 싣는 색」이다.)
+   옮기는 규칙: 저쪽 선택자 묶음 중 우리 변수에 해당하는 규칙의 색을 쓴다. 한 변수가 저쪽에서
+   두 색으로 갈리는 자리(예: `section` 은 onedark 에서 name 색, base16 에서 fn 색)는 더 많은
+   테마가 따르는 쪽(fn)으로 묶었다. 굵기(monokai 의 bold keyword)는 옮기지 않는다.
+   틀 색(머리띠·줄 번호)은 스타일시트에 없다 — base16 은 base01(머리띠)·base03(줄 번호),
+   onedark 는 One Dark UI 의 탭 바(#21252b), monokai 는 base16 monokai 의 base01 을 쓴다. */
+.prose details[data-code][data-theme='darcula'] {
+  --cb-bg: #2b2b2b; --cb-ink: #a9b7c6; --cb-bar-bg: #323232; --cb-ln: #606366;
+  --tk-comment: #606366; --tk-keyword: #cc7832; --tk-literal: #689757;
+  --tk-string: #6a8759; --tk-number: #689757;
+  --tk-title: #bbb529; --tk-name: #4eade5; --tk-fn: #9876aa; --tk-class: #bbb529;
+  --tk-type: #cc7832; --tk-builtin: #629755;
+  --tk-attr: #689757; --tk-attribute: #9876aa; --tk-variable: #4eade5;
+  --tk-regexp: #629755; --tk-subst: #a9b7c6; --tk-tag: #a4a3a3;
+  --tk-meta: #808080; --tk-del: #4eade5; --tk-add: #6a8759;
+}
+.prose details[data-code][data-theme='monokai'] {
+  --cb-bg: #272822; --cb-ink: #ddd; --cb-bar-bg: #383830; --cb-ln: #75715e;
+  --tk-comment: #75715e; --tk-keyword: #f92672; --tk-literal: #f92672;
+  --tk-string: #a6e22e; --tk-number: #f92672;
+  --tk-title: #a6e22e; --tk-name: #f92672; --tk-fn: #a6e22e; --tk-class: #fff;
+  --tk-type: #a6e22e; --tk-builtin: #a6e22e;
+  --tk-attr: #bf79db; --tk-attribute: #bf79db; --tk-variable: #a6e22e;
+  --tk-regexp: #bf79db; --tk-subst: #a6e22e; --tk-tag: #f92672;
+  --tk-meta: #75715e; --tk-del: #75715e; --tk-add: #a6e22e;
+}
+.prose details[data-code][data-theme='onedark'] {
+  --cb-bg: #282c34; --cb-ink: #abb2bf; --cb-bar-bg: #21252b; --cb-ln: #5c6370;
+  --tk-comment: #5c6370; --tk-keyword: #c678dd; --tk-literal: #56b6c2;
+  --tk-string: #98c379; --tk-number: #d19a66;
+  --tk-title: #61aeee; --tk-name: #e06c75; --tk-fn: #61aeee; --tk-class: #e6c07b;
+  --tk-type: #d19a66; --tk-builtin: #e6c07b;
+  --tk-attr: #d19a66; --tk-attribute: #98c379; --tk-variable: #d19a66;
+  --tk-regexp: #98c379; --tk-subst: #e06c75; --tk-tag: currentColor;
+  --tk-meta: #61aeee; --tk-del: #e06c75; --tk-add: #98c379;
+}
+.prose details[data-code][data-theme='dracula'] {
+  --cb-bg: #282936; --cb-ink: #e9e9f4; --cb-bar-bg: #3a3c4e; --cb-ln: #626483;
+  --tk-comment: #626483; --tk-keyword: #b45bcf; --tk-literal: #b45bcf;
+  --tk-string: #ebff87; --tk-number: #b45bcf;
+  --tk-title: #00f769; --tk-name: #ea51b2; --tk-fn: #62d6e8; --tk-class: #00f769;
+  --tk-type: #b45bcf; --tk-builtin: #a1efe4;
+  --tk-attr: #b45bcf; --tk-attribute: #62d6e8; --tk-variable: #ea51b2;
+  --tk-regexp: #a1efe4; --tk-subst: #e9e9f4; --tk-tag: #62d6e8;
+  --tk-meta: #00f769; --tk-del: #ea51b2; --tk-add: #ebff87;
+}
+.prose details[data-code][data-theme='solarized'] {
+  --cb-bg: #002b36; --cb-ink: #93a1a1; --cb-bar-bg: #073642; --cb-ln: #657b83;
+  --tk-comment: #657b83; --tk-keyword: #6c71c4; --tk-literal: #cb4b16;
+  --tk-string: #859900; --tk-number: #cb4b16;
+  --tk-title: #b58900; --tk-name: #dc322f; --tk-fn: #268bd2; --tk-class: #b58900;
+  --tk-type: #6c71c4; --tk-builtin: #2aa198;
+  --tk-attr: #cb4b16; --tk-attribute: #268bd2; --tk-variable: #dc322f;
+  --tk-regexp: #2aa198; --tk-subst: #93a1a1; --tk-tag: #839496;
+  --tk-meta: #d33682; --tk-del: #dc322f; --tk-add: #859900;
+}
+
+/* ── 터미널 ──
+   창 흉내가 아니라 **쉘 화면**이다. 줄 번호 대신 **줄마다 프롬프트 기호(❯)** 가 서고,
+   코드 끝에 커서가 깜빡인다. 언어 라벨은 감춘다 — 쉘에 「bash」라고 써 붙이지 않는다.
+   글자 색은 `plain` 그대로다(터미널의 테마는 색이 아니라 창틀이다).
+
+   프롬프트는 `.cb-ln::before` 의 **생성 콘텐츠**다. 전에는 「코드를 복사하면 기호까지 딸려 간다」며
+   줄 앞에 안 붙이고 머리띠에만 두었는데, 생성 콘텐츠는 선택·복사에 안 들어간다 — 그 걱정은
+   애초에 해당이 없었다. 번호 위젯(`.cb-ln`)을 그대로 쓰므로 줄 강조·줄 설명도 그대로 된다. */
+.prose details[data-code][data-kind='terminal'] {
+  --cb-bg: #0d1117; --cb-ink: #c9d1d9; --cb-bar-bg: transparent; --cb-bar-ink: #7d8590;
+  --cb-title: #adbac7; --cb-ln: #3fb950; --cb-cursor: #c9d1d9;
+  --cb-gutter: 3em;   /* 편집면의 `+`(0.3em 부터 1.5em) 뒤에 기호 하나. 번호 세 자리가 없어 거터가 좁다 */
+  border: 1px solid #222831; border-radius: 8px;
+}
+.prose [data-kind='terminal'] .cb-bar {
+  border-bottom: 1px solid #222831;
+  font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.72rem;
+}
+.prose [data-kind='terminal'] .cb-title { font-weight: 500; }
+.prose [data-kind='terminal'] .cb-lang { display: none; }
+.prose [data-kind='terminal'] .cb-ln { padding-right: 0.6em; font-weight: 700; }
+.prose [data-kind='terminal'] .cb-ln::before { content: '❯'; }
+/* 강조 줄의 번호색(#93b0ff)은 소스코드용이다 — 프롬프트는 강조돼도 초록이고 띠만 깔린다 */
+.prose [data-kind='terminal'] .cb-ln.is-hl { color: var(--cb-ln); }
+/* 커서 — 순수 CSS. 깜빡임은 `visibility` 로 끄고 켠다(opacity 전환은 「숨 쉬는」 느낌이라 커서가 아니다).
+   inline-block 의 높이를 글줄 상자(line-height 1.7) 안에 두어 **줄 높이를 안 바꾼다** —
+   편집면과 발행면이 같은 의사 요소를 그리므로 기하도 같다. */
+.prose [data-kind='terminal'] pre code::after {
+  content: ''; display: inline-block; width: 0.55em; height: 1.05em;
+  margin-left: 0.1em; vertical-align: -0.2em; background: var(--cb-cursor);
+  animation: cb-blink 1.1s steps(2, start) infinite;
+}
+@keyframes cb-blink { to { visibility: hidden; } }
+/* 깜빡임을 꺼 달라는 사람에게는 **멈춘 커서**를 보인다 — 커서 자체가 「여기는 터미널」이라는 뜻이라 남긴다 */
+@media (prefers-reduced-motion: reduce) {
+  .prose [data-kind='terminal'] pre code::after { animation: none; }
+}
+/* 편집면: 코드가 개행으로 끝나면 ProseMirror 가 끝에 `<br>`(trailingBreak)을 둔다. 그 뒤에 오는
+   커서(`::after`)가 그 br 때문에 **한 줄 더 내려가** 발행면보다 한 줄 길어진다. 마지막 줄에는
+   이미 프롬프트 위젯(`.cb-ln`)이 서 있어 줄 상자가 있으므로 br 을 감춰도 줄이 없어지지 않는다
+   (마지막 줄에 설명이 붙었을 때 같은 br 을 감추는 규칙이 아래 줄 설명 절에 이미 있다). */
+.ProseMirror [data-kind='terminal'] pre code .cb-ln ~ br.ProseMirror-trailingBreak { display: none; }
+
+/* ── 터미널 · mac — macOS 창 ──
+   신호등 셋 + **가운데 제목**. 몸통은 터미널 그대로고 창틀만 입는다. */
+.prose details[data-code][data-kind='terminal'][data-theme='mac'] {
+  --cb-bar-bg: #2c2e33; border: 0; border-radius: 12px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, .28), 0 12px 28px -12px rgba(0, 0, 0, .45);
 }
 .prose [data-theme='mac'] .cb-dots { display: flex; }
 .prose [data-theme='mac'] .cb-dots i:nth-child(1) { background: #ff5f57; }
 .prose [data-theme='mac'] .cb-dots i:nth-child(2) { background: #febc2e; }
 .prose [data-theme='mac'] .cb-dots i:nth-child(3) { background: #28c840; }
-.prose [data-theme='mac'] .cb-bar { padding: 0.62em 0.9em; background: #2c2e33; }
+.prose [data-theme='mac'] .cb-bar { position: relative; padding: 0.62em 0.9em; border-bottom: 0; }
 /* 제목이 **창의 가운데**에 선다. 신호등이 왼쪽에 자리를 먹으므로 그만큼 밀어 보정한다.
    긴 파일명이 신호등을 덮지 않도록 폭에 상한을 둔다 — 가운데는 유지하고 줄어들기만 한다. */
 .prose [data-theme='mac'] .cb-title {
@@ -683,35 +802,11 @@ html:not(.js) .prose .cb-copy { visibility: hidden; }
   max-width: calc(100% - 9rem); overflow: hidden; white-space: nowrap;
   text-overflow: ellipsis; text-align: center;
 }
-.prose [data-theme='mac'] .cb-bar { position: relative; }
-.prose [data-theme='mac'] .cb-lang { display: none; }
-/* 복사 버튼은 맥 창에 없는 물건이다 — 손이 올라갔을 때만 나온다 */
-.prose [data-theme='mac'] .cb-copy { margin-left: auto; opacity: 0; transition: opacity .12s; }
-.prose details[data-code][data-theme='mac']:hover .cb-copy,
-.prose [data-theme='mac'] .cb-copy:focus-visible { opacity: 1; }
-
-/* ── terminal — 터미널 ──
-   창 흉내가 아니라 **쉘 화면**이다. 그래서 라벨은 남기고, 머리띠를 바닥 선 하나로 낮춘다.
-   줄 앞에 프롬프트 기호를 붙이지 않는 이유: 코드를 복사했을 때 기호까지 딸려 가면 안 된다.
-   대신 머리띠에 기호를 두어 「여기는 터미널」만 말한다. */
-.prose details[data-code][data-theme='terminal'] {
-  background: #0d1117; border: 1px solid #222831; border-radius: 8px;
-}
-.prose [data-theme='terminal'] .cb-bar {
-  background: transparent; border-bottom: 1px solid #222831; color: #7d8590;
-  font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.72rem;
-}
-.prose [data-theme='terminal'] .cb-bar::before {
-  content: '❯'; color: #3fb950; font-weight: 700; flex: none;
-}
-.prose [data-theme='terminal'] .cb-title { color: #adbac7; font-weight: 500; }
-.prose [data-theme='terminal'] .cb-lang { opacity: .55; }
-.prose [data-theme='terminal'] .cb-copy { border-color: #2d333b; }
 
 
 .prose details[data-code] pre {
   margin: 0; padding: 1em 1.15em 1em calc(1.15em + var(--cb-gutter)); overflow-x: auto;
-  background: none; color: #e6e6e6; font-size: 0.86rem; line-height: 1.7;
+  background: none; color: var(--cb-ink); font-size: 0.86rem; line-height: 1.7;
 }
 .prose pre { margin: 1.8em auto; padding: 1em 1.15em; overflow-x: auto;
   background: #1c1d21; color: #e6e6e6; border-radius: 8px; font-size: 0.86rem; line-height: 1.7; }
@@ -727,7 +822,7 @@ html:not(.js) .prose .cb-copy { visibility: hidden; }
   display: inline-block; box-sizing: border-box;
   width: var(--cb-gutter); margin-left: calc(-1 * var(--cb-gutter));
   padding-right: 1em; text-align: right;
-  color: #565c66; user-select: none; pointer-events: none;
+  color: var(--cb-ln); user-select: none; pointer-events: none;
   font-variant-numeric: tabular-nums;
 }
 .prose .cb-ln::before { content: attr(data-n); }
@@ -881,23 +976,40 @@ html:not(.js) .prose .cb-copy { visibility: hidden; }
 .cb-note-cancel { background: #3c4250; color: #c8cedb; }
 .cb-note-cancel:hover { background: #4d5566; }
 
-/* 차분한 톤의 하이라이팅 */
-.prose .hljs-comment, .prose .hljs-quote { color: #6b727e; font-style: italic; }
-.prose .hljs-keyword, .prose .hljs-selector-tag, .prose .hljs-literal { color: #c792ea; }
-.prose .hljs-string, .prose .hljs-meta .hljs-string { color: #a5d6a7; }
-.prose .hljs-number, .prose .hljs-symbol, .prose .hljs-bullet { color: #f5c17b; }
-.prose .hljs-title, .prose .hljs-section, .prose .hljs-name { color: #82aaff; }
-.prose .hljs-attr, .prose .hljs-attribute, .prose .hljs-variable { color: #7fdbca; }
-.prose .hljs-type, .prose .hljs-built_in, .prose .hljs-class .hljs-title { color: #ffcb6b; }
-.prose .hljs-meta, .prose .hljs-doctag { color: #8a92a0; }
-.prose .hljs-deletion { color: #ff8a8a; }
-.prose .hljs-addition { color: #a5d6a7; }
+/* ── 글자 색 — 변수만 읽는다. 값은 위 테마 블록에 ──
+   묶음은 highlight.js 11 의 스코프를 따른다. `.hljs-title.function_` 처럼 **한 요소에 두 클래스**가
+   붙는다(토큰은 중첩을 클래스 이어붙이기로 편다 — `tokens()`). 그래서 `.hljs-class .hljs-title`
+   같은 자손 선택자는 여기서 아무것도 못 잡는다 — 겹친 토큰은 같은 특이도에서 **뒤에 적은 규칙**이
+   이긴다(subst 가 string 을, meta 가 string 을 이기게 순서를 두었다).
+   `params`·`property`·`punctuation`·`operator` 는 규칙이 없다 — 옮긴 다섯 스타일시트 전부가
+   그 자리를 본문 색으로 둔다(base16 은 「일부러 칠하지 않는다」고 적어 두었다). */
+.prose .hljs-comment, .prose .hljs-quote { color: var(--tk-comment); font-style: italic; }
+.prose .hljs-keyword, .prose .hljs-selector-tag, .prose .hljs-template-tag { color: var(--tk-keyword); }
+.prose .hljs-literal { color: var(--tk-literal); }
+.prose .hljs-string, .prose .hljs-char.escape_, .prose .hljs-code { color: var(--tk-string); }
+.prose .hljs-number, .prose .hljs-symbol, .prose .hljs-bullet, .prose .hljs-link { color: var(--tk-number); }
+.prose .hljs-title, .prose .hljs-selector-id { color: var(--tk-title); }
+.prose .hljs-name { color: var(--tk-name); }
+.prose .hljs-section, .prose .hljs-title.function_ { color: var(--tk-fn); }
+.prose .hljs-title.class_ { color: var(--tk-class); }
+.prose .hljs-type { color: var(--tk-type); }
+.prose .hljs-built_in { color: var(--tk-builtin); }
+.prose .hljs-attr, .prose .hljs-selector-attr, .prose .hljs-selector-class, .prose .hljs-selector-pseudo { color: var(--tk-attr); }
+.prose .hljs-attribute { color: var(--tk-attribute); }
+.prose .hljs-variable, .prose .hljs-template-variable { color: var(--tk-variable); }
+.prose .hljs-regexp { color: var(--tk-regexp); }
+.prose .hljs-subst { color: var(--tk-subst); }
+.prose .hljs-tag { color: var(--tk-tag); }
+.prose .hljs-meta, .prose .hljs-doctag { color: var(--tk-meta); }
+.prose .hljs-deletion { color: var(--tk-del); }
+.prose .hljs-addition { color: var(--tk-add); }
 .prose .hljs-emphasis { font-style: italic; }
 .prose .hljs-strong { font-weight: 700; }
 
 @media (max-width: 640px) {
   .prose details[data-code] pre { font-size: 0.78rem; }
   .prose details[data-code] { --cb-gutter: 3.2em; }
+  .prose details[data-code][data-kind='terminal'] { --cb-gutter: 2.6em; }
 }
 
 /* 동영상 */

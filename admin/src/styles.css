@@ -679,9 +679,11 @@ body{margin:0;background:var(--bg);color:var(--fg)}
 .lk .lkShape rect[data-tone="0"]{fill:#d7dbe0}
 /* 흰 면 — 헤더 띠·드로어 판처럼 바탕보다 밝은 자리 */
 .lk .lkShape rect[data-tone="2"]{fill:#fff;stroke:#c9ced4;stroke-width:.2}
+.lk .lkShape rect[data-tone="3"]{fill:#eceff2}
 .lk .lkShapes button[aria-pressed="true"] .lkShape{background:#fff;border-color:var(--fg)}
 .lk .lkShapes button[aria-pressed="true"] .lkShape rect[data-tone="1"]{fill:var(--fg)}
 .lk .lkShapes button[aria-pressed="true"] .lkShape rect[data-tone="0"]{fill:#aeb4bb}
+.lk .lkShapes button[aria-pressed="true"] .lkShape rect[data-tone="3"]{fill:#ccd1d7}
 
 /**
  * 결(스킨) 칩 — 카드 한 장을 아주 작게 그린 것.
@@ -1277,3 +1279,181 @@ body{margin:0;background:var(--bg);color:var(--fg)}
    눈 아이콘 폭만큼 들여써서 이름 칸과 왼쪽 선이 맞습니다(들쭉날쭉하면 줄이 안 읽힙니다) */
 .lk .lkLinkTo{margin:-.25rem 0 .55rem;padding-left:calc(26px + .7rem);font-size:.76rem;color:var(--fg-3)}
 .lk .lkLinkTo code{font-family:var(--mono,ui-monospace,monospace);font-size:.76rem}
+
+/* ── 카테고리 — 홈디자인 블로그 탭 ────────────────────────────────────
+   줄은 요소 목록(.lkItems)과 같은 부품입니다. 기본 줄만 눈 자리가 비어 있어(숨길 수 없습니다)
+   같은 폭의 빈 칸을 세워 이름 x 를 맞춥니다. */
+/* ── 블로그 카테고리 목록 ──────────────────────────────────────────────
+   한 줄이 한 카테고리입니다. 줄 안에서 이름을 고치고 눈으로 공개를 가릅니다 —
+   고치는 자리를 한 군데로 모았습니다. 전에는 줄에도 입력칸이 있고 그 아래 또 이름·주소
+   칸이 있어서 같은 것을 두 군데서 쳤습니다(사용자 지적).
+   **주소 칸은 없습니다** — 이름에서 자동으로 붙고(`autoSlug`) 회색 글자로 보여 주기만 합니다. */
+.lk .lkCatsBox{margin-bottom:.4rem}
+.lk .lkCats{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.lk .lkCats li{display:flex;align-items:center;gap:.4rem;padding:.3rem .5rem;border-bottom:1px solid var(--line)}
+.lk .lkCats li:last-child{border-bottom:0}
+/* 「기본」 줄 — 고칠 것이 없어 바탕을 눕힙니다 */
+.lk .lkCats li.is-fixed{background:#fafbfc}
+/* 고른 줄은 왼쪽 먹선 하나로만 말합니다 — 바탕을 칠하면 비공개(흐림)와 겹칩니다 */
+.lk .lkCats li[aria-current]{box-shadow:inset 3px 0 0 var(--fg)}
+/* 비공개 — 글자만 흐리게. 눈이 이미 상태를 말하므로 줄을 지우지는 않습니다 */
+.lk .lkCats li.is-off .lkCatName,.lk .lkCats li.is-off .lkCatUrl{opacity:.45}
+.lk .lkCats .lkCatEye{display:inline-block;width:32px;height:32px;flex:none}
+.lk .lkCats .vis{flex:none}
+/* 이름 — 칸처럼 안 보이다가 손이 가면 밑줄이 섭니다. 초점이 가면 그 카테고리를 고른 것입니다 */
+.lk .lkCatName{flex:1 1 auto;min-width:0;font:inherit;font-size:.88rem;border:0;background:transparent;
+  padding:.3rem .15rem;border-bottom:1px solid transparent;border-radius:0}
+.lk .lkCatName::placeholder{color:#b4bac2}
+.lk .lkCatName:hover{border-bottom-color:var(--line)}
+.lk .lkCatName:focus{outline:0;border-bottom-color:var(--fg)}
+.lk .lkCatPick{flex:1 1 auto;min-width:0;text-align:left;border:0;background:transparent;cursor:pointer;
+  font:inherit;font-size:.88rem;font-weight:700;padding:.3rem .15rem}
+.lk .lkCatUrl{flex:0 0 auto;font-family:var(--mono);font-size:.72rem;color:var(--fg-3);white-space:nowrap}
+.lk .lkCatMini{flex:none;border:0;background:transparent;cursor:pointer;color:var(--fg-3);
+  font-size:.86rem;line-height:1;padding:.2rem .25rem;border-radius:4px}
+.lk .lkCatMini:hover:not(:disabled){color:var(--fg);background:#f3f4f6}
+.lk .lkCatMini:disabled{opacity:.25;cursor:default}
+/* 더하기는 목록 끝에 — 제목 옆에 두면 「무엇에 더하는지」가 안 붙습니다 */
+.lk .lkCatAdd{display:block;width:100%;margin:.5rem 0 .2rem;padding:.55rem;cursor:pointer;
+  border:1px dashed var(--line);border-radius:8px;background:transparent;
+  font:inherit;font-size:.84rem;color:var(--fg-3)}
+.lk .lkCatAdd:hover:not(:disabled){border-color:var(--fg);color:var(--fg)}
+.lk .lkCatAdd:disabled{opacity:.4;cursor:default}
+/* 편집 단추 — 제목 줄 오른쪽. 켜면 이름 칸·차례·지우기·더하기가 함께 섭니다 */
+.lk .lkCatHead{display:flex;align-items:center;justify-content:space-between;gap:.6rem}
+.lk .lkCatMode{font:inherit;font-size:.76rem;padding:.26rem .7rem;cursor:pointer;
+  border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--fg-2)}
+.lk .lkCatMode:hover{border-color:var(--fg);color:var(--fg)}
+.lk .lkCatMode.is-on{background:var(--fg);border-color:var(--fg);color:#fff}
+/* 머리줄 오른쪽 — 고른 카테고리의 편수와 편집 단추. 편수는 줄마다 적지 않습니다 */
+.lk .lkCatMeta{display:inline-flex;align-items:center;gap:.55rem}
+.lk .lkCatMeta em{font-style:normal;font-size:.76rem;font-weight:400;color:var(--fg-3);
+  font-family:var(--mono)}
+/* 카테고리 전용 저장 — 「사이트에 적용」과 별개입니다. 눈에 띄어야 하므로 먹바탕 */
+.lk .lkCatSave{font:inherit;font-size:.76rem;padding:.26rem .8rem;cursor:pointer;border-radius:999px;
+  background:var(--fg);border:1px solid var(--fg);color:#fff;font-weight:700}
+.lk .lkCatSave:disabled{opacity:.5;cursor:default}
+.lk .lkCatSaved{font-style:normal;font-size:.74rem;color:var(--fg-3);font-family:inherit}
+.lk .lkCatsBox h4.lkCatSub{margin:1.2rem 0 .5rem;font-size:.82rem;font-weight:700}
+/* 카테고리 디자인 그림은 **절반 크기**입니다. 템플릿 고르개는 판짜기 전체를 보여 줘야 해서
+   크지만, 여기는 줄 하나의 차이라 그만한 자리가 필요 없습니다 — 크면 줄과 목록 사이에서
+   제가 주인공처럼 보입니다 */
+/* 그림이 칸을 **꽉 채웁니다.** 작게 두었더니 테두리만 크고 그림이 쪼그라들어 다섯이 다
+   비슷해 보였습니다(사용자 지적). 줄만 그리는 납작한 그림이라 높이는 저절로 낮습니다 */
+.lk .lkCatsBox .lkShape{width:100%;max-height:none}
+.lk .lkCatsBox .lkPick{grid-template-columns:repeat(3,1fr)}
+.lk .lkCatsBox .lkShapes button{padding:.7rem .7rem .6rem}
+/* 보기 상태의 눈 — 상태만 말하고 눌리지 않습니다. 단추(.vis)와 자리를 같이 쓰도록 크기를 맞춥니다 */
+.lk .lkCats .lkCatEye{display:inline-flex;align-items:center;justify-content:center;
+  width:32px;height:32px;flex:none;color:var(--fg-3)}
+.lk .lkCats li.is-fixed .lkCatEye{opacity:.3}
+.lk .lkCats li.is-off .lkCatEye{opacity:.45}
+.lk .lkCatNone{color:#b4bac2}
+/* 보기 상태에서는 줄이 통째로 고르는 자리입니다 */
+.lk .lkCats:not(.is-edit) .lkCatPick:hover{text-decoration:underline;text-underline-offset:3px}
+
+
+/* ── 글 목록 — 카테고리 거르기·고르기·칩 ─────────────────────────────── */
+/* 거르는 칩 — 홈디자인의 프리셋 칩(.lkChip)과 같은 모양. 눌린 것은 먹바탕 */
+.adm .flt{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;margin:0 0 .9rem}
+.adm .flt .chip{padding:.3rem .7rem;font-size:.84rem;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--fg)}
+.adm .flt .chip[aria-pressed="true"]{border-color:var(--fg);background:var(--fg);color:#fff}
+.adm .flt .pickAll{margin-left:auto;display:inline-flex;align-items:center;gap:.4rem;font-size:.82rem;color:#5c646f;cursor:pointer;white-space:nowrap}
+/* 한 번에 앉히는 띠 — 고른 것이 있을 때만 섭니다. 지우기 띠(.ask)와 같은 결의 옅은 판 */
+.adm .bulk{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;padding:.7rem .9rem;margin:0 0 .9rem;
+  background:#f7f8f9;border:1px solid var(--line)}
+.adm .bulk .bulkN{font-size:.86rem;color:var(--fg-2)}
+.adm .bulk .bulkN b{font-family:var(--mono);font-weight:600;color:var(--fg)}
+.adm .bulk button{padding:.38rem .9rem;font-size:.84rem}
+/* 고르는 칸 — 홈디자인의 `.lk .lkPicker` 는 `.lk` 안에서만 먹어 여기서는 맨 글자로 섭니다. 같은 네모를 줍니다 */
+.adm .bulk .tb-anchor{display:inline-flex}
+.adm .bulk .lkPicker{display:inline-flex;align-items:center;gap:.4rem;min-width:11rem;padding:.38rem .7rem;
+  border:1px solid var(--line);border-radius:0;background:#fff;font:inherit;font-size:.84rem;color:var(--fg);cursor:pointer}
+.adm .bulk .lkPicker:hover,.adm .bulk .lkPicker.is-open{border-color:var(--fg);background:#fff}
+/* 고르기 칸 — 표식 칸(번호·연필) 앞에 작게. 줄을 누르면 열리므로 칸 자체가 클릭을 삼킵니다 */
+.adm .row .pick{width:14px;height:14px;margin:0 .35rem 0 0;vertical-align:-1px;cursor:pointer;accent-color:var(--fg)}
+.adm .row .no,.adm .row .pen{display:inline-flex;align-items:center}
+.adm .row[data-picked]{background:#eef6fe}
+.adm .row[data-picked]:hover{background:#e3f0fc}
+/* 카테고리 칩 — 「수정 중」(.wip)과 같은 자리·같은 크기, 색만 중립 */
+.adm .cat{margin-left:.5rem;font-size:.7rem;font-weight:600;color:#3d4650;
+  background:#eef0f3;border:1px solid #d9dde3;padding:.05rem .4rem;vertical-align:1px}
+/* 「기본」(아직 분류 안 한 글) — 같은 자리에 같은 크기로 서되 옅습니다.
+   안 그리면 「칩이 없는 글」과 「칩을 못 그린 글」이 같아 보여, 분류가 끝났는지를 못 셉니다 */
+.adm .cat[data-muted]{color:#8b939d;background:transparent;border-color:#e3e6ea;font-weight:500}
+
+/* 편집 — 목록을 읽는 화면에서 고르는 화면으로 바꿉니다. 홈디자인의 카테고리 관리와 같은 모양 */
+.adm .head .headEdit{margin-left:auto;padding:.3rem .75rem;font-size:.82rem;color:#5c646f;
+  background:#fff;border:1px solid #d9dde3;border-radius:5px;cursor:pointer}
+.adm .head .headEdit:hover{border-color:#9aa1aa;color:var(--fg)}
+.adm .head .headEdit[aria-pressed="true"]{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+/* 편집 단추가 생기면 「글쓰기」는 제 자리를 그대로 지켜야 합니다 — auto 여백을 단추가 가져갑니다 */
+.adm .head .headEdit + .primary{margin-left:0}
+
+/* ── 발행 패널 ──────────────────────────────────────────────────────
+   「발행」 단추 바로 밑에 떨어지는 카테고리·태그 칸. 본문 위에 늘 세워 뒀던 것을 여기로
+   옮겼습니다 — 한 글에 한 번 정하는 값이 글 쓰는 내내 자리를 차지했습니다.
+
+   헤더는 검정 띠인데 패널은 **흰 종이**입니다. 안의 칸이 관리자 다른 화면의 칸과 같은 모양이어야
+   하고(흰 바탕·#dedbd4 경계), 검정 위에 검정 칸을 두면 입력 칸이 안 보입니다.
+   `.peHead` 가 position:relative 라 단추를 기준으로 섭니다. */
+.pePanel{position:absolute;right:12px;top:calc(100% + 6px);z-index:40;width:min(26rem,calc(100vw - 24px));
+        display:flex;flex-direction:column;gap:.9rem;padding:1.1rem 1.2rem;
+        background:#fff;color:var(--fg);border:1px solid var(--line);border-radius:9px;
+        box-shadow:0 10px 28px rgba(0,0,0,.18)}
+.pePanelRow{display:grid;grid-template-columns:4.2rem 1fr;align-items:center;gap:.7rem}
+.pePanelRow>span{font-size:.84rem;color:var(--fg-3)}
+.pePanelRow input{width:100%;padding:.5rem .65rem;border:1px solid var(--line);border-radius:5px;
+        background:#fff;color:var(--fg);font:inherit;font-size:.9rem}
+.pePanelRow input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.pePanel .tb-anchor{display:flex}
+.pePanel .pePanelPick{position:relative;width:100%;justify-content:flex-start;
+        padding:.5rem 2rem .5rem .65rem;border:1px solid var(--line);border-radius:5px;background:#fff}
+.pePanel .pePanelPick:hover{background:#fff;border-color:var(--fg-3)}
+/* 꺾쇠 — 이게 없으면 「고르는 칸」이 아니라 「치는 칸」으로 읽힙니다(사용자 지적).
+   글자 ▾ 는 서체마다 모양도 세로 위치도 달라 테두리로 그립니다 — 공통헤더의 ← 를 SVG 로 둔 것과 같은 까닭 */
+.pePanel .pePanelPick::after{content:'';position:absolute;right:.7rem;top:50%;
+        width:0;height:0;margin-top:-1px;border:4px solid transparent;border-top-color:var(--fg-3)}
+.pePanel .pePanelPick.is-open::after{margin-top:-5px;border-top-color:transparent;border-bottom-color:var(--fg)}
+.pePanelWhy{display:block;margin-top:.35rem;font-style:normal;font-size:.76rem;color:#a4272b}
+/* ── 태그 칸 ──
+   칩과 입력이 한 상자 안에 섭니다. 상자가 곧 입력처럼 보여야 하므로 테두리·포커스 링은
+   상자가 갖고 안쪽 `<input>` 은 민낯입니다. 상자를 누르면 입력에 초점이 갑니다.
+
+   높이는 세 줄쯤을 미리 비워 둡니다 — 태그는 쌓이는 값이라, 한 줄짜리 칸이 둘째 줄에서
+   갑자기 늘어나면 밑의 단추가 밀립니다. 비어 있어도 자리를 지키는 쪽이 조용합니다. */
+.pePanelTags{align-items:start}
+.tagBox{display:flex;flex-wrap:wrap;align-content:flex-start;align-items:center;gap:.3rem;
+        min-height:5rem;padding:.5rem .55rem;border:1px solid var(--line);border-radius:5px;
+        background:#fff;cursor:text}
+.tagBox:focus-within{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+/* `#` 은 안내문이 아니라 늘 있는 글자 — 칩이 쌓여도 다음 태그 앞에 섭니다 */
+.tagHash{font-size:.9rem;color:var(--fg);line-height:1.5;margin-left:.15rem}
+.tagBox input{flex:1 1 4rem;min-width:3rem;width:auto;padding:0;margin-left:-.1rem;
+        border:0;outline:none;background:transparent;font:inherit;font-size:.9rem;
+        line-height:1.5;color:var(--fg)}
+.tagBox input::placeholder{color:#9aa1aa}
+.tagBox input:disabled{cursor:not-allowed}
+/* 칩 — 네모에 가까운 작은 모서리. × 를 안 답니다: 지우기는 백스페이스(또는 칩을 눌러 잡기)입니다.
+   `.adm button` 이 둥근 흰 단추를 깔아 두어(반경 9px·테두리·굵은 글씨·넉넉한 안쪽) 그냥 쓰면
+   칩이 단추처럼 커집니다. `.tagBox` 를 앞에 세워 명시도를 올리고, 깔린 값을 전부 되돌립니다. */
+.tagBox .tagChip{padding:.14rem .4rem;font:inherit;font-size:.82rem;font-weight:400;line-height:1.5;
+        color:#333;background:#f0f1f3;border:0;border-radius:3px;cursor:pointer;white-space:nowrap}
+.tagBox .tagChip:hover:not(:disabled){background:#e4e6e9;border-color:transparent}
+/* 잡힌 칩 — 한 번 더 누르면(또는 백스페이스) 지워집니다. 어두운 것이 「다음에 사라질 것」입니다 */
+.tagBox .tagChip[data-armed]{background:#4a4a4a;color:#fff}
+.tagBox .tagChip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+/* 바닥 — 왼쪽은 무엇이 일어날지, 오른쪽은 그걸 일으키는 단추 */
+.pePanelFoot{display:flex;align-items:center;justify-content:space-between;gap:1rem;
+        margin-top:.2rem;padding-top:.9rem;border-top:1px solid var(--line)}
+.pePanelNote{font-size:.76rem;color:var(--fg-3);line-height:1.4}
+/* 헤더 안이라 `.peHead .peBtn` 의 흰 글자 규칙이 걸립니다 — 흰 종이 위에서는 안 보입니다 */
+.peHead .pePanel .peBtn{height:34px;border-radius:5px;border-color:var(--line);color:var(--fg)}
+.peHead .pePanel .pePub{min-width:76px;background:var(--fg);border-color:var(--fg);color:#fff}
+.peHead .pePanel .pePub:hover:not(:disabled){background:#000;border-color:#000;color:#fff}
+.peHead .pePanel .pePub:disabled{background:var(--fg-3);border-color:var(--fg-3);color:#fff}
+@media (max-width:640px){
+  .pePanel{right:8px;left:8px;width:auto}
+  .pePanelRow{grid-template-columns:1fr;align-items:start;gap:.35rem}
+}

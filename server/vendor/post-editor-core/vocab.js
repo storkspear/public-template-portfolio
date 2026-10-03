@@ -15,14 +15,26 @@
  * `dots3` 는 점 **세 개**(`. .`), `dots` 는 점이 쭉 이어지는 점선이다 — 다른 물건이다.
  */
 /**
- * 코드 블록의 겉모습.
+ * 코드 블록의 **종류** — 소스코드와 터미널.
  *
- * - `plain`    기본 — 어두운 판 + 머리띠(제목·언어·복사)
- * - `mac`      macOS 창 — 신호등 셋 + **가운데 제목**. 언어 라벨은 감춘다
- *              (신호등 옆에 라벨이 붙으면 창이 아니라 코드 위젯으로 되돌아간다)
- * - `terminal` 터미널 — 프롬프트 기호, 낮은 대비
+ * - `code`      소스코드. IDE 처럼 줄 번호가 서고 문법 색 테마를 고른다
+ * - `terminal`  터미널. 줄마다 프롬프트 기호(❯)가 서고 끝에 커서가 깜빡인다. 줄 번호는 없다
+ *
+ * **노드는 하나다**(`codeBlock`) — 종류는 속성이다. 노드를 둘로 쪼개면 `<pre>` 를 받는
+ * parse 규칙이 기본 규칙과 우선순위가 같아 먹히는 함정에 빠진다(`Divider.ts` 머리말과 같은 이유).
  */
-export const CODE_THEMES = ['plain', 'mac', 'terminal'];
+export const CODE_KINDS = ['code', 'terminal'];
+/**
+ * 소스코드의 색 테마. `plain` 이 기본(이 블로그의 차분한 톤)이고, 나머지 다섯은
+ * highlight.js 가 제 스타일시트로 싣는 팔레트를 그대로 옮긴 것이다(`prose.css` 의 변수 블록).
+ * 색을 지어내지 않는 이유: 「Darcula」라고 불렀는데 IntelliJ 와 다르면 이름이 거짓이 된다.
+ */
+export const CODE_THEMES = ['plain', 'darcula', 'monokai', 'onedark', 'dracula', 'solarized'];
+/**
+ * 터미널의 창틀 — `plain`(쉘 화면) 과 `mac`(macOS 창: 신호등 셋 + **가운데 제목**).
+ * 옛 어휘의 `theme:'mac'`·`theme:'terminal'` 은 `migrateCode` 가 이쪽으로 옮긴다.
+ */
+export const TERMINAL_THEMES = ['plain', 'mac'];
 export const DIVIDER_KINDS = ['short', 'long', 'dots3', 'dots', 'wave', 'diamond', 'slash', 'vertical'];
 /**
  * 선 두께. **null 이 1px(기본)** 이고 속성을 아예 안 쓴다.
@@ -201,6 +213,41 @@ export const TIME_ZONE = 'Asia/Seoul';
  */
 export function oneOf(list, v, dflt) {
     return list.includes(v) ? v : dflt;
+}
+/** 종류에 맞는 테마 목록 — 고르개(react)와 검증(`migrateCode`)이 같은 함수를 본다 */
+export function codeThemesOf(kind) {
+    return kind === 'terminal' ? TERMINAL_THEMES : CODE_THEMES;
+}
+/**
+ * 코드 블록 속성의 옛 어휘 → 새 어휘. **순수·멱등.**
+ *
+ * 2026-10 전에는 `kind` 가 없고 `theme` 하나가 `plain|mac|terminal` 을 들고 있었다.
+ * 그중 `mac`·`terminal` 은 이제 **터미널 종류**의 창틀이다:
+ *   `{theme:'terminal'}` → `{kind:'terminal', theme:'plain'}`
+ *   `{theme:'mac'}`      → `{kind:'terminal', theme:'mac'}`
+ *   그 밖              → `{kind:'code', theme: CODE_THEMES 로 접은 값}`
+ * `kind` 가 이미 있으면 그 종류의 목록으로 테마만 접는다(어휘 밖 조합은 `plain`).
+ * 두 번 적용해도 같다 — 첫 적용에서 `kind` 가 생기고, 그 뒤로는 접기만 남는데 접힌 값은 다시 접어도 그대로다.
+ *
+ * **extensions/ 가 아니라 여기 있다.** `serialize.ts`(발행 굽기)가 이 함수를 쓰는데, 그 파일은
+ * 사이트 레포에 복사돼 Tiptap 없는 맨 Node 에서 돈다 — 확장 옆에 두면 `@tiptap/core` 가 딸려 온다.
+ * `migrateDivider` 가 확장 옆에 있는 것과 자리가 다른 이유가 그것이다.
+ *
+ * 세 관문이 같은 함수를 부른다: `parseHTML`(HTML 입구) · `normalizeDoc`(JSON 입구) ·
+ * `bakeCode`(발행). 발행에서도 부르는 이유: 사이트의 정본은 **HTML**(`posts.body`)이라 굽기는
+ * Tiptap 을 거치지 않는다 — 여기서 안 옮기면 발행면만 옛 속성을 들고 새 CSS 를 못 탄다.
+ */
+export function migrateCode(a) {
+    const { kind, theme } = a;
+    if (kind == null) {
+        if (theme === 'terminal')
+            return { ...a, kind: 'terminal', theme: 'plain' };
+        if (theme === 'mac')
+            return { ...a, kind: 'terminal', theme: 'mac' };
+        return { ...a, kind: 'code', theme: oneOf(CODE_THEMES, theme, 'plain') };
+    }
+    const k = oneOf(CODE_KINDS, kind, 'code');
+    return { ...a, kind: k, theme: oneOf(codeThemesOf(k), theme, 'plain') };
 }
 /**
  * null 을 허용하는 `oneOf` — 「안 정함」이 기본인 속성용(표의 선 종류·모서리, 구분선의 두께·색).

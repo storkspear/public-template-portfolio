@@ -4,7 +4,7 @@
  * 고치면 다음 pull 이 충돌로 막힙니다. nginx 가 /blog/ 를 그 폴더로 돌려놨습니다.
  * 본문의 attachment://{id} 는 src·href 속성값일 때만 /uploads/{id} 로 바꿉니다.
  */
-import { mkdir, writeFile, rm, readFile } from 'node:fs/promises'
+import { mkdir, writeFile, rm, rmdir, readFile } from 'node:fs/promises'
 import { readdirSync, statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { configureFonts, FONT_VALUES } from './vendor/post-editor-core/vocab.js'
@@ -20,11 +20,23 @@ import { existsSync, readFileSync } from 'node:fs'
 import { renderPostHead, normalizeTitle } from './vendor/post-editor-core/title.js'
 import { configureAttachments } from './vendor/post-editor-core/attachments.js'
 import { toPublishedHtml } from './vendor/post-editor-core/serialize.js'
+import { preloadLanguages } from './vendor/post-editor-core/highlight.js'
+
+/**
+ * 코드 색칠용 문법을 **미리 전부 싣습니다.** `toPublishedHtml` 은 동기 함수라 그 안에서는
+ * 문법을 기다릴 수 없고, 안 실린 언어는 토큰이 빈 배열로 돌아옵니다 — 에러가 없어서 못 알아챕니다.
+ *
+ * 실측(이 줄을 넣기 전): rust·go·csharp·markdown·nginx·php 가 `hljs-` span 0개로 발행됐습니다.
+ * 편집 화면에서는 색이 보이는데 발행본만 흑백이라, 글쓴이가 보는 것과 읽는 이가 받는 것이 달랐습니다.
+ * 넣은 뒤 27종 전부 색이 나갑니다 — `tools/check-prose.mjs` 가 매번 셉니다.
+ */
+await preloadLanguages()
 import site from '../site.config.mjs'
 import { pgSsl } from './local.mjs'
-import { BUILTIN_FAVICON, DEFAULTS, inkOn, ITEM_LINKS, ITEM_SIZES, KEYS, NAV_LINKS, SHOT_KNOBS, SHOT_MAX, isExternal, mainStart, mutedOn, normalize, PAGE_SAMPLES, PAGE_SOURCE_MINE,
+import { CAT_STRIP_STYLES, BUILTIN_FAVICON, DEFAULTS, inkOn, ITEM_LINKS, ITEM_SIZES, KEYS, NAV_LINKS, SHOT_KNOBS, SHOT_MAX, isExternal, mainStart, mutedOn, normalize, PAGE_SAMPLES, PAGE_SOURCE_MINE,
   ICON_OF, OUTLINE_SKINS, SERVICE_ICONS } from '../shared/site-vocab.mjs'
 import { MENU_ICON_OF } from '../shared/menu-icons.mjs'
+import { categoryOf, orphanOf, slugProblem } from '../shared/category.mjs'
 import { ymd } from '../shared/text.mjs'
 import { TAG, esc, summarize, unesc } from './html-text.mjs'
 import { nested, okSlug, realOf, unsafeBit, writeAtomic } from './bake-safety.mjs'
@@ -173,7 +185,13 @@ const resolveAttachments = (html) =>
  * 드로어 패널은 <header> 밖에 둬야 합니다: .s-head 에 backdrop-filter 가 걸려 있어 그 안의
  * position:fixed 는 뷰포트가 아니라 헤더 띠를 기준으로 잘립니다.
  */
-const headerHtml = (h, navAll, brand) => {
+/**
+ * @param subs 드로어에만 붙는 블로그의 하위 항목(카테고리). 헤더 메뉴(`navPart`)에는 안 냅니다 —
+ *             헤더와 드로어는 `navPart = drawer ? '' : …` 로 서로 배타라 한쪽에만 두면 다른 쪽
+ *             사이트에서는 영영 안 보입니다. 정식 자리는 목록 위의 줄(`catStrip`)이고, 드로어는
+ *             세로로 서는 목록이라 한 칸 들인 항목이 자연스러워 덤으로 냅니다.
+ */
+const headerHtml = (h, navAll, brand, subs = []) => {
   /* 관리자에서 바꾼 라벨·표시 여부를 입힙니다. href 로 짝을 짓습니다.
      짝이 없는 항목(site.config.mjs 에 직접 적은 외부 링크 등)은 그대로 둡니다.
      관리자에서 손댈 수 없는 걸 굽기가 지우면 안 됩니다. */
@@ -209,7 +227,7 @@ const headerHtml = (h, navAll, brand) => {
            ` stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${body}</svg>`
   }
   const withIcon = drawer && h.drawer.style === 'icon'
-  const a = (n) => `<a href="${esc(n.href)}"${n.current ? ` aria-current="${esc(n.current)}"` : ''}` +
+  const a = (n) => `<a${n.sub ? ' class="s-sub"' : ''} href="${esc(n.href)}"${n.current ? ` aria-current="${esc(n.current)}"` : ''}` +
                    `${n.external ? ' rel="me noopener" target="_blank"' : ''}>` +
                    `${withIcon ? iconSvg(n.icon) : ''}${esc(n.label)}</a>`
   /* 사이트 이름 자리. 글·작업 상세에서는 부르는 쪽이 「← 목록」 링크를 넘겨 이 자리를 대신합니다 */
@@ -225,7 +243,12 @@ const headerHtml = (h, navAll, brand) => {
 <label class="s-scrim" for="site-menu" aria-hidden="true"></label>
 ` : ''
   const drawerPart = drawer ? `${toggle}<nav class="s-drawer s-drawer-${esc(h.sidebar.kind)} s-item-${esc(h.drawer.style)}" aria-label="메뉴">
-${burger ? '  <label class="s-x" for="site-menu" aria-hidden="true"></label>\n' : ''}${ordered.map((n) => '  ' + a(n)).join('\n')}
+${burger ? '  <label class="s-x" for="site-menu" aria-hidden="true"></label>\n' : ''}${ordered.flatMap((n) => [
+  '  ' + a(n),
+  /* 블로그 줄 바로 밑에 카테고리를 한 칸 들여 세웁니다. 블로그를 숨겼으면 `ordered` 에 그 줄이
+     없으므로 하위 항목도 같이 사라집니다 — 부모 없는 자식을 세우지 않습니다 */
+  ...(n.href === '/blog/' ? subs.map((c) => '  ' + a({ ...c, sub: true })) : []),
+]).join('\n')}
 </nav>
 ` : ''
   const navPart = drawer ? '' : `    <nav class="s-nav s-nav-${esc(h.nav.style)}">
@@ -429,6 +452,8 @@ const shell = ({
    * 이 값은 어느 화면에 헤더가 붙는지는 안 정합니다 — 그건 `chrome` 이 합니다.
    */
   header = null,
+  /* 드로어의 블로그 줄 밑에 설 카테고리들(`blogSubs`). 헤더 메뉴 벌에서는 안 쓰입니다 */
+  subs = [],
   /* 공통 헤더를 포함할지. 끄면 헤더가 한 줄도 출력되지 않습니다.
      메인처럼 본문이 제 머리를 직접 갖는 화면용(main.chrome) */
   chrome = true,
@@ -449,7 +474,7 @@ const shell = ({
 ${head}${theme}</head>
 <body>
 
-${!chrome ? '' : header ? headerHtml(header, nav, brand) : `<header class="s-head">
+${!chrome ? '' : header ? headerHtml(header, nav, brand, subs) : `<header class="s-head">
   <div class="wrap">
     ${brand || `<a class="s-name" href="/">${esc(site.brand)}</a>`}
     <nav class="s-nav">
@@ -641,6 +666,63 @@ const ledeOf = (p) => {
   return lede ? `          <span class="b-lede">${esc(lede)}</span>\n` : ''
 }
 
+/* ── 카테고리 ───────────────────────────────────────────────────────
+   「기본」은 `/blog/` 그 자체입니다 — 모든 글이 실리고, 그 모양이 블로그 설정의 윗단입니다.
+   카테고리는 저마다 `/blog/<slug>/` 를 갖고, 거기 속한 글은 `/blog/` 와 제 카테고리 양쪽에
+   나옵니다. 비공개 카테고리는 **어디에도 안 나갑니다** — 페이지도, 거기 속한 글도 굽지 않습니다
+   (「주소로도 안 열리게」). 카테고리를 안 정한 글은 `/blog/` 에만 있습니다. */
+
+/** 공개 카테고리 목록 — 줄·드로어·굽기가 같은 필터를 씁니다 */
+const publicCats = (conf) => (conf?.blog?.categories || []).filter((c) => c.show)
+/** 비공개 카테고리의 식별자 — SQL 이 그 글을 처음부터 안 읽게 넘깁니다 */
+export const privateIds = (conf) => (conf?.blog?.categories || []).filter((c) => !c.show).map((c) => c.id)
+const catHref = (c) => `/blog/${encodeURIComponent(c.slug)}/`
+
+/**
+ * 드로어의 하위 항목. 지금 보는 카테고리에는 `page` 를 답니다 — 블로그 줄은 `navFor` 가
+ * 「섹션」(`true`)으로 달아 두므로 둘이 겹치지 않습니다.
+ */
+const blogSubs = (conf, here = null) => publicCats(conf)
+  .map((c) => ({ href: catHref(c), label: c.label, current: here === catHref(c) ? 'page' : '' }))
+
+/**
+ * 목록 위의 카테고리 줄 — `기본 · 개발 · 일상`. 「기본」이 `/blog/` 로 가는 링크입니다.
+ *
+ * 헤더 메뉴의 하위 메뉴로 두지 않습니다. 헤더와 드로어가 서로 배타(`headerHtml` 의 `navPart`)라
+ * 어느 한쪽에 둔 하위 메뉴는 다른 벌의 사이트에서 안 보이고, 둘 다에 두면 헤더 CSS 를 통째로
+ * 손대야 합니다. 목록 위 한 줄이면 열두 갈래 어디서나 같은 자리에 섭니다.
+ *
+ * 공개 카테고리가 하나도 없으면 **아무것도 안 냅니다.** 「기본」 하나만 선 줄은 고를 것이 없는
+ * 메뉴이고, 빈 줄이라도 내면 카테고리를 안 쓰는 사이트의 HTML 이 전부 달라집니다(골든 64벌).
+ */
+const catStrip = (conf, currentId = '') => {
+  const cats = publicCats(conf)
+  if (!cats.length) return ''
+  const link = (href, label, on) => `    <a href="${href}"${on ? ' aria-current="page"' : ''}>${esc(label)}</a>`
+  /* 첫 값(`dots`)은 클래스를 안 답니다 — 지금까지의 HTML 과 한 바이트도 달라지지 않아야 합니다
+     (카드 테마의 `skinCls` 와 같은 규약) */
+  const cls = conf.blog.catStrip && conf.blog.catStrip !== CAT_STRIP_STYLES[0].value
+    ? ` b-cats-${esc(conf.blog.catStrip)}` : ''
+  return `  <nav class="b-cats${cls}" aria-label="카테고리">
+${[link('/blog/', '기본', !currentId), ...cats.map((c) => link(catHref(c), c.label, c.id === currentId))].join('\n')}
+  </nav>
+`
+}
+
+/** 그 카테고리의 모양으로 바꾼 설정 한 벌 — 블로그 윗단 여섯 키만 카테고리 것으로 갈아 끼웁니다 */
+const confFor = (conf, cat) => (cat ? { ...conf, blog: { ...conf.blog, ...cat.look } } : conf)
+
+/**
+ * 카테고리 페이지에만 박는 표식. 「이 `index.html` 은 굽기가 만든 카테고리 목록이다」라는 뜻입니다.
+ *
+ * 치우는 일(`sweepCategories`)은 평소에 `.categories.json` 기록을 보고 합니다. 그런데 그 파일
+ * 하나가 없어지면(볼륨을 갈아 끼웠거나 손으로 지웠거나) 치울 목록이 영영 비어, 지운 카테고리의
+ * 페이지가 공개면에 그대로 남습니다 — 비공개로 돌린 카테고리라면 「주소로도 안 열리게」가 거짓이 됩니다.
+ * 그때는 디스크에서 이 표식을 가진 폴더만 찾아냅니다. 우리가 쓴 것이라는 증거가 파일 안에 있으므로
+ * 「굽기가 안 만든 것은 안 건드린다」는 규약을 안 깹니다.
+ */
+const CAT_MARK = '<meta name="page-kind" content="category">'
+
 /**
  * 글 목록 — 열두 벌이 같은 마크업을 씁니다.
  * 줄마다 번호·대표 이미지·제목·날짜·첫 문단이 다 들어 있고, 무엇을 보여 줄지는 CSS 가
@@ -648,25 +730,30 @@ const ledeOf = (p) => {
  * 반영됩니다 — 포트폴리오와 같은 규약.
  * 연도 라벨은 리스트형 템플릿(YEARED)에서만 냅니다. 그리드형은 줄이 아니라 칸이라 자리가 없습니다.
  */
-export const listPage = (posts, style, conf = DEFAULTS) => shell({
+/**
+ * @param cat  카테고리 페이지면 그 카테고리. 없으면 `/blog/`(기본). 모양(`conf.blog`)은 부르는
+ *             쪽이 `confFor` 로 이미 갈아 끼운 것이라 여기서는 주소·제목·줄의 「지금」만 가릅니다.
+ */
+export const listPage = (posts, style, conf = DEFAULTS, cat = null) => shell({
   theme: style + pageFontStyle(conf.blog.font) + lhStyle(conf.blog.head) + outlineStyle(conf.blog),
   footer: conf.footer, colors: conf.theme,
   header: conf.header,
   chrome: conf.blog.chrome,
-  title: siteName(conf, site.siteTitle), favicon: faviconOf(conf.site),
+  title: cat ? `${cat.label} — ${siteName(conf, site.siteTitle)}` : siteName(conf, site.siteTitle), favicon: faviconOf(conf.site),
   description: site.description,
-  canonical: `${site.origin}/blog/`,
-  nav: navFor('/blog/'),
+  canonical: `${site.origin}${cat ? catHref(cat) : '/blog/'}`,
+  nav: navFor(cat ? catHref(cat) : '/blog/'),
+  subs: blogSubs(conf, cat ? catHref(cat) : null),
   /* 목록도 글꼴 선언을 실어야 합니다. 제목 글꼴이 fonts.local.css 쪽이면 안 실은 목록은
      대체 글꼴로 렌더링되어 같은 제목의 서체가 목록과 글에서 달라집니다. */
-  head: `<link rel="stylesheet" href="/assets/blog.css?v=${assetVersion()}">
+  head: `${cat ? `${CAT_MARK}\n` : ''}<link rel="stylesheet" href="/assets/blog.css?v=${assetVersion()}">
 <link rel="stylesheet" href="/assets/templates/blog.css?v=${assetVersion()}">
 <link rel="stylesheet" href="/assets/templates/header.css?v=${assetVersion()}">
 ${fontSheet(conf.theme.display, conf.theme.body, conf.header?.font, conf.blog.font.display, conf.blog.font.body)}<link rel="stylesheet" href="/assets/fonts.local.css?v=${assetVersion()}">\n`,
   /* 목록에 제 폭이 없습니다. .wrap 이 사이트 --body-w 를 그대로 따릅니다 */
   body: `<main class="wrap">
 
-${listHead(conf.blog.head, posts.length)}
+${listHead(conf.blog.head, posts.length)}${catStrip(conf, cat?.id || '')}
   <ul class="bl bl-${esc(conf.blog.template)}${skinCls(conf.blog)}">
 ${(() => { const ys = YEARED.has(conf.blog.template) ? yearLabels(posts, conf.blog.template === 'feed') : posts.map(() => '')
     return posts.map((p, i) => ys[i] + `    <li class="b-item">
@@ -848,6 +935,28 @@ const TL_AT = 'cover 0% cover 80%'
  * 들어가면 목차의 모든 절이 이미 눈앞에 있으므로 그대로 둡니다.
  */
 const TL_END = { a: 'bjEnd steps(1,end) both', t: 'scroll(root block)', r: '0% 99%' }
+/**
+ * 바닥 신호의 **문** — 앞 절이 이미 지나갔을 때만 바닥 신호를 셈에 넣습니다.
+ *
+ * 바닥 신호 혼자서는 「글 끝 몇 절이 한 화면에 들어가는」 글에서 틀립니다. 바닥에 닿았는데도
+ * 끝에서 둘째 제목이 아직 임계선 위면, 읽고 있는 절은 셋째인데 끝 절까지 같이 켜집니다.
+ * 2026-10-02 에 4편 끝에서 실측했습니다.
+ *
+ *   아쉬운 것(끝-2)    --bjp 1  --bjq 0            --cur  1   굵기 700
+ *   다음에 해 볼 것(끝-1) --bjp 0  --bjq 0  --bje 1  --cur -1   굵기 100  ← 음수
+ *   돌아보면(끝)        --bjp 0           --bje 1  --cur  1   굵기 700  ← 둘째로 켜짐
+ *
+ * 그래서 끝 절에 「앞 절이 지났는가」를 하나 더 겹쳐 `min` 으로 묶습니다. 끝 절이 짧아 제
+ * 임계선에 못 닿는 원래 사례에서는 앞 절이 이미 지나 있으므로 그대로 켜집니다.
+ *
+ * 음수도 같이 막습니다. `--cur` 이 -1 이면 blog.css 의
+ * `color-mix(… calc(var(--cur) * 50% + 50%) …)` 에 음수 퍼센트가 들어가 **선언이 통째로
+ * 무효**가 되고, `font-weight: calc(400 + var(--cur) * 300)` 만 남아 100 으로 그려집니다.
+ * 위 실측의 굵기 100 이 그것입니다.
+ *
+ * 이름 주의 — `--bjr`·`--bjg` 등은 시트 쪽이 길이로 쓰고 있어 못 씁니다. 새 신호는 `--bjk`.
+ */
+const TL_GATE = (prev) => ({ a: 'bjGate steps(1,end) both', t: `--tl-${prev}`, r: TL_AT })
 export const tocTimelineCss = (items) => {
   const ids = items.map((it) => it.id)
   if (!ids.length || !ids.every((id) => SAFE_ID.test(id))) return ''
@@ -860,11 +969,14 @@ export const tocTimelineCss = (items) => {
     const 끄기 = nx ? { a: 'bjOff steps(1,end) both', t: `--tl-${nx}`, r: TL_AT } : null
     /* 바닥 신호는 끝 절(켜는 쪽)과 끝에서 둘째(끄는 쪽)에만 붙습니다 */
     const 바닥 = (n === 끝 || n === 끝 - 1) ? TL_END : null
-    const 셋 = [켜기, 끄기, 바닥].filter(Boolean)
+    /* 문은 끝 절에만 — 앞 절이 임계선을 지났는지를 따로 받아 둡니다 */
+    const 문 = (n === 끝 && 끝 > 0) ? TL_GATE(ids[끝 - 1]) : null
+    const 셋 = [켜기, 끄기, 바닥, 문].filter(Boolean)
     const 늘켜짐 = n === 0 ? '--bjp:1;' : ''
-    /* `--cur` 은 바탕 규칙이 맡고, 바닥 신호가 붙은 둘만 제 셈을 따로 적습니다 */
-    const 셈 = n === 끝 ? '--cur:max(var(--bjp),var(--bje));'
-      : n === 끝 - 1 ? '--cur:calc(var(--bjp) - max(var(--bjq),var(--bje)));' : ''
+    /* `--cur` 은 바탕 규칙이 맡고, 바닥 신호가 붙은 둘만 제 셈을 따로 적습니다.
+       어느 쪽도 음수로 내려가지 않게 `max(0,…)` 로 바닥을 깔아 둡니다 */
+    const 셈 = n === 끝 ? '--cur:max(var(--bjp),min(var(--bje),var(--bjk)));'
+      : n === 끝 - 1 ? '--cur:max(0,calc(var(--bjp) - max(var(--bjq),var(--bje))));' : ''
     const anim = 셋.length
       ? `animation:${셋.map((x) => x.a).join(',')};animation-timeline:${셋.map((x) => x.t).join(',')}`
         + `;animation-range:${셋.map((x) => x.r).join(',')}`
@@ -874,12 +986,13 @@ export const tocTimelineCss = (items) => {
   return `@property --bjp{syntax:'<number>';inherits:false;initial-value:0}
 @property --bjq{syntax:'<number>';inherits:false;initial-value:0}
 @property --bje{syntax:'<number>';inherits:false;initial-value:0}
+@property --bjk{syntax:'<number>';inherits:false;initial-value:0}
 @supports (animation-timeline:view()){
-@keyframes bjOn{from{--bjp:0}to{--bjp:1}}@keyframes bjOff{from{--bjq:0}to{--bjq:1}}@keyframes bjEnd{from{--bje:0}to{--bje:1}}
+@keyframes bjOn{from{--bjp:0}to{--bjp:1}}@keyframes bjOff{from{--bjq:0}to{--bjq:1}}@keyframes bjEnd{from{--bje:0}to{--bje:1}}@keyframes bjGate{from{--bjk:0}to{--bjk:1}}
 main.b-post{timeline-scope:${ids.map((i) => `--tl-${i}`).join(',')}}
 ${ids.map((i) => `.prose-body #${i}{view-timeline-name:--tl-${i}}`).join('')}
 ${ids.map(rule).join('')}
-.b-jump a{--cur:calc(var(--bjp) - var(--bjq))}}`
+.b-jump a{--cur:max(0,calc(var(--bjp) - var(--bjq)))}}`
 }
 
 /**
@@ -1008,7 +1121,11 @@ const styleAttr = (vars) =>
  *
  * ①만 두고 ②를 지우면 sticky 가 다시 죽습니다. ②만 두고 ①을 지우면 가로 스크롤이 돌아옵니다.
  */
-export const postPage = (p, styleTag, conf = DEFAULTS) => {
+/**
+ * @param cat  이 글이 속한 공개 카테고리. 있으면 「← 목록」이 그 카테고리로 돌아갑니다 —
+ *             글이 사는 자리가 거기라서입니다(작업의 「← 작업」과 같은 결). 없으면 `/blog/`.
+ */
+export const postPage = (p, styleTag, conf = DEFAULTS, cat = null) => {
   seedAttachments(p)                         /* 제목 배너도 이 표를 참조하므로 본문보다 먼저 준비합니다 */
   const { html: body, items } = articleBody(p)
   const jump = conf.blog.toc.show ? jumpHtml(items, conf.blog.toc) : ''
@@ -1041,10 +1158,13 @@ export const postPage = (p, styleTag, conf = DEFAULTS) => {
     description: summarize(body) || site.description,
     canonical: `${site.origin}/blog/${encodeURIComponent(p.slug)}/`,
     nav: navFor(`/blog/${encodeURIComponent(p.slug)}/`),
+    subs: blogSubs(conf),
     /* 글을 읽는 중에는 사이트 이름 자리가 「← 목록」이 됩니다.
        본문 위에 따로 줄을 만들면 배너가 헤더에서 떨어지고, 이름 옆에 덧붙이면
        헤더 항목이 셋이 되어 어디를 눌러야 목록인지 인지하기 어려워집니다. */
-    brand: '<a class="s-name s-back" href="/blog/"><span aria-hidden="true">←</span>글 목록</a>',
+    brand: cat
+      ? `<a class="s-name s-back" href="${catHref(cat)}"><span aria-hidden="true">←</span>${esc(cat.label)}</a>`
+      : '<a class="s-name s-back" href="/blog/"><span aria-hidden="true">←</span>글 목록</a>',
     head: `<link rel="stylesheet" href="/assets/blog.css?v=${assetVersion()}">
 <link rel="stylesheet" href="/assets/templates/blog.css?v=${assetVersion()}">
 <link rel="stylesheet" href="/assets/fonts.css?v=${assetVersion()}">
@@ -1424,6 +1544,7 @@ const homePage = (ctx, fragment = '') => {
   const body = order.map((b) => (SECTION_HTML[b] ? SECTION_HTML[b](ctx) : '')).filter(Boolean)
   return shell({
     header: ctx.header,
+    subs: blogSubs(ctx),
     chrome: ctx.main.chrome,
     title: siteName(ctx, site.home.title), favicon: faviconOf(ctx.site),
     description: site.home.description,
@@ -1483,6 +1604,7 @@ ${emitOmit(knobVars(pf.knobs))}}
 const worksPage = (works, ctx, fragment = '') => shell({
   theme: pageStyle(ctx, 'portfolio', lhStyle(ctx.portfolio.head)),
   header: ctx.header,
+  subs: blogSubs(ctx),
   chrome: ctx.portfolio.chrome,
   foot: ctx.portfolio.mode === 'code' ? 'none' : 'pages',
   footer: ctx.footer, colors: ctx.theme,
@@ -1554,6 +1676,7 @@ const workPage = (w, near, ctx) => {
   const zoomOn = true
   return shell({
     header: ctx.header,
+    subs: blogSubs(ctx),
     /* 상세도 목록과 같은 설정을 따릅니다. 한 섹션 안에서 헤더 표시 여부가 달라지면 안 됩니다 */
     chrome: ctx.portfolio.chrome,
     footer: ctx.footer, colors: ctx.theme,
@@ -1624,14 +1747,17 @@ export async function bakePages(pool, { into = PAGES, conf = DEFAULTS, rebase = 
 
   /* 메인에 글 목록을 켠 사이트만 — 안 켰으면 질의도 안 합니다 */
   const wantPosts = conf.main.mode === 'template' && (conf.main.sections || []).some((x) => x.key === 'posts' && x.show)
+  /* 비공개 카테고리의 글은 메인의 최근 글에도 안 나옵니다 — 그 글의 페이지가 없어 눌러도 404 입니다 */
   const { rows: recent } = !wantPosts ? { rows: [] } : dummy ? { rows: DUMMY_POSTS.slice(0, 3) } : await pool.query(
     `select p.slug, p.title, p.published_at,
             (select coalesce(a.thumb, a.file_path) from post_attachments a
               where a.post_id = p.id and a.kind = 'banner' limit 1) as cover
        from posts p
       where p.kind = 'post' and p.published_at is not null and not p.hidden
+        and not (coalesce(p.meta->>'category', '') = any($1::text[]))
       order by p.published_at desc
       limit 3`,
+    [privateIds(conf)],
   )
 
   /* ① 만듭니다 — 아직 디스크에는 손대지 않습니다 */
@@ -1745,11 +1871,14 @@ export async function bakePages(pool, { into = PAGES, conf = DEFAULTS, rebase = 
 /**
  * 발행된 글을 읽는 질의. 미리보기와 공개 생성이 같은 문장을 쓰고 limit 만 다릅니다
  * (미리보기 12편, 공개 생성 전부).
+ * `$1` 은 비공개 카테고리의 식별자들 — 그 글은 **읽지도 않습니다.** JS 에서 거르면 되지만, 읽은 글이
+ * 곧 「발행 글」로 세어져 자체검사(`구운 글 ≠ 발행 글`)와 어긋납니다. `meta` 를 같이 읽는 것은
+ * 굽기가 글의 카테고리를 알아야 해서입니다(어느 목록에 넣을지, 「← 목록」이 어디로 갈지).
  * cover 는 배너를 우선하고 없으면 본문에 먼저 나오는 사진을 씁니다(라이브러리의
  * coverAttachmentId 와 같은 규칙). 찾는 대상은 참조(attachment://{id})이지 파일 주소가
  * 아닙니다 — presigned URL 은 만료되고 저장 위치도 바뀌므로 라이브러리가 id 만 남깁니다.
  */
-const POSTS_SQL = (limit) => `select p.slug, p.no, p.title, p.body, p.width, p.title_doc, p.published_at,
+const POSTS_SQL = (limit) => `select p.slug, p.no, p.title, p.body, p.width, p.title_doc, p.published_at, p.meta,
             (select coalesce(a.thumb, a.file_path) from post_attachments a
               where a.post_id = p.id
                 and (a.kind = 'banner' or position('attachment://' || a.attachment_id in p.body) > 0)
@@ -1760,6 +1889,7 @@ const POSTS_SQL = (limit) => `select p.slug, p.no, p.title, p.body, p.width, p.t
                  from post_attachments a where a.post_id = p.id), '[]'::json) as attachments
        from posts p
       where p.kind = 'post' and p.published_at is not null and not p.hidden
+        and not (coalesce(p.meta->>'category', '') = any($1::text[]))
       order by p.published_at desc${limit ? ` limit ${limit}` : ''}`
 
 /**
@@ -1800,16 +1930,30 @@ export async function bakePreview(pool, conf) {
    * 글이 없으면 목록만 생성합니다. 빈 목록도 목록의 모양을 보여 줍니다.
    */
   const style = themeStyle(conf.theme) + headStyle(conf.header, conf.theme)
-  const { rows } = await pool.query(POSTS_SQL(12))
+  /* 미리보기는 비공개 카테고리의 글도 읽습니다(`$1` 이 빈 목록) — 공개 전의 카테고리를 그 페이지에서
+     미리 보려고. `/blog/` 에서는 `blogPages` 가 똑같이 뺍니다(공개면과 같은 규칙) */
+  const { rows } = await pool.query(POSTS_SQL(12), [[]])
   /* 목록에 표시된 글은 상세까지 전부 생성합니다(최대 12편). 위에서 링크를 미리보기 경로로
-     바꿨으므로 생성하지 않은 글을 누르면 404 가 표시됩니다 */
+     바꿨으므로 생성하지 않은 글을 누르면 404 가 표시됩니다.
+     공개 생성과 같은 함수(`blogPages`)를 씁니다 — 카테고리 페이지와 줄까지 한 벌입니다 */
   const blog = async (where, list) => {
     const base = `/preview/${where}`
-    await mkdir(`${into}/${where}/blog`, { recursive: true })
-    await writeAtomic(`${into}/${where}/blog/index.html`, previewLinks(listPage(list, style, conf), base))
-    for (const p of list) {
-      await mkdir(`${into}/${where}/blog/${p.slug}`, { recursive: true })
-      await writeAtomic(`${into}/${where}/blog/${p.slug}/index.html`, previewLinks(postPage(p, style, conf), base))
+    const pages = blogPages(list, style, conf, { preview: true })
+    for (const [rel, html] of pages) {
+      const at = `${into}/${where}/${rel}`
+      await mkdir(dirname(at), { recursive: true })
+      await writeAtomic(at, previewLinks(html, base))
+    }
+    /**
+     * 이번에 안 쓴 폴더를 치웁니다 — `bakePages` 가 `portfolio/` 에 하는 것과 같은 수법입니다.
+     *
+     * 미리보기 트리는 통째로 생성물이라 디스크를 훑어도 됩니다(공개면과 다른 점입니다 —
+     * 거기엔 올린 사진이 같이 삽니다). 안 치우면 카테고리를 지우거나 주소를 바꿔도 옛 페이지가
+     * 관리자 오리진에 계속 살아 있어, 공개 전에 숨긴 카테고리를 미리보기에서는 열 수 있습니다.
+     */
+    const keep = new Set(pages.map(([rel]) => rel.split('/')[1]).filter((n) => n && n !== 'index.html'))
+    for (const e of await readPrev(`${into}/${where}/blog`, { withFileTypes: true }).catch(() => [])) {
+      if (e.isDirectory() && !keep.has(e.name)) await rm(`${into}/${where}/blog/${e.name}`, { recursive: true, force: true })
     }
   }
   await blog('real', rows)
@@ -1834,7 +1978,12 @@ export async function bakePreview(pool, conf) {
     return 많은것
   }
   const 견본폭 = rows.length ? 흔한폭(rows) : null
-  await blog('dummy', DUMMY_POSTS.map((p) => ({ ...p, width: 견본폭 })))
+  /* 견본 글을 카테고리에 돌아가며 앉힙니다 — 안 앉히면 카테고리 페이지가 빈 목록이라
+     그 페이지의 판짜기를 고를 수 없습니다. 카테고리가 없으면 예전과 같이 없음 */
+  const cats = conf.blog.categories || []
+  await blog('dummy', DUMMY_POSTS.map((p, i) => ({
+    ...p, width: 견본폭, meta: cats.length ? { category: cats[i % cats.length].id } : null,
+  })))
   return { ...r, dummy: d.pages, blog: rows.length }
 }
 
@@ -1896,10 +2045,113 @@ export function bake(pool) {
   return next
 }
 
+/**
+ * 블로그의 모든 페이지를 만듭니다 — `/blog/`, 카테고리마다 `/blog/<slug>/`, 글마다 `/blog/<번호>/`.
+ * 공개 굽기(`bakeNow`)·미리보기(`bakePreview`)·골든(`tools/check-bake.mjs`)이 **이 함수 하나**를
+ * 씁니다. 렌더러를 세 벌로 두면 미리보기가 공개면과 갈리는 순간 미리보기를 믿을 수 없게 됩니다.
+ *
+ * 아직 디스크에는 손대지 않습니다 — `[상대경로, HTML]` 목록만 돌려줍니다(`bakePages` 의 ①과 같은 결).
+ *
+ * 비공개 카테고리의 글은 **어디에도 안 냅니다**(「주소로도 안 열리게」). `/blog/` 가 모든 글을
+ * 싣는다고 해서 비공개 글까지 실으면 비공개가 아닙니다.
+ * `preview` 면 비공개 카테고리의 페이지와 글도 **냅니다** — 미리보기는 관리자 오리진에만 서빙되는
+ * 자리라, 공개 전의 카테고리를 거기서 다듬을 수 있어야 합니다. `/blog/` 목록에서는 똑같이 뺍니다.
+ *
+ * 모르는 식별자를 가리키는 글(카테고리가 사라졌는데 글이 남은 경우)은 **기본**으로 읽습니다 —
+ * 글이 사라지는 쪽보다 `/blog/` 에만 나오는 쪽이 낫습니다.
+ *
+ * @param posts  POSTS_SQL 이 읽은 행(`meta` 포함). 견본은 `bakePreview` 가 카테고리를 앉혀 넘깁니다
+ */
+export const blogPages = (posts, style, conf, { preview = false } = {}) => {
+  const cats = conf.blog.categories || []
+  const byId = new Map(cats.map((c) => [c.id, c]))
+  const catFor = (p) => byId.get(categoryOf(p.meta)) || null
+  const hiddenCat = (p) => { const c = catFor(p); return !!c && !c.show }
+  /* 주인 잃은 글은 어디에도 안 냅니다 — 비공개였을 수 있어서입니다(`orphanOf` 의 주석) */
+  const 주인없음 = (p) => !!orphanOf(p.meta, new Set(byId.keys()))
+
+  /**
+   * 카테고리 주소와 글 폴더는 같은 자리(`BLOG_DIR/<이름>/index.html`)입니다. 겹치면 한쪽이 다른 쪽을
+   * 말없이 덮고 자체검사가 굽기 전체를 세웁니다. 저장하는 문(`normCategories`)이 이미 거르지만,
+   * 굽기는 저장을 안 거친 값(옛 판·손으로 넣은 행)도 받으므로 여기서 한 번 더 세웁니다.
+   */
+  const postSlugs = new Set(posts.map((p) => p.slug))
+  const 쓴주소 = new Set()
+  for (const c of cats) {
+    const bad = slugProblem(c.slug)
+    if (bad || !okSlug(c.slug)) throw new Error(`카테고리 「${c.label}」 주소로 쓸 수 없는 이름입니다: ${JSON.stringify(c.slug)}${bad ? ` — ${bad}` : ''}`)
+    if (postSlugs.has(c.slug)) throw new Error(`카테고리 「${c.label}」 주소가 글 폴더와 겹칩니다 — /blog/${c.slug}/`)
+    /* 둘이 같은 주소면 나중 것이 앞의 것을 덮고, 치우는 기록(`.categories.json`)에는 한 줄만 남습니다 */
+    if (쓴주소.has(c.slug)) throw new Error(`카테고리 주소가 둘 겹칩니다 — /blog/${c.slug}/`)
+    쓴주소.add(c.slug)
+  }
+
+  const main = posts.filter((p) => !hiddenCat(p) && !주인없음(p))
+  const written = preview ? posts.filter((p) => !주인없음(p)) : main
+  const pages = [['blog/index.html', listPage(main, style, conf)]]
+  for (const c of cats) {
+    if (!c.show && !preview) continue
+    const mine = written.filter((p) => catFor(p) === c)
+    pages.push([`blog/${c.slug}/index.html`, listPage(mine, style, confFor(conf, c), c)])
+  }
+  for (const p of written) {
+    const c = catFor(p)
+    pages.push([`blog/${p.slug}/index.html`, postPage(p, style, confFor(conf, c), c)])
+  }
+  return pages
+}
+
+/**
+ * 지난 굽기가 쓴 카테고리 주소의 기록. 카테고리를 지우거나 주소를 바꾸거나 비공개로 돌리면
+ * 옛 `/blog/<slug>/index.html` 이 디스크에 남아 계속 서빙됩니다 — 「주소로도 안 열리게」가 거짓이 됩니다.
+ *
+ * 디스크를 훑어 「지금 카테고리가 아닌 폴더」를 지우지 않습니다. 이 폴더에는 굽기가 만들지 않은 것
+ * (손으로 되살린 휴지통 폴더 등)도 있고, 그것을 건드리지 않는 것이 이 모듈의 규약입니다(`bakeNow`).
+ * 대신 **우리가 쓴 것만** 적어 두고 다음 굽기가 그 목록과 지금 목록의 차이만 치웁니다.
+ * 점 파일이라 nginx 가 안 냅니다(`writeAtomic` 의 임시 파일과 같은 수법).
+ */
+const CAT_MANIFEST = `${OUT}/.categories.json`
+
+/** 표식(`CAT_MARK`)을 가진 폴더 — 기록이 없을 때만 씁니다. 글 수만큼 파일을 여는 일이라 평소엔 안 합니다 */
+const markedCategoryDirs = async () => {
+  const out = []
+  for (const e of readdirSync(OUT, { withFileTypes: true })) {
+    if (!e.isDirectory() || /^\d+$/.test(e.name) || !okSlug(e.name)) continue
+    const html = await readFile(`${OUT}/${e.name}/index.html`, 'utf8').catch(() => '')
+    if (html.includes(CAT_MARK)) out.push(e.name)
+  }
+  return out
+}
+
+const sweepCategories = async (now) => {
+  let old = null
+  try { old = JSON.parse(await readFile(CAT_MANIFEST, 'utf8')).slugs || [] } catch { /* 첫 굽기이거나 기록이 사라졌습니다 */ }
+  /* 기록이 없으면 디스크에서 우리 표식을 찾습니다 — 안 그러면 한 번 잃은 기록이 청소를 영영 멈춥니다 */
+  for (const slug of old ?? await markedCategoryDirs()) {
+    /* 숫자 이름은 글 폴더입니다. 기록이 손으로 고쳐졌더라도 글의 페이지는 절대 안 지웁니다 */
+    if (now.has(slug) || !okSlug(slug) || /^\d+$/.test(String(slug))) continue
+    await rm(`${OUT}/${slug}/index.html`, { force: true })
+    /* 카테고리 폴더에는 사진이 없어 비면 폴더째 치웁니다. 비어 있지 않으면(우리 것이 아니면) 그대로 둡니다 */
+    await rmdir(`${OUT}/${slug}`).catch(() => {})
+  }
+  await writeFile(CAT_MANIFEST, JSON.stringify({ slugs: [...now] }))
+}
+
 async function bakeNow(pool) {
   resetAssetVersion()
   const conf = await loadConf(pool)
-  const { rows } = await pool.query(POSTS_SQL(0))
+  /* 비공개 카테고리의 글은 처음부터 읽지 않습니다(`POSTS_SQL` 주석) */
+  const hid = privateIds(conf)
+  const all = (await pool.query(POSTS_SQL(0), [hid])).rows
+  /**
+   * 주인 잃은 글 — 카테고리를 가리키는데 그 카테고리가 설정에 없는 글입니다. **안 내보냅니다**
+   * (`shared/category.mjs` 의 `orphanOf`). 비공개 카테고리였을 수 있어서, 모를 때는 숨기는 쪽으로
+   * 기울입니다. 정상 경로로는 안 생기므로 생기면 그 자체가 알릴 거리입니다 — `warn` 에 담습니다.
+   */
+  const known = new Set((conf.blog.categories || []).map((c) => c.id))
+  const 주인없는글 = all.filter((p) => orphanOf(p.meta, known))
+  const rows = all.filter((p) => !orphanOf(p.meta, known))
+  const 주인없는주소 = new Set(주인없는글.map((p) => p.slug))
   /**
    * 글 폴더에는 올린 사진도 같이 삽니다 — 통째로 지우고 다시 만들면 원본이 날아갑니다.
    * `index.html` 만 덮어쓰고, 글 자체가 없어진 폴더만 지웁니다.
@@ -1909,10 +2161,12 @@ async function bakeNow(pool) {
   /**
    * 「존재하는 글」과 「공개 중인 글」은 다릅니다. 숨긴 글은 폴더를 남기고 index.html 만
    * 삭제합니다 — 사진 원본이 그 폴더에 있어 다시 공개할 때 살아나야 합니다.
+   * 비공개 카테고리의 글도 같은 처지입니다 — 카테고리를 다시 공개하면 글도 살아나야 합니다.
    *
-   * BLOG_DIR 안에는 폴더 이름이 두 종류 섞여 있습니다.
-   *   {슬러그}/index.html   글 페이지    (postPage 가 씁니다)
-   *   {번호}/{첨부id}       업로드 사진  (admin-api 가 씁니다)
+   * BLOG_DIR 안에는 폴더 이름이 세 종류 섞여 있습니다.
+   *   {슬러그}/index.html   글 페이지       (postPage 가 씁니다)
+   *   {번호}/{첨부id}       업로드 사진     (admin-api 가 씁니다)
+   *   {카테고리}/index.html 카테고리 목록   (listPage 가 씁니다 — 숫자가 아닌 이름만)
    *
    * 숫자 이름 폴더만 순회하면 슬러그를 지정한 글이 빠져, 글을 내려도 {슬러그}/index.html 이
    * 남아 계속 공개됩니다. 그래서 DB 의 슬러그를 기준으로 순회합니다 — 디스크를 훑지 않으므로
@@ -1921,7 +2175,9 @@ async function bakeNow(pool) {
   /* 글만 훑습니다. 작업(`kind='work'`)은 `/portfolio/{번호}/` 로 나가지 루트의
        `{슬러그}/` 가 아닙니다 — 종류를 안 가르면 작업 슬러그가 같은 이름의 글 폴더를 겨눈다 */
   const alive = await pool.query(
-    `select slug, (published_at is not null and not hidden) as pub from posts where kind = 'post'`)
+    `select slug, (published_at is not null and not hidden
+                   and not (coalesce(meta->>'category', '') = any($1::text[]))) as pub
+       from posts where kind = 'post'`, [hid])
   /** 슬러그 → 공개 중인지 여부 */
   const bySlug = new Map(alive.rows.map((r) => [r.slug, r.pub]))
 
@@ -1934,7 +2190,7 @@ async function bakeNow(pool) {
    * 비공개 글은 index.html 만 삭제합니다. 키는 슬러그입니다(위 주석 참고).
    */
   for (const [slug, pub] of bySlug) {
-    if (!pub) await rm(`${OUT}/${slug}/index.html`, { force: true })
+    if (!pub || 주인없는주소.has(slug)) await rm(`${OUT}/${slug}/index.html`, { force: true })
   }
   /**
    * 색과 글꼴은 사이트 전체 설정입니다. 블로그만 옛 색이면 같은 사이트로 인식되지 않습니다.
@@ -1943,11 +2199,19 @@ async function bakeNow(pool) {
    * 설정을 저장하지 않은 사이트의 화면이 안 바뀝니다.
    */
   const style = themeStyle(conf.theme) + headStyle(conf.header, conf.theme)
-  await writeFile(`${OUT}/index.html`, listPage(rows, style, conf))
-  for (const p of rows) {
-    await mkdir(`${OUT}/${p.slug}`, { recursive: true })
-    await writeFile(`${OUT}/${p.slug}/index.html`, postPage(p, style, conf))
+  const blogOut = blogPages(rows, style, conf)
+  /* `blogPages` 는 발행 글의 주소만 압니다. 초안·숨김 글의 폴더도 디스크에 있으므로 DB 의 모든 글
+     주소와 한 번 더 견줍니다 — 겹치면 그 글이 다시 발행되는 날 카테고리 목록이 글을 덮습니다 */
+  for (const c of conf.blog.categories || []) {
+    if (bySlug.has(c.slug)) throw new Error(`카테고리 「${c.label}」 주소가 글 폴더와 겹칩니다 — /blog/${c.slug}/`)
   }
+  for (const [rel, html] of blogOut) {
+    const at = `${OUT}/${rel.slice('blog/'.length)}`
+    await mkdir(dirname(at), { recursive: true })
+    await writeFile(at, html)
+  }
+  /* 지난번에 썼는데 이번에 안 쓴 카테고리 페이지를 치웁니다 — 먼저 쓰고 나중에 지우므로 빈 화면 구간이 없습니다 */
+  await sweepCategories(new Set(publicCats(conf).map((c) => c.slug)))
 
   /* 생성 결과를 스스로 검사합니다. 생성된 글은 public/ 밖의 볼륨에 있어서 레포를 검사하는
      도구로는 닿지 않습니다. 검사는 결과를 만든 쪽이 합니다 */
@@ -1974,6 +2238,10 @@ async function bakeNow(pool) {
   }
   /* 화면은 블로그 생성이 끝난 뒤에 생성합니다. 화면 생성이 실패해도 블로그는 이미 서빙됩니다 */
   const { pages, works, warn } = await bakePages(pool, { conf })
+  for (const p of 주인없는글) {
+    warn.push(`글 ${p.slug} 의 카테고리(${orphanOf(p.meta, known)})가 설정에 없습니다 — 안 내보냈습니다.`
+      + ' 홈디자인 → 블로그에서 그 카테고리를 되살리거나, 목록에서 이 글의 카테고리를 다시 정하세요')
+  }
   return { count: rows.length, pages, works, warn }
 }
 
