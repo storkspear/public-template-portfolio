@@ -20,6 +20,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import { renderPostHead, normalizeTitle } from './vendor/post-editor-core/title.js'
 import { configureAttachments } from './vendor/post-editor-core/attachments.js'
 import { toPublishedHtml } from './vendor/post-editor-core/serialize.js'
+import { fromHtml } from 'hast-util-from-html'
+import { toHtml } from 'hast-util-to-html'
 import { preloadLanguages } from './vendor/post-editor-core/highlight.js'
 
 /**
@@ -34,13 +36,13 @@ await preloadLanguages()
 import site from '../site.config.mjs'
 import { pgSsl } from './local.mjs'
 import { CAT_STRIP_STYLES, BUILTIN_FAVICON, DEFAULTS, inkOn, ITEM_LINKS, ITEM_SIZES, KEYS, NAV_LINKS, SHOT_KNOBS, SHOT_MAX, isExternal, mainStart, mutedOn, normalize, PAGE_SAMPLES, PAGE_SOURCE_MINE,
-  ICON_OF, OUTLINE_SKINS, SERVICE_ICONS } from '../shared/site-vocab.mjs'
+  DECK_STYLES, ICON_OF, OUTLINE_SKINS, PAPER_DECOS, SERVICE_ICONS } from '../shared/site-vocab.mjs'
 import { MENU_ICON_OF } from '../shared/menu-icons.mjs'
-import { categoryOf, orphanOf, slugProblem } from '../shared/category.mjs'
+import { ALL_LABEL, categoryOf, orphanOf, slugProblem } from '../shared/category.mjs'
 import { ymd } from '../shared/text.mjs'
 import { TAG, esc, summarize, unesc } from './html-text.mjs'
 import { nested, okSlug, realOf, unsafeBit, writeAtomic } from './bake-safety.mjs'
-import { emitOmit, fontStack, headVars, knobVars, lhVars, menuVars, outlineVars, pageFontVars, themeVars, tocVars }
+import { deckVars, emitOmit, fontStack, headVars, knobVars, lhVars, menuVars, outlineVars, pageFontVars, themeVars, tocVars }
   from '../shared/site-css.mjs'
 import { DUMMY_POSTS, DUMMY_WORKS } from './dummy.mjs'
 
@@ -70,7 +72,8 @@ const readAssetVersion = () => {
   try {
     let last = 0
     for (const e of readdirSync(CSS_DIR, { recursive: true, withFileTypes: true })) {
-      if (!e.isFile() || !e.name.endsWith('.css')) continue
+      /* 스크립트(peek.js)도 같은 토큰을 답니다 — CSS 만 보면 스크립트만 고친 날 옛 파일이 캐시에 남습니다 */
+      if (!e.isFile() || !/\.(css|js)$/.test(e.name)) continue
       const m = statSync(join(e.parentPath || e.path, e.name)).mtimeMs
       if (m > last) last = m
     }
@@ -169,6 +172,9 @@ const PAGES = process.env.PAGES_DIR || join(dirname(OUT), 'www')
  */
 const previewLinks = (html, base = '/preview') =>
   String(html).replace(/(<a\b[^>]*?\shref\s*=\s*)(["'])\/(?!\/|preview(?:[\/?#"']|$))/gi, `$1$2${base}/`)
+    /* 곁에 뜨는 글(`.peek` 의 iframe)도 같이 옮깁니다 — 관리자 오리진의 `/blog/` 는 사진만 내주는
+       자리라, 안 옮기면 미리보기의 판이 전부 404 로 뜹니다. 영상 iframe 은 바깥 주소라 안 걸립니다 */
+    .replace(/(<iframe\b[^>]*?\ssrc\s*=\s*)(["'])\/(?!\/|preview(?:[\/?#"']|$))/gi, `$1$2${base}/`)
 
 /* 속성값 자리만 바꿉니다. 표에 없는 id 는 참조를 그대로 남깁니다.
    빈 src 로 두면 브라우저가 현재 페이지를 한 번 더 받습니다. */
@@ -333,7 +339,33 @@ ${vars}}
  */
 const skinCls = (blog) =>
   (blog.template === 'outline' && blog.outline.skin !== OUTLINE_SKINS[0].value
-    ? ` bo-${esc(blog.outline.skin)}` : '')
+    ? ` bo-${esc(blog.outline.skin)}` : '') + deckCls(blog)
+
+/** 종이 카드인가 — 장식과 바탕색은 이때만 읽힙니다 */
+const isPaper = (blog) => blog.template === 'cards' && blog.deck.cards === 'paper'
+
+/**
+ * 갈래 밑의 모양(`DECK_STYLES`) — 고른 갈래의 값 하나만 `ls-<값>` 으로 답니다. 첫 값이면
+ * 아무것도 안 답니다(`skinCls` 와 같은 규약: 쓰던 사람의 HTML 이 한 바이트도 안 바뀝니다).
+ * 종이 카드의 장식은 `ld-<값>` 으로 따로 답니다 — 「없음」이면 안 답니다.
+ */
+const deckCls = (blog) => {
+  const list = DECK_STYLES[blog.template]
+  const v = list && blog.deck[blog.template]
+  return (list && v !== list[0].value ? ` ls-${esc(v)}` : '')
+    + (isPaper(blog) && blog.deck.deco !== PAPER_DECOS[0].value ? ` ld-${esc(blog.deck.deco)}` : '')
+}
+
+/** 종이 카드의 바탕색. 종이를 고르고 색을 정했을 때만 냅니다(`outlineStyle` 과 같은 규약) */
+const deckStyle = (blog) => {
+  if (!isPaper(blog)) return ''
+  const vars = emitOmit(deckVars(blog.deck))
+  return vars ? `<style data-deck>
+:root {
+${vars}}
+</style>
+` : ''
+}
 
 /** 목록 제목(.lh)의 모양. 블로그와 포트폴리오가 값을 따로 갖습니다 */
 const lhStyle = (head) => `<style data-lh>
@@ -614,6 +646,15 @@ const readFragment = async (page, source = PAGE_SOURCE_MINE) => {
 }
 
 /** 100편이면 `001`…`100` — 자릿수가 늘어도 번호 열이 안 흔들립니다 */
+/**
+ * 번호 자릿수 — 목록에서 제일 큰 번호에 맞춥니다. 두 자리가 바닥값입니다(한 자리면 줄이 들쭉날쭉).
+ *
+ * 번호는 **목록을 거꾸로 셉니다.** 목록은 최신순인데 번호를 위에서부터 1 로 매기면 맨 위
+ * 최신 글이 「01」이 되고, 글이 쌓일 때마다 같은 글의 번호가 계속 바뀝니다. 아래에서부터
+ * 세면 첫 글이 늘 01 이고 맨 위가 지금까지 쓴 편수입니다 — 번호의 뜻이 「몇 편째 글인가」가 됩니다.
+ * 글 주소(`/blog/15/`)의 번호와는 다른 것입니다. 그쪽은 시퀀스가 주고 안 바뀝니다.
+ * 카테고리 페이지는 그 목록 안에서 다시 셉니다(그 카테고리의 몇 편째).
+ */
 const digitsOf = (posts) => Math.max(2, String(posts.length).length)
 const yearOf = (p) => new Date(p.published_at).getFullYear()
 /**
@@ -637,22 +678,25 @@ function yearLabels(posts, always = false) {
 const YEARED = new Set(['rows', 'ledger', 'lines', 'runin', 'feed'])
 
 /**
- * 읽는 시간(분) — 한글은 분당 500자, 라틴은 분당 230단어. 코드 블록은 읽는 글이 아니라 뺍니다.
- * 공백까지 세면 영어 1000단어가 「10분」으로 나왔습니다. 최소 1분. 보일지는 갈래가 정합니다
+ * 글의 태그 칩 — `posts.meta.tags`(문자열 배열, admin-api 의 `normalizeMeta` 가 다듬어 저장).
+ *
+ * 태그가 없는 글은 **줄째 안 냅니다.** 빈 상자라도 내면 카드 아래에 선 하나가 남습니다.
+ * 보일지는 갈래가 정합니다(카드만 켭니다). 태그 페이지가 아직 없어 링크가 아니라 글자 칩입니다.
+ * 이 자리에는 예전에 읽는 시간(「3분」)이 섰습니다 — 읽는 속도는 사람마다 달라 뺐습니다(주인 결정).
  */
-const readMinutes = (html) => {
-  const text = unesc(String(html || '')
-    .replace(new RegExp(`<pre${TAG}>[\\s\\S]*?</pre>`, 'gi'), ' ')
-    .replace(new RegExp(`<${TAG}>`, 'g'), ' '))
-  const hangul = (text.match(/[\u3131-\u318e\uac00-\ud7a3]/g) || []).length
-  const words = (text.match(/[A-Za-z0-9]+/g) || []).length
-  return Math.max(1, Math.round(hangul / 500 + words / 230))
+const tagsOf = (p) => {
+  const tags = (Array.isArray(p.meta?.tags) ? p.meta.tags : []).filter((t) => typeof t === 'string' && t.trim())
+  return tags.length ? `        <span class="b-tags">${tags.map((t) => `<span>${esc(t.trim())}</span>`).join('')}</span>\n` : ''
 }
 
-/** 날짜 조각 — 「16 / 9월」「2026년 9월 16일」처럼 CSS 가 다시 조립할 수 있게. `ymd` 와 같은 시간대. 숫자뿐이라 주입 통로가 없습니다 */
+/**
+ * 날짜 조각 — 「2026년 9월 16일」「09.16」처럼 CSS 가 다시 조립할 수 있게. `ymd` 와 같은 시간대. 숫자뿐이라 주입 통로가 없습니다.
+ * `data-md` 는 0 을 채운 「월.일」입니다 — CSS 의 `attr()` 로는 0 을 못 채워 여기서 만들어 보냅니다(날짜 피드가 씁니다).
+ */
 const dateAttrs = (d) => {
   const t = new Date(d)
-  return ` data-y="${t.getFullYear()}" data-m="${t.getMonth() + 1}" data-d="${t.getDate()}"`
+  const two = (n) => String(n).padStart(2, '0')
+  return ` data-y="${t.getFullYear()}" data-m="${t.getMonth() + 1}" data-d="${t.getDate()}" data-md="${two(t.getMonth() + 1)}.${two(t.getDate())}"`
 }
 
 /**
@@ -686,13 +730,13 @@ const blogSubs = (conf, here = null) => publicCats(conf)
   .map((c) => ({ href: catHref(c), label: c.label, current: here === catHref(c) ? 'page' : '' }))
 
 /**
- * 목록 위의 카테고리 줄 — `기본 · 개발 · 일상`. 「기본」이 `/blog/` 로 가는 링크입니다.
+ * 목록 위의 카테고리 줄 — `전체 · 개발 · 일상`. 「전체」(`ALL_LABEL`)가 `/blog/` 로 가는 링크입니다.
  *
  * 헤더 메뉴의 하위 메뉴로 두지 않습니다. 헤더와 드로어가 서로 배타(`headerHtml` 의 `navPart`)라
  * 어느 한쪽에 둔 하위 메뉴는 다른 벌의 사이트에서 안 보이고, 둘 다에 두면 헤더 CSS 를 통째로
  * 손대야 합니다. 목록 위 한 줄이면 열두 갈래 어디서나 같은 자리에 섭니다.
  *
- * 공개 카테고리가 하나도 없으면 **아무것도 안 냅니다.** 「기본」 하나만 선 줄은 고를 것이 없는
+ * 공개 카테고리가 하나도 없으면 **아무것도 안 냅니다.** 「전체」 하나만 선 줄은 고를 것이 없는
  * 메뉴이고, 빈 줄이라도 내면 카테고리를 안 쓰는 사이트의 HTML 이 전부 달라집니다(골든 64벌).
  */
 const catStrip = (conf, currentId = '') => {
@@ -704,7 +748,7 @@ const catStrip = (conf, currentId = '') => {
   const cls = conf.blog.catStrip && conf.blog.catStrip !== CAT_STRIP_STYLES[0].value
     ? ` b-cats-${esc(conf.blog.catStrip)}` : ''
   return `  <nav class="b-cats${cls}" aria-label="카테고리">
-${[link('/blog/', '기본', !currentId), ...cats.map((c) => link(catHref(c), c.label, c.id === currentId))].join('\n')}
+${[link('/blog/', ALL_LABEL, !currentId), ...cats.map((c) => link(catHref(c), c.label, c.id === currentId))].join('\n')}
   </nav>
 `
 }
@@ -735,7 +779,7 @@ const CAT_MARK = '<meta name="page-kind" content="category">'
  *             쪽이 `confFor` 로 이미 갈아 끼운 것이라 여기서는 주소·제목·줄의 「지금」만 가릅니다.
  */
 export const listPage = (posts, style, conf = DEFAULTS, cat = null) => shell({
-  theme: style + pageFontStyle(conf.blog.font) + lhStyle(conf.blog.head) + outlineStyle(conf.blog),
+  theme: style + pageFontStyle(conf.blog.font) + lhStyle(conf.blog.head) + outlineStyle(conf.blog) + deckStyle(conf.blog),
   footer: conf.footer, colors: conf.theme,
   header: conf.header,
   chrome: conf.blog.chrome,
@@ -758,14 +802,13 @@ ${listHead(conf.blog.head, posts.length)}${catStrip(conf, cat?.id || '')}
 ${(() => { const ys = YEARED.has(conf.blog.template) ? yearLabels(posts, conf.blog.template === 'feed') : posts.map(() => '')
     return posts.map((p, i) => ys[i] + `    <li class="b-item">
       <a href="/blog/${encodeURIComponent(p.slug)}/">
-        <span class="b-no">${String(i + 1).padStart(digitsOf(posts), '0')}</span>
+        <span class="b-no">${String(posts.length - i).padStart(digitsOf(posts), '0')}</span>
         <span class="b-shot">${p.cover ? `<img src="${esc(p.cover)}" alt="" loading="lazy">` : ''}</span>
         <span class="b-body">
           <span class="b-title">${esc(p.title)}</span>
 ${ledeOf(p)}        </span>
         <span class="b-date"${dateAttrs(p.published_at)}>${ymd(p.published_at)}</span>
-        <span class="b-read">${readMinutes(p.body)}분</span>
-      </a>
+${tagsOf(p)}      </a>
     </li>`).join('\n') })()}
   </ul>
 </main>`,
@@ -850,7 +893,97 @@ ${items.map((it) => `      <a href="#${esc(it.id)}"${it.sub ? ' class="sub"' : '
 
 /* 표는 부르는 쪽이 이미 깔아 둡니다(postPage 가 제목 배너보다 먼저 깝니다).
    여기서 다시 깔면 글마다 Map 을 두 번 만듭니다 */
-const articleBody = (p) => withAnchors(resolveAttachments(toPublishedHtml(p.body || '')))
+const articleBody = (p, link = null, mode = 'page') => {
+  const { html, peeks } = peekLinks(resolveAttachments(toPublishedHtml(p.body || '')), p, link, mode)
+  return { ...withAnchors(html), peeks }
+}
+
+/**
+ * 「내 글」 링크(`<a data-post="슬러그">`)를 곁에 띄우는 모양으로 바꿉니다.
+ *
+ * 편집기가 저장한 것은 그 글로 가는 보통 링크입니다(`href="/blog/31/"`). 여기서
+ *   - 링크는 `href="#peek-N"` 으로 바꾸고(스크립트 없이도 `:target` 으로 열립니다),
+ *   - 그 링크가 든 **맨 위 단계 블록 바로 뒤**에 판(`section.peek`)을 넣습니다. 판 안의 글은
+ *     `/blog/<슬러그>/peek/` — 헤더 없이 본문만 있는 그 글의 다른 벌(`peekPage`)입니다.
+ *
+ * 지키는 것:
+ *   - `data-post` 가 없는 글은 **글자 하나 안 건드립니다.** 한 번 더 읽고 쓰는 것만으로도
+ *     바이트가 달라질 수 있고, 그러면 이 기능을 안 쓰는 글의 골든이 전부 흔들립니다.
+ *   - 판에는 **글자를 두지 않습니다.** 요약(`summarize`)이 본문 글자로 셉니다.
+ *     「참고 글」·닫기 표시는 CSS 가 그립니다.
+ *   - 대상이 이번에 나가는 글이 아니면(초안·숨김·비공개 카테고리·지운 글) 링크를 **풀어 글자만**
+ *     남기고 알립니다. 주소를 남기면 404 로 가는 링크가 되고, 제목을 남기면 숨긴 글의 존재가 샙니다.
+ *
+ * `link` = { open: Map(슬러그 → 제목), warn: [] }. 안 넘기면(견본 한 장만 굽는 검사 등) 링크를
+ * 보통 링크로 둡니다 — 무엇이 공개인지 모르는 채로 판을 만들 수 없습니다.
+ *
+ * `mode = 'peek'` 는 판 안에 들어갈 벌입니다. 거기서는 판을 또 만들지 않고(끝없이 겹칩니다)
+ * 다른 글의 `peek/` 로 가는 링크로 둡니다 — 판 안에서 그 글로 넘어갑니다.
+ */
+const peekLinks = (html, p, link, mode) => {
+  if (!link || !html.includes('data-post=')) return { html, peeks: 0 }
+  const tree = fromHtml(html, { fragment: true })
+  let n = 0
+  const sections = []                     // [맨 위 블록, 그 뒤에 넣을 판들]
+  const walk = (node, top) => {
+    if (!node.children) return
+    node.children = node.children.flatMap((c) => {
+      if (c.type !== 'element') return [c]
+      /* 맨 위 단계에 놓인 것은 그것이 제 블록입니다(편집기는 늘 문단에 싸지만, 손으로 쓴 본문은 아닐 수 있습니다) */
+      const mine = top || c
+      const slug = c.tagName === 'a' ? c.properties?.dataPost : undefined
+      if (typeof slug !== 'string') {
+        /* 판 안의 벌은 `<base target="_top">` 이라 `#각주` 같은 글 안 링크까지 창 전체를 이 벌로 보냅니다 — 제자리에서 열게 둡니다 */
+        if (mode === 'peek' && c.tagName === 'a' && typeof c.properties?.href === 'string' && c.properties.href.startsWith('#')) {
+          c.properties = { ...c.properties, target: '_self' }
+        }
+        walk(c, mine); return [c]
+      }
+      /* 이미 바꾼 링크는 다시 안 바꿉니다 — 구운 것을 한 번 더 넣어도 판이 둘 생기지 않게 */
+      if ((c.properties.className || []).includes('peek-link')) return [c]
+      const title = link.open.get(slug)
+      if (title === undefined || slug === p.slug) {
+        if (mode === 'page') {
+          link.warn.push(slug === p.slug
+            ? `글 ${p.slug} 의 링크가 제 글을 가리킵니다 — 링크를 풀어 글자만 내보냈습니다`
+            : `글 ${p.slug} 의 링크가 공개되지 않은 글(${slug})을 가리킵니다 — 링크를 풀어 글자만 내보냈습니다.`
+              + ' 그 글을 발행하면 다음 굽기부터 링크가 살아납니다')
+        }
+        return c.children || []           // 풀어서 글자만
+      }
+      const cls = [...(c.properties.className || []), 'peek-link']
+      const { target: _t, rel: _r, ...rest } = c.properties
+      /* 그 글의 진짜 주소를 따로 들려 보냅니다. `href` 는 판을 여는 자리가 되므로, ⌘클릭·가운데 클릭처럼
+         「새 탭으로 열어 달라」는 누름을 스크립트가 이 주소로 보냅니다 */
+      const real = `/blog/${encodeURIComponent(slug)}/`
+      if (mode === 'peek') {
+        /* 판 안의 벌 — 다른 글의 판 안 벌로. 이 한 줄만 판 안에서 열리고 나머지는 창 전체로 갑니다(<base>) */
+        c.properties = { ...rest, className: cls, href: `${real}peek/`, dataHref: real, target: '_self' }
+        return [c]
+      }
+      n += 1
+      c.properties = { ...rest, className: cls, id: `peek-${n}-from`, href: `#peek-${n}`, dataHref: real }
+      sections.push([mine, {
+        type: 'element', tagName: 'section',
+        properties: { className: ['peek'], id: `peek-${n}`, ariaLabel: '참고 글' },
+        children: [
+          { type: 'element', tagName: 'header', properties: { className: ['peek-bar'] }, children: [
+            { type: 'element', tagName: 'a', properties: { className: ['peek-x'], href: '#peek-0', ariaLabel: '닫기' }, children: [] },
+          ] },
+          { type: 'element', tagName: 'iframe', properties: { loading: 'lazy', src: `/blog/${encodeURIComponent(slug)}/peek/`, title }, children: [] },
+        ],
+      }])
+      return [c]
+    })
+  }
+  walk(tree, null)
+  /* 판은 링크가 든 맨 위 블록 뒤에 — 목록·인용 안의 링크도 그 블록 전체가 끝난 자리입니다.
+     `.prose-body > *` 가 글줄 폭을 잡으므로 판도 맨 위 단계여야 폭이 맞습니다 */
+  if (sections.length) {
+    tree.children = tree.children.flatMap((c) => [c, ...sections.filter(([top]) => top === c).map(([, sec]) => sec)])
+  }
+  return { html: toHtml(tree), peeks: n }
+}
 
 /**
  * 글의 본문 폭 → CSS 변수. 값은 **라이브러리 어휘 셋**입니다(post-editor-core 의
@@ -1011,6 +1144,17 @@ ${ids.map(rule).join('')}
  * 그래서 글마다 제 글 폭에서 셈합니다 — 글줄 + 간격 2rem + 목차 15rem + 양쪽 가장자리.
  * 전체폭 글은 여백이 처음부터 없으므로 아예 안 냅니다.
  */
+/**
+ * 이 문자열은 **글마다 통째로 실립니다**(인라인 `<style>`). 그래서 긴 설명은 여기 바깥에 둡니다 —
+ * 안에 적으면 글 수만큼 같은 글자가 공개면으로 나갑니다.
+ *
+ * **여닫는 체크박스(`.b-sw`)는 `fixed` 여야 합니다.** 막과 ✕ 는 `<label for>` 라, 누르면
+ * 브라우저가 체크박스를 켜면서 **거기로 초점을 옮기고 그 자리를 화면 안으로 끌어옵니다.**
+ * `absolute` 였을 때는 그 칸이 글 머리 바로 뒤에 서 있어서, 시트로 5절에 옮긴 다음 시트를 닫으면
+ * 글이 맨 위로 튀었습니다 — 옮겨 놓고 도로 데려오니 바로가기가 한 일이 없어집니다(주인 확인).
+ * `fixed` 면 늘 화면 안이라 끌어올 자리가 없습니다. 형제 선택자(`~`)는 배치가 아니라 문서
+ * 차례를 보므로 자리를 옮겨도 그대로 걸립니다.
+ */
 const SHEET_CSS = `/* 시트 — 아래에서 올라옵니다. 머리(손잡이·닫기)는 안 구르고 목록만 구릅니다 */
 .b-post .b-jump{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:9;
 float:none;width:auto;max-width:none;height:min(46vh,24rem);max-height:none;margin:0;
@@ -1038,8 +1182,10 @@ width:1px;background:color-mix(in srgb,var(--bji) 16%,transparent)}
 .b-post .b-jump nav{gap:1.05rem}
 /* 단추 · 막 · 닫기 */
 /* 눈으로만 숨깁니다 — display:none 이면 초점을 못 받아 키보드로 열 방법이 없습니다
-(header.css 의 .s-toggle 과 같은 까닭). 넓은 화면에서는 바탕 규칙이 통째로 지웁니다 */
-.b-post .b-sw{display:block;position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;
+(header.css 의 .s-toggle 과 같은 까닭). 넓은 화면에서는 바탕 규칙이 통째로 지웁니다.
+fixed 인 까닭은 bake.mjs 의 이 규칙 위 주석에 적혀 있습니다 */
+.b-post .b-sw{display:block;position:fixed;right:1rem;bottom:1.2rem;
+width:1px;height:1px;margin:-1px;padding:0;border:0;
 overflow:hidden;clip-path:inset(50%);white-space:nowrap;opacity:0}
 .b-post .b-open{display:flex;position:fixed;right:1rem;bottom:1.2rem;z-index:7}
 .b-post .b-sw:checked~.b-open{opacity:0;pointer-events:none}
@@ -1077,6 +1223,42 @@ export const jumpModeCss = (width) => {
    */
   const need = Math.round((rem + 2 * (15 + 2 + 1.5)) * 16)
   return `@media (max-width:${need - 1}px){\n${SHEET_CSS}}`
+}
+
+/**
+ * 판이 뜰 때 본문이 비켜서는 규칙 — 글의 본문 폭에 따라 경계가 달라 글마다 냅니다.
+ * 판·링크의 모양 자체는 blog.css 에 있고, 여기는 **폭이 들어가는 줄**만 냅니다.
+ * (CSS 변수를 새로 만들지 않습니다 — 굽기가 변수를 지으면 site-css 의 계약 검사에 걸립니다.)
+ *
+ * 판 폭을 W(= min(520px, 40vw)), 글줄을 M 이라 하면
+ *   - 전체폭 글: 옮길 여백이 없으니 늘 **줄입니다**(body 오른쪽을 W 만큼 비움).
+ *   - 화면 < M + W + 3rem: 글줄과 판이 한 화면에 안 들어갑니다 — 줄입니다.
+ *   - 그 이상: 글줄 폭은 두고 **모자란 만큼만** 왼쪽으로 옮깁니다. 화면이 넓어 안 겹치면 0 입니다.
+ *       옮기는 양 = (가운데 선 글줄의 오른끝 + 1.5rem) − (판 왼끝)
+ *   - 화면 ≥ M + 18.5rem + W + 1rem (문단 바로가기가 있을 때): 바로가기(15rem + 간격)까지 판 왼쪽에
+ *     서도록 그만큼 더 옮깁니다. 그 아래에서는 스크립트가 바로가기를 「문단」 단추로 물립니다(`.pk-sheet`).
+ *
+ * 1200px 아래(문단 아래로 펼침 · 화면 전체)는 폭과 무관해 blog.css 가 맡습니다.
+ * 스크립트(peek.js)가 두 장 이상을 세울 때는 같은 셈을 판 폭 합계로 직접 합니다.
+ */
+export const peekModeCss = (width, hasJump) => {
+  const W = 'min(520px,40vw)'
+  const shrink = `body:has(.peek:target){padding-right:${W}}`
+  const m = String(width || '38rem')
+  /* 전체폭, 그리고 px 로 못 바꾸는 폭(`80%`·`50vw` …) — 글줄이 얼마인지 굽는 쪽이 모르므로 옮길 양도 못 셉니다.
+     줄이는 쪽은 폭을 몰라도 맞습니다. peek.js 도 같은 판정을 합니다(`full`) */
+  if (width === 'full' || !/^[\d.]+(rem|px)$/.test(m)) return `@media (min-width:1200px){${shrink}}\n${hasJump ? `html.pk-sheet body{\n${SHEET_CSS}}` : ''}`
+  const rem = m.endsWith('rem') ? parseFloat(m) : parseFloat(m) / 16
+  const half = `${rem / 2}rem`
+  const fit = Math.max(1200, Math.round((rem + 3) * 16) + 520)          // 글줄 + 판이 들어가는 폭
+  const nav = Math.round((rem + 18.5 + 1) * 16) + 520                   // 바로가기까지 들어가는 폭
+  const move = (gap) => `body:has(.peek:target) main.b-post{left:calc(-1 * max(0px, ${half} + ${gap} + ${W} - 50vw))}`
+  return [
+    fit > 1200 ? `@media (min-width:1200px) and (max-width:${fit - 1}px){${shrink}}` : '',
+    `@media (min-width:${fit}px){${move('1.5rem')}\nbody:has(.peek:target) .s-head{padding-right:${W}}}`,
+    hasJump ? `@media (min-width:${Math.max(fit, nav)}px){${move('18.5rem')}}` : '',
+    hasJump ? `html.pk-sheet body{\n${SHEET_CSS}}` : '',
+  ].filter(Boolean).join('\n')
 }
 
 export const proseWidthVars = (width) => {
@@ -1125,9 +1307,9 @@ const styleAttr = (vars) =>
  * @param cat  이 글이 속한 공개 카테고리. 있으면 「← 목록」이 그 카테고리로 돌아갑니다 —
  *             글이 사는 자리가 거기라서입니다(작업의 「← 작업」과 같은 결). 없으면 `/blog/`.
  */
-export const postPage = (p, styleTag, conf = DEFAULTS, cat = null) => {
+export const postPage = (p, styleTag, conf = DEFAULTS, cat = null, link = null) => {
   seedAttachments(p)                         /* 제목 배너도 이 표를 참조하므로 본문보다 먼저 준비합니다 */
-  const { html: body, items } = articleBody(p)
+  const { html: body, items, peeks } = articleBody(p, link)
   const jump = conf.blog.toc.show ? jumpHtml(items, conf.blog.toc) : ''
   const widthAttr = styleAttr(proseWidthVars(p.width))
   /**
@@ -1174,14 +1356,69 @@ export const postPage = (p, styleTag, conf = DEFAULTS, cat = null) => {
 <style>
   /* 배너의 100vw 를 자릅니다. 둘은 한 짝입니다 — 까닭은 굽기의 postPage 주석에. */
   html { overflow-x: hidden; }
-  body { overflow-x: clip; }${jump ? `\n${jumpModeCss(p.width)}\n${tocTimelineCss(items)}` : ''}
+  body { overflow-x: clip; }${jump ? `\n${jumpModeCss(p.width)}\n${tocTimelineCss(items)}` : ''}${peeks ? `\n${peekModeCss(p.width, !!jump)}` : ''}
 </style>
-`,
+${peeks ? `<script src="/assets/peek.js?v=${assetVersion()}" defer></script>\n` : ''}`,
     /* 갈래 이름을 안 답니다 — 글은 한 가지 모양입니다(위 postPage 주석).
        `b-post` 만으로 blog.css 가 제목·날짜·본문 여백을 정합니다 */
-    body: `<main class="wrap b-post${fullCls}"${widthAttr}>
+    /* `#peek-0` 은 닫기가 가는 곳입니다 — 화면에 붙어 있어(blog.css) 닫을 때 스크롤이 안 움직입니다.
+       본문 밖에 둡니다: 본문 안이면 요약·글줄 폭 규칙에 걸립니다 */
+    body: `${peeks ? '<span id="peek-0"></span>\n' : ''}<main class="wrap b-post${fullCls}"${widthAttr}>
 ${head}
 ${jump}
+  <article class="prose">
+    <div class="prose-body">
+${body}
+    </div>
+  </article>
+</main>`,
+  })
+}
+
+/**
+ * 곁에 뜨는 판 안에 들어갈 벌 — 같은 글을 헤더·푸터·문단 바로가기 없이 본문만.
+ *
+ * `/blog/<슬러그>/peek/index.html` 로 나갑니다. 공개 글 **전부**에 대해 굽습니다: 링크된 글만
+ * 구우면 링크가 끊긴 날 치울 목록을 따로 들고 있어야 하는데, 전부 구우면 글의 생사와 같이
+ * 움직입니다(`bakeNow` 가 `index.html` 과 함께 지웁니다).
+ *
+ *   - 검색엔진에는 원래 글 주소를 `canonical` 로 알리고 `noindex` 를 답니다 — 같은 글이 두 주소에 있습니다.
+ *   - `<base target="_top">`: 판 안에서 누른 링크는 창 전체로 갑니다. 판 안에서 넘어가는 것은
+ *     다른 글의 이 벌로 가는 「내 글」 링크뿐입니다(`peekLinks` 가 `target="_self"` 를 답니다).
+ *   - 머리의 카테고리·「본문으로 이동」은 **이 벌이 직접** 답니다. 판 바깥의 머리에 두면 판 안에서
+ *     다른 글로 넘어갔을 때 옛 글의 제목이 남습니다(바깥은 스크립트 없이 못 고칩니다).
+ *   - 본문 폭은 늘 판 폭입니다 — 글이 고른 폭(`p.width`)은 판 안에서 뜻이 없습니다.
+ */
+export const peekPage = (p, styleTag, conf = DEFAULTS, cat = null, link = null) => {
+  seedAttachments(p)
+  const { html: body } = articleBody(p, link, 'peek')
+  const t = normalizeTitle(p.title_doc || { text: p.title })
+  const when = `<time class="b-when" datetime="${new Date(p.published_at).toISOString()}"` +
+               ` style="text-align:${t.align}">${ymd(p.published_at)}</time>`
+  const head = '  ' + renderPostHead(t, 'viewport').replace(/<\/header>\s*$/, when + '</header>')
+  const url = `/blog/${encodeURIComponent(p.slug)}/`
+  return shell({
+    theme: styleTag + pageFontStyle(conf.blog.font),
+    chrome: false, foot: 'none',
+    title: `${p.title} — ${siteName(conf, site.siteTitle)}`, favicon: faviconOf(conf.site),
+    description: summarize(body) || site.description,
+    canonical: `${site.origin}${url}`,
+    head: `<meta name="robots" content="noindex">
+<base target="_top">
+<link rel="stylesheet" href="/assets/blog.css?v=${assetVersion()}">
+<link rel="stylesheet" href="/assets/templates/blog.css?v=${assetVersion()}">
+<link rel="stylesheet" href="/assets/fonts.css?v=${assetVersion()}">
+<link rel="stylesheet" href="/assets/fonts.local.css?v=${assetVersion()}">
+<link rel="stylesheet" href="/assets/prose.css?v=${assetVersion()}">
+<style>
+  html { overflow-x: hidden; }
+  body { overflow-x: clip; }
+</style>
+`,
+    /* 폭 변수는 전체폭 글과 같은 길(`proseWidthVars`)로 냅니다 — 여기서 이름을 직접 적으면 변수를 짓는 곳이 둘이 됩니다 */
+    body: `<main class="wrap b-post b-full b-peek"${styleAttr(proseWidthVars('full'))}>
+  <div class="pk-head">${cat ? `<span class="pk-cat">${esc(cat.label)}</span>` : '<span></span>'}<a class="pk-go" href="${url}">본문으로 이동</a></div>
+${head}
   <article class="prose">
     <div class="prose-body">
 ${body}
@@ -1932,17 +2169,40 @@ export async function bakePreview(pool, conf) {
   const style = themeStyle(conf.theme) + headStyle(conf.header, conf.theme)
   /* 미리보기는 비공개 카테고리의 글도 읽습니다(`$1` 이 빈 목록) — 공개 전의 카테고리를 그 페이지에서
      미리 보려고. `/blog/` 에서는 `blogPages` 가 똑같이 뺍니다(공개면과 같은 규칙) */
-  const { rows } = await pool.query(POSTS_SQL(12), [[]])
-  /* 목록에 표시된 글은 상세까지 전부 생성합니다(최대 12편). 위에서 링크를 미리보기 경로로
-     바꿨으므로 생성하지 않은 글을 누르면 404 가 표시됩니다.
-     공개 생성과 같은 함수(`blogPages`)를 씁니다 — 카테고리 페이지와 줄까지 한 벌입니다 */
-  const blog = async (where, list) => {
+  const { rows } = await pool.query(POSTS_SQL(0), [[]])
+  /**
+   * 목록과 카테고리 페이지는 글 **전부**로 굽습니다. 「실제 데이터로 확인」은 방문자가 볼 바로 그
+   * 화면이어야 합니다. 예전에는 최신 12편만 읽어서, 최신 글이 한 카테고리에 몰리면 다른 카테고리
+   * 페이지가 빈 목록으로 떴습니다(26-10-15, 최신 12편이 전부 News 라 「홈서버 구축」이 빈 화면).
+   *
+   * 상세는 일부만 굽습니다. 글 하나의 상세와 곁뜨기가 30ms 남짓이라 88편이면 2.6초가 들고,
+   * 미리보기는 설정을 바꿀 때마다 다시 굽습니다. 최신 12편과 카테고리마다 최신 3편만 굽고,
+   * 나머지 글의 링크는 공개 사이트의 그 글로 보냅니다(`outLinks`) — 미리보기 경로로 두면 404 입니다.
+   */
+  const 상세 = new Set(rows.slice(0, 12).map((p) => p.slug))
+  const 카테고리별 = new Map()
+  for (const p of rows) {
+    const k = categoryOf(p.meta) || ''
+    const n = 카테고리별.get(k) || 0
+    if (n < 3) { 상세.add(p.slug); 카테고리별.set(k, n + 1) }
+  }
+  const 글주소 = new Set(rows.map((p) => String(p.slug)))
+  /* 굽지 않은 글을 가리키는 `/blog/<글>/` 링크와 곁뜨기를 공개 사이트 주소로 바꿉니다.
+     카테고리 주소(`/blog/<카테고리>/`)는 글 주소가 아니라 건드리지 않습니다 */
+  const outLinks = (html, detail) => !detail ? html : String(html).replace(
+    /(\s(?:href|src)\s*=\s*)(["'])\/blog\/([^\/"'?#]+)\//gi,
+    (all, lead, q, seg) => {
+      const slug = decodeURIComponent(seg)
+      return 글주소.has(slug) && !detail.has(slug) ? `${lead}${q}${site.origin}/blog/${seg}/` : all
+    })
+  /* 공개 생성과 같은 함수(`blogPages`)를 씁니다 — 카테고리 페이지와 줄까지 한 벌입니다 */
+  const blog = async (where, list, detail = null) => {
     const base = `/preview/${where}`
-    const pages = blogPages(list, style, conf, { preview: true })
+    const pages = blogPages(list, style, conf, { preview: true, detail })
     for (const [rel, html] of pages) {
       const at = `${into}/${where}/${rel}`
       await mkdir(dirname(at), { recursive: true })
-      await writeAtomic(at, previewLinks(html, base))
+      await writeAtomic(at, previewLinks(outLinks(html, detail), base))
     }
     /**
      * 이번에 안 쓴 폴더를 치웁니다 — `bakePages` 가 `portfolio/` 에 하는 것과 같은 수법입니다.
@@ -1956,7 +2216,7 @@ export async function bakePreview(pool, conf) {
       if (e.isDirectory() && !keep.has(e.name)) await rm(`${into}/${where}/blog/${e.name}`, { recursive: true, force: true })
     }
   }
-  await blog('real', rows)
+  await blog('real', rows, 상세)
   /**
    * 견본 글도 상세까지 생성합니다. 목록만 견본이면 제목을 눌렀을 때 404 가 표시됩니다.
    *
@@ -1979,11 +2239,20 @@ export async function bakePreview(pool, conf) {
   }
   const 견본폭 = rows.length ? 흔한폭(rows) : null
   /* 견본 글을 카테고리에 돌아가며 앉힙니다 — 안 앉히면 카테고리 페이지가 빈 목록이라
-     그 페이지의 판짜기를 고를 수 없습니다. 카테고리가 없으면 예전과 같이 없음 */
+     그 페이지의 판짜기를 고를 수 없습니다. 카테고리가 없으면 예전과 같이 없음.
+     **공개 카테고리에만** 돌립니다. 비공개에 앉은 글은 `/blog/` 에서 빠져, 여섯 중 하나가 말없이
+     사라졌습니다(주인 지적: 5편). 비공개 카테고리에는 앞의 셋을 따로 베껴 앉힙니다 — 그 페이지의
+     판짜기도 고를 수 있어야 합니다. 베낀 글은 주소만 달리합니다(`d-<카테고리>-<n>`) */
   const cats = conf.blog.categories || []
-  await blog('dummy', DUMMY_POSTS.map((p, i) => ({
-    ...p, width: 견본폭, meta: cats.length ? { category: cats[i % cats.length].id } : null,
-  })))
+  const 공개 = cats.filter((c) => c.show)
+  const 비공개 = cats.filter((c) => !c.show)
+  const 앉힘 = (c) => (c ? { category: c.id } : null)
+  await blog('dummy', [
+    ...DUMMY_POSTS.map((p, i) => ({ ...p, width: 견본폭, meta: 앉힘(공개[i % 공개.length]) })),
+    ...비공개.flatMap((c) => DUMMY_POSTS.slice(0, 3).map((p) => ({
+      ...p, slug: `d-${c.id}-${p.no}`, width: 견본폭, meta: 앉힘(c),
+    }))),
+  ])
   return { ...r, dummy: d.pages, blog: rows.length }
 }
 
@@ -2062,7 +2331,7 @@ export function bake(pool) {
  *
  * @param posts  POSTS_SQL 이 읽은 행(`meta` 포함). 견본은 `bakePreview` 가 카테고리를 앉혀 넘깁니다
  */
-export const blogPages = (posts, style, conf, { preview = false } = {}) => {
+export const blogPages = (posts, style, conf, { preview = false, warn = [], detail = null } = {}) => {
   const cats = conf.blog.categories || []
   const byId = new Map(cats.map((c) => [c.id, c]))
   const catFor = (p) => byId.get(categoryOf(p.meta)) || null
@@ -2094,9 +2363,15 @@ export const blogPages = (posts, style, conf, { preview = false } = {}) => {
     const mine = written.filter((p) => catFor(p) === c)
     pages.push([`blog/${c.slug}/index.html`, listPage(mine, style, confFor(conf, c), c)])
   }
+  /* 「내 글」 링크가 판으로 바뀌어도 되는 글 = **이번에 실제로 나가는 글**(슬러그 → 제목).
+     호출마다 새로 셉니다 — 미리보기는 비공개 카테고리 글도 쓰므로 공개 굽기와 목록이 다릅니다 */
+  const link = { open: new Map(written.map((p) => [p.slug, p.title || ''])), warn }
   for (const p of written) {
+    /* `detail` 이 있으면 그 글만 상세를 굽습니다 — 미리보기가 목록은 전부, 상세는 일부만 굽습니다(`bakePreview`) */
+    if (detail && !detail.has(p.slug)) continue
     const c = catFor(p)
-    pages.push([`blog/${p.slug}/index.html`, postPage(p, style, confFor(conf, c), c)])
+    pages.push([`blog/${p.slug}/index.html`, postPage(p, style, confFor(conf, c), c, link)])
+    pages.push([`blog/${p.slug}/peek/index.html`, peekPage(p, style, confFor(conf, c), c, link)])
   }
   return pages
 }
@@ -2189,9 +2464,7 @@ async function bakeNow(pool) {
    *
    * 비공개 글은 index.html 만 삭제합니다. 키는 슬러그입니다(위 주석 참고).
    */
-  for (const [slug, pub] of bySlug) {
-    if (!pub || 주인없는주소.has(slug)) await rm(`${OUT}/${slug}/index.html`, { force: true })
-  }
+  await sweepUnpublished(OUT, bySlug, 주인없는주소)
   /**
    * 색과 글꼴은 사이트 전체 설정입니다. 블로그만 옛 색이면 같은 사이트로 인식되지 않습니다.
    * 글 본문의 글꼴은 글마다 저장돼 있어 여기서 안 건드립니다(편집 화면과 달라집니다).
@@ -2199,7 +2472,8 @@ async function bakeNow(pool) {
    * 설정을 저장하지 않은 사이트의 화면이 안 바뀝니다.
    */
   const style = themeStyle(conf.theme) + headStyle(conf.header, conf.theme)
-  const blogOut = blogPages(rows, style, conf)
+  const linkWarn = []
+  const blogOut = blogPages(rows, style, conf, { warn: linkWarn })
   /* `blogPages` 는 발행 글의 주소만 압니다. 초안·숨김 글의 폴더도 디스크에 있으므로 DB 의 모든 글
      주소와 한 번 더 견줍니다 — 겹치면 그 글이 다시 발행되는 날 카테고리 목록이 글을 덮습니다 */
   for (const c of conf.blog.categories || []) {
@@ -2208,7 +2482,17 @@ async function bakeNow(pool) {
   for (const [rel, html] of blogOut) {
     const at = `${OUT}/${rel.slice('blog/'.length)}`
     await mkdir(dirname(at), { recursive: true })
-    await writeFile(at, html)
+    /* 임시 파일에 쓰고 바꿔 끼웁니다 — 글마다 두 장을 쓰게 되어, 쓰는 도중의 반쪽 파일이 읽힐 틈이 늘었습니다 */
+    await writeAtomic(at, html)
+  }
+  /* 판이 가리키는 벌이 이번에 실제로 구워졌는지 봅니다. 없는 벌을 가리키면 판이 404 로 뜹니다 */
+  const wrote = new Set(blogOut.map(([rel]) => rel))
+  for (const [rel, html] of blogOut) {
+    for (const m of html.matchAll(/<iframe\b[^>]*\ssrc="\/blog\/([^"\/]+)\/peek\/"/g)) {
+      if (!wrote.has(`blog/${decodeURIComponent(m[1])}/peek/index.html`)) {
+        throw new Error(`${rel}: 곁에 띄울 글(${m[1]})의 판 벌이 구워지지 않았습니다`)
+      }
+    }
   }
   /* 지난번에 썼는데 이번에 안 쓴 카테고리 페이지를 치웁니다 — 먼저 쓰고 나중에 지우므로 빈 화면 구간이 없습니다 */
   await sweepCategories(new Set(publicCats(conf).map((c) => c.slug)))
@@ -2238,11 +2522,30 @@ async function bakeNow(pool) {
   }
   /* 화면은 블로그 생성이 끝난 뒤에 생성합니다. 화면 생성이 실패해도 블로그는 이미 서빙됩니다 */
   const { pages, works, warn } = await bakePages(pool, { conf })
+  warn.push(...linkWarn)
   for (const p of 주인없는글) {
     warn.push(`글 ${p.slug} 의 카테고리(${orphanOf(p.meta, known)})가 설정에 없습니다 — 안 내보냈습니다.`
       + ' 홈디자인 → 블로그에서 그 카테고리를 되살리거나, 목록에서 이 글의 카테고리를 다시 정하세요')
   }
   return { count: rows.length, pages, works, warn }
+}
+
+/**
+ * 공개 중이 아닌 글의 구운 페이지를 지웁니다 — 폴더는 두고(올린 사진이 삽니다) 페이지 두 장만.
+ *
+ * `index.html` 과 함께 판 안에 들어가는 벌(`peek/`)도 지웁니다. 남겨 두면 숨긴 글의 본문이
+ * `/blog/<번호>/peek/` 로 계속 읽힙니다 — `index.html` 만 지우던 때에는 없던 두 번째 문입니다.
+ * 따로 떼어 둔 까닭은 검사(tools/check-bake.mjs)가 이 한 줄을 직접 불러 보기 위해서입니다.
+ *
+ * @param bySlug   슬러그 → 지금 공개 중인가
+ * @param orphans  카테고리를 잃어 안 내보내는 글의 슬러그
+ */
+export const sweepUnpublished = async (out, bySlug, orphans = new Set()) => {
+  for (const [slug, pub] of bySlug) {
+    if (pub && !orphans.has(slug)) continue
+    await rm(`${out}/${slug}/index.html`, { force: true })
+    await rm(`${out}/${slug}/peek`, { recursive: true, force: true })
+  }
 }
 
 /** 글 폴더만 골라냅니다. 이름이 숫자인 것만 대상이고 assets, fonts 는 건드리지 않습니다 */

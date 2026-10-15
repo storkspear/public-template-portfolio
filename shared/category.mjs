@@ -43,6 +43,8 @@ export const CATEGORY_ID = /^[a-z][a-z0-9]{3,15}$/
 
 /** 「기본」 — `/blog/` 그 자체입니다. 제 주소도 식별자도 없고, 카테고리를 안 정한 글의 자리입니다 */
 export const DEFAULT_LABEL = '기본'
+/** `/blog/` 의 공개 이름 — 카테고리 줄에 서는 낱말입니다. 관리자에서는 `DEFAULT_LABEL` */
+export const ALL_LABEL = '전체'
 
 /** 관리자가 새 카테고리에 붙이는 식별자. `c` + 36진수 여섯 자리 — 사람이 읽을 일이 없어 짧게 */
 export const newCategoryId = () => 'c' + Math.random().toString(36).slice(2, 8).padEnd(6, '0')

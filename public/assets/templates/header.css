@@ -394,7 +394,9 @@ body:has(> .s-drawer-rail) { padding-left: min(88vw, var(--dr-w, 300px)); }
 
 /* ── 콘텐츠 타이틀 — 「글 / 5편」과 「작업 / 9편」 ─────────────────────────
    두 목록이 같은 부품을 씁니다(마크업과 옷이 하나). 값 — 이름·보이기·사이즈·정렬·갯수·상단 여백 —
-   은 블로그와 포트폴리오가 각자 갖습니다. 글꼴은 그 화면의 표제 글꼴을 따릅니다. */
+   은 블로그와 포트폴리오가 각자 갖습니다. 글꼴은 **사이트 글꼴**(`--site-*`)을 따릅니다 — 화면별 글꼴
+   (목록 갈래를 고르면 그 짝으로 바뀌는 것)을 따르면 갈래를 바꿀 때마다 「글」의 서체까지 바뀌어
+   사이트의 결이 흔들립니다(주인 지적). 변수가 없는 화면(code 모드)은 그 화면 글꼴로 물러섭니다. */
 
 .lh {
   padding-block: calc(clamp(2.5rem, 6vh, 4rem) * var(--lh-size, 1))
@@ -402,12 +404,12 @@ body:has(> .s-drawer-rail) { padding-left: min(88vw, var(--dr-w, 300px)); }
   text-align: var(--lh-align, left);
 }
 .lh h1 {
-  margin: 0; font-family: var(--display); font-weight: 400;
+  margin: 0; font-family: var(--site-display, var(--display)); font-weight: 400;
   font-size: calc(clamp(1.7rem, 4.4vw, 2.4rem) * var(--lh-size, 1));
   letter-spacing: -0.03em;
 }
 .lh-count {
-  margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--fg-3);
+  margin: 0.55rem 0 0; font-family: var(--site-sans, var(--sans)); font-size: 0.82rem; color: var(--fg-3);
   font-variant-numeric: tabular-nums;
 }
 

@@ -17,16 +17,22 @@
  */
 .bl.bl-cards a,
 .bl.bl-issue a,
+.bl.bl-gallery a,
 .bl.bl-stack a,
 .bl.bl-magazine > li:first-child a { align-items: stretch; }
 
-.bl { list-style: none; margin: 0; padding: 0;
+/* 목록 아래 숨 쉴 자리. 없으면 마지막 줄 바로 밑에 푸터 윗선이 붙습니다 — `.foot` 의 위 여백은
+   관리자가 정하는 값(`--fgap`)이고 기본이 0 이라, 목록이 제 아래 여백을 스스로 들어야 합니다.
+   글 페이지는 `.b-post .prose` 가 이미 그렇게 하고 있습니다(blog.css). 그쪽(4~5rem)보다 넓습니다 —
+   처음에 2.5~3.5rem 을 넣었더니 눈으로 보기에 모자랐습니다(주인 확인). 목록은 줄이 가로로 끝까지
+   그어져 있어 마지막 줄과 푸터 윗선이 같은 결로 보입니다. 둘을 떼어 놓으려면 글보다 더 벌려야 합니다. */
+.bl { list-style: none; margin: 0 0 clamp(5rem, 10vh, 7rem); padding: 0;
   /* 굵기를 지어내지 않습니다 — 한 벌짜리 글꼴(부크크명조·페이퍼로지·검은고딕)에 700 이 닿아도 번지지 않고
      400 파일로 렌더링됩니다. 고른 뒤 글꼴을 바꿔도 안전합니다 */
   font-synthesis: none; }
 .bl a { display: block; text-decoration: none; color: inherit; }
 .bl a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.bl .b-shot, .bl .b-lede, .bl .b-read { display: none; }   /* 갈래가 켭니다 */
+.bl .b-shot, .bl .b-lede, .bl .b-tags { display: none; }   /* 갈래가 켭니다 */
 .bl .b-body { min-width: 0; }
 .bl .b-no { font-family: var(--mono); font-size: .8rem; color: var(--fg-3);
   letter-spacing: .04em; font-variant-numeric: tabular-nums; }
@@ -36,8 +42,7 @@
 .bl .b-lede { color: var(--fg-2); word-break: keep-all; overflow-wrap: anywhere; }
 .bl .b-date { font-family: var(--mono); font-size: .78rem; color: var(--fg-3);
   font-variant-numeric: tabular-nums; white-space: nowrap; }
-.bl .b-read { font-family: var(--sans); font-size: .78rem; color: var(--fg-3);   /* 「3분」— 한글이라 모노 아님 */
-  white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bl .b-tags { font-family: var(--sans); font-size: .74rem; color: var(--fg-3); }   /* 한글이라 모노 아님 */
 .bl .b-shot:empty { background: none; }
 .bl .b-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .bl > .b-year { padding: 2.25rem 0 .75rem; font-family: var(--mono); font-size: .82rem;
@@ -54,7 +59,7 @@
    견주는데, 이 줄은 목록 밖이라 견줄 바탕이 없습니다.
    공개 카테고리가 없으면 굽기가 이 줄을 아예 안 냅니다 — 카테고리를 안 쓰는 사이트는 예전 그대로입니다. */
 .b-cats { display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem 0;
-  margin: 0 0 1.6rem; font-family: var(--sans); font-size: .9rem; font-synthesis: none; }
+  margin: 0 0 1.6rem; font-family: var(--site-sans, var(--sans)); font-size: .9rem; font-synthesis: none; }
 .b-cats a { text-decoration: none; color: var(--fg-3); padding: .15rem 0; transition: color var(--t); }
 .b-cats a + a::before { content: '·'; content: '·' / ''; margin: 0 .9rem;
   color: color-mix(in srgb, var(--fg) 30%, var(--bg)); }
@@ -161,28 +166,28 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
   .bl.bl-ledger .b-title { font-size: 1.1rem; }
 }
 
-/* ── ② 날짜 피드 feed — 큰 일·작은 월, 제목 한 줄, 읽는 시간, 화살표 ────────── */
+/* ── ② 날짜 피드 feed — 제목이 왼쪽, 날짜(「10.04」)는 오른쪽 끝에 연하게 ──────────
+   예전에는 큰 일자 밑에 작은 「N월」을 세로로 쌓아 왼쪽에 뒀습니다. 위에서 아래로 훑을 때 월이 안 읽혀
+   날짜의 차례가 안 보였습니다(주인 지적). 한 줄 「월.일」로 바꾸고, 먼저 읽는 것은 제목이라 날짜를 뒤로 보냅니다.
+   해는 연도 머리글이 말합니다. */
 .bl.bl-feed { border-top: 1px solid var(--line); }
 .bl.bl-feed > li.b-item { border-bottom: 1px solid var(--line); }
-.bl.bl-feed a { display: grid; grid-template-columns: 3.6rem minmax(0, 1fr) auto 1.25rem;
-  column-gap: 1rem; align-items: center; padding: .7rem 0;
+.bl.bl-feed a { display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 1.25rem; row-gap: .2rem; align-items: center; padding: .7rem 0;
   scroll-margin-top: 7rem; }            /* Tab 으로 옮겨 갈 때 헤더·연도 라벨 밑에 가려지지 않게 */
 .bl.bl-feed .b-no, .bl.bl-feed .b-shot, .bl.bl-feed .b-lede { display: none; }
-/* 날짜 글자(2026.09.16)는 남기되 0 크기로 — 화면읽기는 읽고, 눈에는 아래 두 조각이 보입니다 */
-.bl.bl-feed .b-date[data-d] { grid-column: 1; grid-row: 1; display: grid; justify-items: center;
-  font-size: 0; line-height: 1; }
-.bl.bl-feed .b-date[data-d]::before { content: attr(data-d); content: attr(data-d) / ''; font-family: var(--sans); font-weight: 700;
-  font-size: 1.35rem; letter-spacing: -.02em; color: var(--fg); font-variant-numeric: tabular-nums; }   /* accent 아닌 글자색 */
-.bl.bl-feed .b-date[data-d]::after { content: attr(data-m) '월'; content: attr(data-m) '월' / ''; margin-top: .15rem;
-  font-family: var(--sans); font-size: .68rem; letter-spacing: .04em; color: var(--fg-3); }
-.bl.bl-feed .b-date:not([data-d]) { grid-column: 1; grid-row: 1; }   /* 옛 마크업 — 그냥 날짜 */
-.bl.bl-feed .b-body { grid-column: 2; grid-row: 1; }
+.bl.bl-feed .b-body { grid-column: 1; grid-row: 1; }
 .bl.bl-feed .b-title { font-weight: 700; font-size: 1.05rem; line-height: 1.4; letter-spacing: -.02em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bl.bl-feed .b-read { display: block; grid-column: 3; grid-row: 1; }
-.bl.bl-feed a::after { content: '→'; content: '→' / ''; grid-column: 4; grid-row: 1; font-family: var(--mono); color: var(--fg);
-  opacity: 0; transform: translateX(-.6rem); transition: opacity var(--t), transform var(--t); }
-.bl.bl-feed a:hover::after, .bl.bl-feed a:focus-visible::after { opacity: 1; transform: none; }
+/* 날짜 글자(2026.09.16)는 남기되 0 크기로 — 화면읽기는 온전한 날짜를 읽고, 눈에는 「09.16」만 보입니다 */
+.bl.bl-feed .b-date { grid-column: 2; grid-row: 1; }
+.bl.bl-feed .b-date[data-md] { font-size: 0; line-height: 1; }
+.bl.bl-feed .b-date[data-md]::before { content: attr(data-md); content: attr(data-md) / '';
+  font-family: var(--mono); font-size: .84rem; letter-spacing: .02em; color: var(--fg-3); font-variant-numeric: tabular-nums; }
+/* 태그 — 제목 아래 줄에 작고 연한 「#홈서버 #배포」. 칩이 아니라 글자입니다: 줄마다 테두리가 서면 제목보다 태그가 먼저 보입니다.
+   날짜는 제목 줄에 그대로 서고(첫 줄), 태그가 길면 다음 줄로 넘어갑니다. 태그 없는 글은 굽기가 이 줄을 안 냅니다 */
+.bl.bl-feed .b-tags { display: flex; flex-wrap: wrap; gap: .1rem .6rem; grid-column: 1; grid-row: 2; font-size: .76rem; }
+.bl.bl-feed .b-tags > span::before { content: '#'; opacity: .6; }
 .bl.bl-feed a:hover .b-title, .bl.bl-feed a:focus-visible .b-title {
   text-decoration: underline; text-underline-offset: .18em; text-decoration-thickness: 1.5px; }
 .bl.bl-feed a:visited .b-title { color: var(--fg-2); }
@@ -194,9 +199,7 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
   .bl.bl-feed > .b-year { position: static; }   /* 메뉴가 두 줄로 접히면 헤더 높이가 달라집니다 */
 }
 @media (max-width: 640px) {
-  .bl.bl-feed a { grid-template-columns: 3rem minmax(0, 1fr) 1rem; column-gap: .75rem; }
-  .bl.bl-feed .b-read { display: none; }
-  .bl.bl-feed a::after { grid-column: 3; }
+  .bl.bl-feed a { column-gap: .75rem; }
 }
 
 /* ── ③ 목차 lines — 제목 … 날짜. 점선 리더는 배경, 제목 바탕이 글자 뒤 점을 덮습니다 ─── */
@@ -215,6 +218,9 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
   transition: color var(--t), text-decoration-color var(--t), text-underline-offset var(--t); }
 .bl.bl-lines a:hover .b-title, .bl.bl-lines a:focus-visible .b-title {
   text-decoration-color: currentColor; text-underline-offset: .14em; text-decoration-thickness: 1.5px; }
+/* 전역 `.b-item > a:hover` 의 옅은 띠를 받지 않습니다 — 제목 바탕이 점을 가리느라 `--bg` 라서
+   띠가 깔리면 글자 뒤만 흰색으로 남습니다. 이 갈래의 호버는 밑줄과 「나머지가 물러서는」 것입니다 */
+.bl.bl-lines a:hover, .bl.bl-lines a:focus-visible { background: transparent; }
 .bl.bl-lines:has(a:hover) a:not(:hover) .b-title { color: var(--fg-3); }   /* Are.na — 나머지가 물러섭니다 */
 .bl.bl-lines a:visited .b-title { color: var(--fg-2); }
 .bl.bl-lines > .b-year { font-family: var(--display); font-size: 1rem; letter-spacing: 0; color: var(--fg);
@@ -226,7 +232,7 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
 .bl.bl-runin > li.b-item { border-bottom: 1px solid var(--line); }
 .bl.bl-runin a { display: block; padding: 1.15rem 0 1.25rem; font-family: var(--display);
   font-size: 1.12rem; line-height: 1.7; letter-spacing: -.01em; color: var(--fg); transition: color var(--t); }
-.bl.bl-runin .b-no, .bl.bl-runin .b-shot, .bl.bl-runin .b-read { display: none; }
+.bl.bl-runin .b-no, .bl.bl-runin .b-shot { display: none; }
 .bl.bl-runin .b-body { display: inline; }
 .bl.bl-runin .b-title { display: inline; font: inherit; font-weight: 700; letter-spacing: inherit;
   color: inherit; margin-right: .3em;
@@ -262,7 +268,7 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
 /* ── ⑥ 에세이 stack — 선 없이, 날짜 → 굵은 제목 → 첫 문장. 오래될수록 옅습니다 ──── */
 .bl.bl-stack { display: flex; flex-direction: column; gap: clamp(2rem, 5vh, 3rem); }
 .bl.bl-stack a { display: flex; flex-direction: column; }
-.bl.bl-stack .b-no, .bl.bl-stack .b-shot, .bl.bl-stack .b-read { display: none; }
+.bl.bl-stack .b-no, .bl.bl-stack .b-shot { display: none; }
 .bl.bl-stack .b-date { order: 1; margin-bottom: .5rem; }
 .bl.bl-stack .b-body { order: 2; text-wrap: balance; }
 .bl.bl-stack .b-title { font-size: clamp(1.6rem, 3.6vw, 2.3rem); line-height: 1.22; letter-spacing: 0;
@@ -305,7 +311,7 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
 
 /* ── ⑧ 매거진 magazine — 피처 하나 + 2단. 경계는 둘째 글의 윗선 하나 ─────────── */
 .bl.bl-magazine { display: grid; grid-template-columns: 1fr 1fr; column-gap: 2.5rem; border-bottom: 1px solid var(--line); }
-.bl.bl-magazine .b-no, .bl.bl-magazine .b-read { display: none; }
+.bl.bl-magazine .b-no { display: none; }
 .bl.bl-magazine > li:first-child { grid-column: 1 / -1; margin-bottom: clamp(1.5rem, 4vh, 2.5rem); }
 .bl.bl-magazine > li:first-child a { display: flex; flex-direction: column; }
 .bl.bl-magazine > li:first-child .b-shot { display: block; aspect-ratio: 21 / 9; overflow: hidden;
@@ -381,14 +387,14 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
   .bl.bl-cards { grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: .9rem; }
 }
 
-/* ── ⑩ 카드 outline — 글만. accent 기운 얇은 테두리, 날짜 + 번호 칩, 읽는 시간 ── */
+/* ── ⑩ 카드 outline — 글만. accent 기운 얇은 테두리, 날짜, 맨 아래에 태그 ── */
 .bl.bl-outline { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 1rem; }
 .bl.bl-outline > li { display: flex; }
 /* 선 색·배경·모서리는 폴백 자리에 둡니다 — 관리자에서 고른 값(`--bo-*`)이 이기고,
    안 고르면 아래 기본이 그대로 삽니다. 테마도 제 기본을 폴백 자리에 넣습니다. */
 .bl.bl-outline a { --ol: var(--bo-ink, color-mix(in srgb, var(--accent) 32%, var(--line)));
   display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr auto;
-  grid-template-areas: 'date no' 'body body' 'read read';
+  grid-template-areas: 'date date' 'body body' 'tags tags';
   width: 100%; padding: 1.05rem 1.2rem 1rem; border: 1px solid var(--ol);
   background: var(--bo-bg, transparent); border-radius: var(--bo-radius, 12px);
   position: relative;                        /* 결이 가상요소로 겹선·표식을 그립니다 */
@@ -397,17 +403,17 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
 .bl.bl-outline a:focus-visible { outline-offset: 2px; }
 .bl.bl-outline .b-shot, .bl.bl-outline .b-shot:empty { display: none; }   /* 글만 담는 카드 */
 .bl.bl-outline .b-date { grid-area: date; align-self: center; }
-.bl.bl-outline .b-no { grid-area: no; justify-self: end; padding: .1rem .55rem; border: 1px solid var(--ol);
-  border-radius: 999px; font-size: .7rem; letter-spacing: .06em; color: var(--fg-2);
-  transition: background-color var(--t), color var(--t), border-color var(--t); }
-.bl.bl-outline a:hover .b-no { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+/* 번호는 안 냅니다 — 카드 귀퉁이의 알약이 날짜·제목과 따로 놀았습니다(주인 지적). 테마도 전부 같습니다 */
+.bl.bl-outline .b-no { display: none; }
 .bl.bl-outline .b-body { grid-area: body; margin-top: .7rem; }
 .bl.bl-outline .b-title { font-weight: 700; font-size: 1.12rem; line-height: 1.38; letter-spacing: -.02em; }
 .bl.bl-outline .b-lede { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
   margin-top: .4rem; font-size: .88rem; line-height: 1.6; }
-.bl.bl-outline .b-read { display: block; grid-area: read; margin-top: 1rem; padding-top: .6rem;
+/* 태그 칩 — 카드 맨 아래 한 줄. 태그가 없는 글은 굽기가 이 줄을 안 내므로 점선도 같이 없습니다 */
+.bl.bl-outline .b-tags { display: flex; flex-wrap: wrap; gap: .3rem .4rem; grid-area: tags; margin-top: 1rem; padding-top: .6rem;
   border-top: 1px dashed var(--ol); }
-.bl.bl-outline .b-read::before { content: '읽는 데 '; }
+.bl.bl-outline .b-tags > span { padding: .08rem .45rem; border: 1px solid var(--ol); border-radius: 999px; white-space: nowrap; }
+.bl.bl-outline .b-tags > span::before { content: '#'; opacity: .55; }
 
 /* ══ 카드 갈래의 테마 ══════════════════════════════════════════
    갈래 하나에만 붙습니다(어휘 `OUTLINE_SKINS`). 마크업은 그대로이고 클래스 한 장만 더
@@ -433,13 +439,9 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
 .bl.bl-outline.bo-terminal .b-title { font-family: var(--sans); font-weight: 700; color: #cfe8d6; letter-spacing: -.01em; }
 .bl.bl-outline.bo-terminal .b-title::before { content: '$ '; color: #4ec97a; }
 .bl.bl-outline.bo-terminal .b-lede { color: #7d9187; }
-.bl.bl-outline.bo-terminal .b-date, .bl.bl-outline.bo-terminal .b-read { color: #4d6356; }
-.bl.bl-outline.bo-terminal .b-read { border-top-color: var(--ol); }
-.bl.bl-outline.bo-terminal .b-no { border: 0; padding: 0; border-radius: 0; color: #4ec97a; }
-.bl.bl-outline.bo-terminal .b-no::before { content: '['; }
-.bl.bl-outline.bo-terminal .b-no::after { content: ']'; }
+.bl.bl-outline.bo-terminal .b-date, .bl.bl-outline.bo-terminal .b-tags { color: #4d6356; }
+.bl.bl-outline.bo-terminal .b-tags { border-top-color: var(--ol); }
 .bl.bl-outline.bo-terminal a:hover { border-color: #4ec97a; box-shadow: inset 0 0 0 1px #4ec97a; }
-.bl.bl-outline.bo-terminal a:hover .b-no { background: none; color: #9ef7bd; }
 /**
  * 커서 한 칸 — 올린 카드에서만 뜨고 깜빡입니다.
  * 올린 것 하나만 깜빡이므로 목록 전체가 어지러워지지 않습니다.
@@ -470,10 +472,9 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
   font-family: var(--mono); font-size: .62rem; line-height: 1.5; letter-spacing: .22em;
   word-break: break-all; color: #4ec97a; opacity: .2;
   animation: bo-term-rain 14s linear infinite; }
-.bl.bl-outline.bo-terminal .b-no,
 .bl.bl-outline.bo-terminal .b-body,
 .bl.bl-outline.bo-terminal .b-date,
-.bl.bl-outline.bo-terminal .b-read { position: relative; }
+.bl.bl-outline.bo-terminal .b-tags { position: relative; }
 
 /* 움직임을 줄여 달라는 기기에서는 비도 커서도 멈춥니다 */
 @media (prefers-reduced-motion: reduce) {
@@ -496,11 +497,8 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
   border-radius: 15px 225px 15px 255px / 255px 15px 225px 15px; }
 .bl.bl-outline.bo-sketch .b-title { font-family: 'Gaegu', var(--sans); font-size: 1.35rem; font-weight: 700; }
 .bl.bl-outline.bo-sketch .b-lede { font-family: 'Gaegu', var(--sans); font-size: 1.05rem; line-height: 1.45; }
-.bl.bl-outline.bo-sketch .b-date, .bl.bl-outline.bo-sketch .b-read {
+.bl.bl-outline.bo-sketch .b-date, .bl.bl-outline.bo-sketch .b-tags {
   font-family: 'Gaegu', var(--sans); font-size: .95rem; letter-spacing: 0; }
-.bl.bl-outline.bo-sketch .b-no {
-  border-width: 2px; border-radius: 60% 40% 55% 45% / 45% 55% 40% 60%;
-  font-family: 'Gaegu', var(--sans); font-size: .9rem; }
 /* 손으로 놓은 종이는 반듯하지 않습니다. 올리면 제자리를 찾습니다 */
 .bl.bl-outline.bo-sketch > li:nth-child(3n+1) a { transform: rotate(-.5deg); }
 .bl.bl-outline.bo-sketch > li:nth-child(3n+2) a { transform: rotate(.35deg); }
@@ -562,8 +560,7 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
 .bl.bl-outline.bo-blueprint .b-title { color: #f2f8ff; font-weight: 500; letter-spacing: -.01em; }
 .bl.bl-outline.bo-blueprint .b-lede { color: #9dbcd8; }
 .bl.bl-outline.bo-blueprint .b-date { color: #7fb2e5; }
-.bl.bl-outline.bo-blueprint .b-read { color: #7fb2e5; border-top-style: solid; border-top-color: #ffffff2e; }
-.bl.bl-outline.bo-blueprint .b-no { border-radius: 0; color: #cfe4f8; }
+.bl.bl-outline.bo-blueprint .b-tags { color: #7fb2e5; border-top-style: solid; border-top-color: #ffffff2e; }
 .bl.bl-outline.bo-blueprint a:hover { border-color: #ffffff; box-shadow: inset 0 0 0 1px #ffffff66; }
 
 /* ── 영수증 — 종이 한 장. 테두리 대신 위아래를 찢습니다 ──
@@ -605,10 +602,8 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
   border: 1px dashed var(--ol); opacity: .55; }
 .bl.bl-outline.bo-receipt .b-title { font-family: var(--sans); font-weight: 700; letter-spacing: -.02em; }
 .bl.bl-outline.bo-receipt .b-lede { font-family: var(--sans); font-size: .82rem; color: #6f675c; }
-.bl.bl-outline.bo-receipt .b-date, .bl.bl-outline.bo-receipt .b-read { color: #8a8175; }
-.bl.bl-outline.bo-receipt .b-read { border-top-style: dashed; }
-.bl.bl-outline.bo-receipt .b-no { border-radius: 0; border-style: dashed; color: #6f675c; }
-.bl.bl-outline.bo-receipt .b-no::before { content: 'No.'; opacity: .6; }
+.bl.bl-outline.bo-receipt .b-date, .bl.bl-outline.bo-receipt .b-tags { color: #8a8175; }
+.bl.bl-outline.bo-receipt .b-tags { border-top-style: dashed; }
 .bl.bl-outline.bo-receipt a:hover { border-color: var(--fg); box-shadow: none; }
 
 /* ── 심플 포스트잇 — 노란 종이 한 장. 테두리도 톱니도 없습니다 ──
@@ -624,10 +619,8 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
   transition: filter var(--t), transform var(--t); }
 .bl.bl-outline.bo-postit .b-title { font-weight: 700; font-size: 1.06rem; color: #3b3524; }
 .bl.bl-outline.bo-postit .b-lede { margin-top: .4rem; color: #6b6042; }
-.bl.bl-outline.bo-postit .b-read {
+.bl.bl-outline.bo-postit .b-tags {
   margin-top: 1rem; padding-top: .6rem; border-top: 1px solid var(--ol); color: #8b7f56; }
-/* 번호는 칩을 벗깁니다 — 종이 한 장에 테두리가 둘이면 어수선합니다 */
-.bl.bl-outline.bo-postit .b-no { border: 0; border-radius: 0; padding: 0; color: #8b7f56; }
 /* 올리면 종이가 조금 더 떠오릅니다 */
 .bl.bl-outline.bo-postit a:hover {
   border-color: transparent; box-shadow: none;
@@ -655,6 +648,240 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
 @media (max-width: 640px) {
   .bl.bl-issue { gap: 1.75rem 1.25rem; }
   .bl.bl-issue .b-no { font-size: 3rem; }
+}
+
+/* ══ 갈래 밑의 모양 ══════════════════════════════════════════════
+   어휘는 `DECK_STYLES`(갈래 하나에 하나씩). 마크업은 그대로이고 목록에 `ls-<값>` 한 장,
+   종이 카드의 장식이면 `ld-<값>` 한 장이 더 붙습니다. 첫 값은 클래스가 없습니다 — 위의
+   그 갈래 바탕 규칙이 첫 값입니다. */
+
+/* ── 사진 행 · 사진 왼쪽 ── */
+.bl.bl-thumb.ls-left a { grid-template-columns: 7rem minmax(0, 1fr); }
+.bl.bl-thumb.ls-left .b-shot { grid-column: 1; }
+.bl.bl-thumb.ls-left .b-date, .bl.bl-thumb.ls-left .b-body { grid-column: 2; }
+.bl.bl-thumb.ls-left:not(:has(.b-shot img)) a { grid-template-columns: minmax(0, 1fr); }
+.bl.bl-thumb.ls-left:not(:has(.b-shot img)) .b-date,
+.bl.bl-thumb.ls-left:not(:has(.b-shot img)) .b-body { grid-column: 1; }
+@media (max-width: 640px) { .bl.bl-thumb.ls-left a { grid-template-columns: 5rem minmax(0, 1fr); } }
+
+/* ── 참고서 카드 · 종이 ──
+   제 종이색과 글자색을 갖습니다(카드 테마의 포스트잇과 같은 결) — 사이트 테마가 어두워도
+   종이는 종이입니다. 바탕색만 관리자에서 고칩니다(`--bc-paper`). 글자색은 밝은 종이를 전제로
+   두므로, 고르는 칸이 어두운 색을 막지는 않지만 미색 계열을 권합니다. */
+.bl.bl-cards.ls-paper a { --paper: var(--bc-paper, #f7f3ea);
+  background: var(--paper); color: #2b2620; border: 1px solid color-mix(in srgb, var(--paper) 86%, #6b5530);
+  border-radius: 3px; padding: .7rem .7rem 1rem;
+  box-shadow: 0 1px 2px rgba(60, 40, 10, .08), 0 10px 22px -14px rgba(60, 40, 10, .35);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease); }
+.bl.bl-cards.ls-paper a > :not(.b-shot):not(.b-no) { padding-inline: .35rem; }
+.bl.bl-cards.ls-paper .b-shot { border: 0; margin: 0 0 .95rem; border-radius: 1px; }
+.bl.bl-cards.ls-paper .b-no { z-index: 1; top: 1.15rem; right: 1.15rem; background: rgba(247, 243, 234, .94); color: #2b2620; border-radius: 2px; }
+.bl.bl-cards.ls-paper a:hover { background: var(--paper); color: #2b2620; transform: translateY(-4px) rotate(-.5deg);
+  box-shadow: 0 2px 4px rgba(60, 40, 10, .08), 0 22px 30px -16px rgba(60, 40, 10, .4); }
+.bl.bl-cards.ls-paper a:hover .b-no { background: rgba(247, 243, 234, .94); color: #2b2620; }
+.bl.bl-cards.ls-paper .b-lede, .bl.bl-cards.ls-paper a:hover .b-lede { color: #5a5247; }
+.bl.bl-cards.ls-paper .b-date, .bl.bl-cards.ls-paper a:hover .b-date { color: #7a7062; }
+.bl.bl-cards.ls-paper a:has(.b-shot:empty) { padding-top: 2.2rem; }
+
+/* 장식 ① 테이프 — 가운데 위에 한 장. 결은 흰 줄무늬, 끝은 찢은 톱니 */
+.bl.bl-cards.ls-paper.ld-tape > li { padding-top: .75rem; }
+.bl.bl-cards.ls-paper.ld-tape a::before { content: ''; position: absolute; z-index: 2; top: -.75rem; left: 50%;
+  width: 6.2rem; height: 1.6rem; transform: translateX(-50%) rotate(-3deg);
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .18) 0 2px, transparent 2px 7px),
+              color-mix(in srgb, #e9dcae 82%, transparent);
+  box-shadow: 0 1px 2px rgba(60, 40, 10, .15);
+  clip-path: polygon(3% 0, 97% 0, 100% 18%, 96% 38%, 100% 60%, 97% 82%, 100% 100%, 3% 100%, 0 80%, 4% 58%, 0 38%, 3% 18%); }
+.bl.bl-cards.ls-paper.ld-tape a:hover { transform: translateY(-3px); }   /* 붙인 종이는 돌지 않습니다 */
+
+/* 장식 ② 압정 — 가운데 위. 카드가 조금씩 기울어 있다가 올리면 바로 섭니다.
+   압정은 그림(SVG)입니다 — 원 하나에 그라데이션으로는 장난감처럼 보였습니다(주인 지적) */
+.bl.bl-cards.ls-paper.ld-pin > li { padding-top: 1rem; }
+.bl.bl-cards.ls-paper.ld-pin a { transform: rotate(var(--tilt, 0deg)); transform-origin: 50% 0; }
+.bl.bl-cards.ls-paper.ld-pin > li:nth-child(4n+1) a { --tilt: -1.2deg; }
+.bl.bl-cards.ls-paper.ld-pin > li:nth-child(4n+2) a { --tilt: .9deg; }
+.bl.bl-cards.ls-paper.ld-pin > li:nth-child(4n+3) a { --tilt: -.5deg; }
+.bl.bl-cards.ls-paper.ld-pin > li:nth-child(4n) a { --tilt: 1.3deg; }
+.bl.bl-cards.ls-paper.ld-pin a:hover { transform: translateY(-3px); }
+.bl.bl-cards.ls-paper.ld-pin a::before { content: ''; position: absolute; z-index: 3; top: -1.15rem; left: 50%;
+  width: 1.9rem; height: 2.25rem; margin-left: -.95rem; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 52'%3E%3Cdefs%3E%3CradialGradient id='sh' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0' stop-color='%23000' stop-opacity='.32'/%3E%3Cstop offset='1' stop-color='%23000' stop-opacity='0'/%3E%3C/radialGradient%3E%3ClinearGradient id='body' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%239e2a22'/%3E%3Cstop offset='.45' stop-color='%23d8443a'/%3E%3Cstop offset='1' stop-color='%239e2a22'/%3E%3C/linearGradient%3E%3CradialGradient id='cap' cx='38%25' cy='32%25' r='70%25'%3E%3Cstop offset='0' stop-color='%23f58a7f'/%3E%3Cstop offset='.55' stop-color='%23d8443a'/%3E%3Cstop offset='1' stop-color='%239e2a22'/%3E%3C/radialGradient%3E%3ClinearGradient id='nd' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%238d939a'/%3E%3Cstop offset='.5' stop-color='%23e6e9ec'/%3E%3Cstop offset='1' stop-color='%237b8188'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cellipse cx='27' cy='44' rx='13' ry='4.5' fill='url(%23sh)'/%3E%3Cpath d='M21 31 L23.5 43.5 L25 43.3 L23.2 31 Z' fill='url(%23nd)'/%3E%3Cellipse cx='22' cy='30' rx='9' ry='3.2' fill='%239e2a22'/%3E%3Cpath d='M13 30 C13 28 15.5 27 16.5 25 L17.5 16 L26.5 16 L27.5 25 C28.5 27 31 28 31 30 C31 31.8 13 31.8 13 30 Z' fill='url(%23body)'/%3E%3Cellipse cx='22' cy='16' rx='5' ry='1.6' fill='%239e2a22' opacity='.55'/%3E%3Cellipse cx='22' cy='11' rx='11' ry='7' fill='%239e2a22'/%3E%3Cellipse cx='22' cy='10' rx='11' ry='6.4' fill='url(%23cap)'/%3E%3Cellipse cx='18' cy='7.6' rx='4.2' ry='1.7' fill='%23fff' opacity='.55'/%3E%3C/svg%3E") center / contain no-repeat; }
+.bl.bl-cards.ls-paper.ld-pin > li:nth-child(3n+2) a::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 52'%3E%3Cdefs%3E%3CradialGradient id='sh' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0' stop-color='%23000' stop-opacity='.32'/%3E%3Cstop offset='1' stop-color='%23000' stop-opacity='0'/%3E%3C/radialGradient%3E%3ClinearGradient id='body' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%231c4682'/%3E%3Cstop offset='.45' stop-color='%232f6fc0'/%3E%3Cstop offset='1' stop-color='%231c4682'/%3E%3C/linearGradient%3E%3CradialGradient id='cap' cx='38%25' cy='32%25' r='70%25'%3E%3Cstop offset='0' stop-color='%237fb0ee'/%3E%3Cstop offset='.55' stop-color='%232f6fc0'/%3E%3Cstop offset='1' stop-color='%231c4682'/%3E%3C/radialGradient%3E%3ClinearGradient id='nd' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%238d939a'/%3E%3Cstop offset='.5' stop-color='%23e6e9ec'/%3E%3Cstop offset='1' stop-color='%237b8188'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cellipse cx='27' cy='44' rx='13' ry='4.5' fill='url(%23sh)'/%3E%3Cpath d='M21 31 L23.5 43.5 L25 43.3 L23.2 31 Z' fill='url(%23nd)'/%3E%3Cellipse cx='22' cy='30' rx='9' ry='3.2' fill='%231c4682'/%3E%3Cpath d='M13 30 C13 28 15.5 27 16.5 25 L17.5 16 L26.5 16 L27.5 25 C28.5 27 31 28 31 30 C31 31.8 13 31.8 13 30 Z' fill='url(%23body)'/%3E%3Cellipse cx='22' cy='16' rx='5' ry='1.6' fill='%231c4682' opacity='.55'/%3E%3Cellipse cx='22' cy='11' rx='11' ry='7' fill='%231c4682'/%3E%3Cellipse cx='22' cy='10' rx='11' ry='6.4' fill='url(%23cap)'/%3E%3Cellipse cx='18' cy='7.6' rx='4.2' ry='1.7' fill='%23fff' opacity='.55'/%3E%3C/svg%3E"); }
+.bl.bl-cards.ls-paper.ld-pin > li:nth-child(3n) a::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 52'%3E%3Cdefs%3E%3CradialGradient id='sh' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0' stop-color='%23000' stop-opacity='.32'/%3E%3Cstop offset='1' stop-color='%23000' stop-opacity='0'/%3E%3C/radialGradient%3E%3ClinearGradient id='body' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23a8730c'/%3E%3Cstop offset='.45' stop-color='%23e5a523'/%3E%3Cstop offset='1' stop-color='%23a8730c'/%3E%3C/linearGradient%3E%3CradialGradient id='cap' cx='38%25' cy='32%25' r='70%25'%3E%3Cstop offset='0' stop-color='%23f6d17a'/%3E%3Cstop offset='.55' stop-color='%23e5a523'/%3E%3Cstop offset='1' stop-color='%23a8730c'/%3E%3C/radialGradient%3E%3ClinearGradient id='nd' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%238d939a'/%3E%3Cstop offset='.5' stop-color='%23e6e9ec'/%3E%3Cstop offset='1' stop-color='%237b8188'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cellipse cx='27' cy='44' rx='13' ry='4.5' fill='url(%23sh)'/%3E%3Cpath d='M21 31 L23.5 43.5 L25 43.3 L23.2 31 Z' fill='url(%23nd)'/%3E%3Cellipse cx='22' cy='30' rx='9' ry='3.2' fill='%23a8730c'/%3E%3Cpath d='M13 30 C13 28 15.5 27 16.5 25 L17.5 16 L26.5 16 L27.5 25 C28.5 27 31 28 31 30 C31 31.8 13 31.8 13 30 Z' fill='url(%23body)'/%3E%3Cellipse cx='22' cy='16' rx='5' ry='1.6' fill='%23a8730c' opacity='.55'/%3E%3Cellipse cx='22' cy='11' rx='11' ry='7' fill='%23a8730c'/%3E%3Cellipse cx='22' cy='10' rx='11' ry='6.4' fill='url(%23cap)'/%3E%3Cellipse cx='18' cy='7.6' rx='4.2' ry='1.7' fill='%23fff' opacity='.55'/%3E%3C/svg%3E"); }
+
+/* ── 참고서 카드 · 옆 견출지 ──
+   번호가 카드 오른쪽 가장자리의 세로 탭이 됩니다. 탭 높이를 카드마다 엇갈려 바인더 색인처럼.
+   탭이 칸 밖으로 1.75rem 나가므로 목록이 그만큼 오른쪽을 비워 둡니다 — 안 비우면 마지막 열의
+   탭이 본문 폭을 넘습니다 */
+.bl.bl-cards.ls-side { gap: 1.5rem 2.6rem; padding-right: 1.75rem; }
+.bl.bl-cards.ls-side a { --tab: var(--accent); overflow: visible; border: 1px solid var(--line); border-top-width: 1px;
+  border-radius: 6px; background: var(--bg);
+  min-height: 13rem; }        /* 넷째 탭이 9rem 에서 3rem 내려옵니다 — 표지 없는 짧은 카드에서 탭이 카드 밑으로 새지 않게 */
+.bl.bl-cards.ls-side > li:nth-child(4n+2) a { --tab: #3f7d5c; }
+.bl.bl-cards.ls-side > li:nth-child(4n+3) a { --tab: #b5603a; }
+.bl.bl-cards.ls-side > li:nth-child(4n) a { --tab: #6a5aa8; }
+.bl.bl-cards.ls-side .b-no { top: var(--tt, .9rem); right: -1.75rem; width: 1.75rem; padding: .7rem 0;
+  writing-mode: vertical-rl; text-align: center; background: var(--tab); color: #fff; border-radius: 0 6px 6px 0;
+  font-size: .72rem; letter-spacing: .12em; }
+.bl.bl-cards.ls-side > li:nth-child(4n+2) .b-no { --tt: 3.6rem; }
+.bl.bl-cards.ls-side > li:nth-child(4n+3) .b-no { --tt: 6.3rem; }
+.bl.bl-cards.ls-side > li:nth-child(4n) .b-no { --tt: 9rem; }
+.bl.bl-cards.ls-side .b-shot { border: 0; margin: .8rem .8rem .85rem; border-radius: 3px; }
+.bl.bl-cards.ls-side a:hover { background: color-mix(in srgb, var(--tab) 6%, var(--bg)); color: var(--fg); border-color: var(--tab); }
+.bl.bl-cards.ls-side a:hover .b-no { background: var(--tab); color: #fff; }
+.bl.bl-cards.ls-side a:hover .b-lede { color: var(--fg-2); }
+.bl.bl-cards.ls-side a:hover .b-date { color: var(--fg-3); }
+.bl.bl-cards.ls-side a:has(.b-shot:empty) { padding-top: 1.1rem; }
+
+/* ── 참고서 카드 · 서류 폴더 ──
+   탭과 몸통이 한 색. 색은 넷이 돌아갑니다(미색·연두·하늘·분홍) — 종이처럼 제 글자색을 갖습니다 */
+.bl.bl-cards.ls-folder { gap: 2.4rem 1.4rem; }
+.bl.bl-cards.ls-folder > li { padding-top: 1.7rem; }
+.bl.bl-cards.ls-folder a { --fd: #efe2bd; overflow: visible; border: 0; border-radius: 0 10px 10px 10px; background: var(--fd);
+  color: #2c2a24; padding: .8rem .8rem 1rem;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--fd) 70%, #000), 0 12px 22px -16px rgba(0, 0, 0, .35);
+  transition: transform .25s var(--ease); }
+.bl.bl-cards.ls-folder > li:nth-child(4n+2) a { --fd: #d9e5d3; }
+.bl.bl-cards.ls-folder > li:nth-child(4n+3) a { --fd: #d6e2ee; }
+.bl.bl-cards.ls-folder > li:nth-child(4n) a { --fd: #f0d9d2; }
+.bl.bl-cards.ls-folder a > :not(.b-shot):not(.b-no) { padding-inline: .25rem; }
+.bl.bl-cards.ls-folder .b-no { top: -1.7rem; left: 0; right: auto; height: 1.75rem; display: flex; align-items: center;
+  padding: 0 1.1rem 0 .9rem; background: var(--fd); color: #2c2a24; font-size: .74rem;
+  clip-path: polygon(0 0, calc(100% - .9rem) 0, 100% 100%, 0 100%); border-radius: 8px 0 0 0; }
+.bl.bl-cards.ls-folder .b-no::before { content: 'No.\00a0'; content: 'No.\00a0' / ''; opacity: .55; }
+.bl.bl-cards.ls-folder .b-shot { border: 0; margin: 0 0 .95rem; border-radius: 4px; box-shadow: 0 0 0 4px rgba(255, 255, 255, .55); }
+.bl.bl-cards.ls-folder a:hover { background: var(--fd); color: #2c2a24; transform: translateY(-3px); }
+.bl.bl-cards.ls-folder a:hover .b-no { background: var(--fd); color: #2c2a24; }
+.bl.bl-cards.ls-folder .b-lede, .bl.bl-cards.ls-folder a:hover .b-lede { color: #57544b; }
+.bl.bl-cards.ls-folder .b-date, .bl.bl-cards.ls-folder a:hover .b-date { color: #6f6b60; }
+.bl.bl-cards.ls-folder a:has(.b-shot:empty) { padding-top: 1rem; }
+
+/* ── 호수 · 표지 ──
+   사진이 먼저(세로 4:5), 번호가 사진 위에 흰 윤곽으로 얹힙니다. 마크업 차례는 번호가 앞이라
+   격자 칸 하나(shot)에 둘을 겹쳐 앉힙니다 */
+.bl.bl-issue.ls-cover a { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr auto;
+  grid-template-areas: 'shot' 'body' 'date'; border-top: 0; padding-top: 0; }
+.bl.bl-issue.ls-cover .b-shot { grid-area: shot; margin: 0; aspect-ratio: 4 / 5; position: relative; }
+.bl.bl-issue.ls-cover .b-shot::after { content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, .5)); }
+/* 표지 없는 글 — 옅은 판을 세우고 번호를 먹 윤곽으로 */
+.bl.bl-issue.ls-cover .b-shot:empty { display: block; background: var(--bg-2); }
+.bl.bl-issue.ls-cover .b-shot:empty::after { content: none; }
+.bl.bl-issue.ls-cover .b-no { grid-area: shot; align-self: end; justify-self: start; z-index: 1; white-space: nowrap;
+  padding: 0 1rem .7rem; font-size: clamp(4rem, 9vw, 6.2rem); -webkit-text-stroke-color: #fff; }
+.bl.bl-issue.ls-cover .b-no::before { color: rgba(255, 255, 255, .85); }
+.bl.bl-issue.ls-cover a:hover .b-no, .bl.bl-issue.ls-cover a:focus-visible .b-no { color: #fff; }
+.bl.bl-issue.ls-cover a:has(.b-shot:empty) .b-no { -webkit-text-stroke-color: var(--fg); }
+.bl.bl-issue.ls-cover a:has(.b-shot:empty) .b-no::before { color: var(--fg-3); }
+.bl.bl-issue.ls-cover a:has(.b-shot:empty):hover .b-no,
+.bl.bl-issue.ls-cover a:has(.b-shot:empty):focus-visible .b-no { color: var(--fg); }
+.bl.bl-issue.ls-cover .b-shot img { transition: transform .5s var(--ease); }
+.bl.bl-issue.ls-cover a:hover .b-shot img { transform: scale(1.03); }
+.bl.bl-issue.ls-cover .b-body { grid-area: body; }
+.bl.bl-issue.ls-cover .b-date { grid-area: date; }
+@media (max-width: 640px) { .bl.bl-issue.ls-cover .b-no { font-size: 3.4rem; } }
+
+/* ── ⑫ 이미지 gallery — 사진이 주인공. 바탕은 배너 리스트(21:9 한 줄씩) ──
+   제목은 사진 위에 흰 글자로 섭니다. 사진 아래쪽을 어둡게 눌러 어떤 사진에서도 읽히게 합니다.
+   기본 줄의 호버(회색 바탕·밑줄)는 사진 판에서 끕니다 — 사진 뒤에 회색이 비칩니다 */
+.bl.bl-gallery { display: grid; gap: 1.25rem; }
+.bl.bl-gallery .b-no, .bl.bl-gallery .b-tags { display: none; }
+.bl.bl-gallery a { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); aspect-ratio: 21 / 9;
+  overflow: hidden; isolation: isolate; padding: 0;
+  background: color-mix(in srgb, var(--accent) 70%, #000); color: #fff; }
+.bl.bl-gallery a:hover { background: color-mix(in srgb, var(--accent) 70%, #000); }
+.bl.bl-gallery a:hover .b-title { text-decoration: none; }
+.bl.bl-gallery .b-shot { display: block; position: absolute; inset: 0; z-index: -1; }
+.bl.bl-gallery .b-shot::after { content: ''; position: absolute; inset: 0;
+  /* 위쪽도 살짝 누릅니다 — 날짜가 위에 서서, 밝은 사진에서는 흰 글자가 안 읽혔습니다 */
+  background: linear-gradient(180deg, rgba(0, 0, 0, .32) 0, rgba(0, 0, 0, .04) 24%, rgba(0, 0, 0, .05) 40%, rgba(0, 0, 0, .72)); }
+.bl.bl-gallery .b-shot img { transition: transform .6s var(--ease); }
+.bl.bl-gallery a:hover .b-shot img { transform: scale(1.03); }
+.bl.bl-gallery .b-body { align-self: end; padding: clamp(1.2rem, 3vw, 2.2rem); max-width: 48rem; }
+.bl.bl-gallery .b-title { color: #fff; font-weight: 700; font-size: clamp(1.4rem, 3vw, 2.25rem); line-height: 1.25; text-wrap: balance; }
+.bl.bl-gallery .b-lede { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+  margin-top: .55rem; color: rgba(255, 255, 255, .86); font-size: .98rem; line-height: 1.6; }
+.bl.bl-gallery .b-date { position: absolute; top: clamp(1rem, 2.4vw, 1.6rem); left: clamp(1.2rem, 3vw, 2.2rem); color: rgba(255, 255, 255, .86);
+  /* site.css 의 좁은 화면 규칙(`.b-date { grid-column: 2 }`)이 여기까지 내려오면, 1열 격자에서
+     날짜의 기준 칸이 오른쪽 끝 폭 0 자리가 되어 카드 밖으로 밀려나 잘립니다 */
+  grid-column: auto; }
+@media (max-width: 640px) { .bl.bl-gallery a { aspect-ratio: 4 / 3; } }
+
+/* 히어로 배너 — 첫 글만 크게, 나머지는 두 칸 */
+.bl.bl-gallery.ls-banner-split { grid-template-columns: 1fr 1fr; }
+.bl.bl-gallery.ls-banner-split > li:first-child { grid-column: 1 / -1; }
+.bl.bl-gallery.ls-banner-split > li + li a { aspect-ratio: 16 / 10; }
+.bl.bl-gallery.ls-banner-split > li + li .b-title { font-size: clamp(1.15rem, 2vw, 1.45rem); }
+.bl.bl-gallery.ls-banner-split > li + li .b-lede { display: none; }
+@media (max-width: 640px) { .bl.bl-gallery.ls-banner-split { grid-template-columns: 1fr; } }
+
+/* 그리드 · 그리드 텍스트 — 정사각 3열을 촘촘히. 그리드는 올리면 제목이 덮개로, 그리드 텍스트는 아래쪽 띠로 늘 보입니다.
+   마우스를 올릴 수 없는 기기에서는 그리드도 그리드 텍스트처럼 섭니다 — 안 그러면 제목을 볼 길이 없습니다 */
+.bl.bl-gallery.ls-grid, .bl.bl-gallery.ls-grid-caption { grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.bl.bl-gallery.ls-grid a, .bl.bl-gallery.ls-grid-caption a { aspect-ratio: 1 / 1; background: var(--bg-2); }
+.bl.bl-gallery.ls-grid .b-lede, .bl.bl-gallery.ls-grid-caption .b-lede { display: none; }
+.bl.bl-gallery.ls-grid .b-shot::after, .bl.bl-gallery.ls-grid-caption .b-shot::after { content: none; }
+.bl.bl-gallery.ls-grid .b-body { position: absolute; inset: 0; max-width: none; display: flex; flex-direction: column;
+  justify-content: center; align-items: center; text-align: center; padding: 1.4rem;
+  background: rgba(10, 12, 16, .64); opacity: 0; transition: opacity .2s; }
+.bl.bl-gallery.ls-grid .b-title, .bl.bl-gallery.ls-grid-caption .b-title { font-size: 1.1rem; line-height: 1.4; }
+.bl.bl-gallery.ls-grid .b-date { top: auto; bottom: .9rem; left: 0; right: 0; text-align: center; opacity: 0; transition: opacity .2s; }
+.bl.bl-gallery.ls-grid a:hover .b-body, .bl.bl-gallery.ls-grid a:focus-visible .b-body,
+.bl.bl-gallery.ls-grid a:hover .b-date, .bl.bl-gallery.ls-grid a:focus-visible .b-date { opacity: 1; }
+.bl.bl-gallery.ls-grid-caption .b-body { position: absolute; inset: 0; max-width: none; display: flex; flex-direction: column;
+  justify-content: flex-end; padding: 1rem 1rem 2.4rem; background: linear-gradient(180deg, transparent 45%, rgba(0, 0, 0, .7)); }
+.bl.bl-gallery.ls-grid-caption .b-title { font-size: 1rem; }
+.bl.bl-gallery.ls-grid-caption .b-date { top: auto; bottom: .9rem; left: 1rem; }
+@media (hover: none) {
+  .bl.bl-gallery.ls-grid .b-body { opacity: 1; justify-content: flex-end; align-items: flex-start; text-align: left;
+    background: linear-gradient(180deg, transparent 45%, rgba(0, 0, 0, .7)); padding: .7rem .7rem 1.9rem; }
+  .bl.bl-gallery.ls-grid .b-date { opacity: 1; text-align: left; left: .7rem; bottom: .6rem; }
+}
+@media (max-width: 640px) {
+  .bl.bl-gallery.ls-grid, .bl.bl-gallery.ls-grid-caption { gap: 2px; }
+  .bl.bl-gallery.ls-grid .b-title, .bl.bl-gallery.ls-grid-caption .b-title { font-size: .82rem; }
+}
+/* 표지 없는 칸 — 포인트색 판에 제목을 늘 보입니다 */
+.bl.bl-gallery.ls-grid a:has(.b-shot:empty) .b-body, .bl.bl-gallery.ls-grid-caption a:has(.b-shot:empty) .b-body {
+  opacity: 1; background: color-mix(in srgb, var(--accent) 90%, #000); }
+
+/* 메이슨리 · 메이슨리 교차 — 단(column)으로 엇갈려 쌓습니다. 메이슨리는 사진 비율 그대로, 교차는 칸 높이를
+   다섯 가지로 돌려 잘라 표지 비율이 같아도 늘 엇갈립니다(지금 표지는 거의 16:9 배너라
+   가로만 쌓으면 높이가 같은 격자처럼 보입니다).
+   읽는 차례는 왼쪽 단을 위에서 아래로 다 내려간 뒤 다음 단입니다 — 단 쌓기의 성질입니다 */
+.bl.bl-gallery.ls-masonry, .bl.bl-gallery.ls-masonry-stagger { display: block; columns: 3 15rem; column-gap: 1.25rem; }
+.bl.bl-gallery.ls-masonry > li, .bl.bl-gallery.ls-masonry-stagger > li { break-inside: avoid; margin-bottom: 1.7rem; }
+.bl.bl-gallery.ls-masonry a, .bl.bl-gallery.ls-masonry-stagger a { display: flex; flex-direction: column; aspect-ratio: auto;
+  overflow: visible; background: none; color: var(--fg); }
+.bl.bl-gallery.ls-masonry a:hover, .bl.bl-gallery.ls-masonry-stagger a:hover { background: none; }
+.bl.bl-gallery.ls-masonry .b-shot, .bl.bl-gallery.ls-masonry-stagger .b-shot { position: relative; inset: auto; z-index: auto;
+  border-radius: 14px; overflow: hidden; background: var(--bg-2); }
+.bl.bl-gallery.ls-masonry .b-shot::after, .bl.bl-gallery.ls-masonry-stagger .b-shot::after { content: none; }
+.bl.bl-gallery.ls-masonry .b-shot img { height: auto; }
+.bl.bl-gallery.ls-masonry .b-shot img, .bl.bl-gallery.ls-masonry-stagger .b-shot img { transition: transform .5s var(--ease), filter .3s; }
+.bl.bl-gallery.ls-masonry a:hover .b-shot img, .bl.bl-gallery.ls-masonry-stagger a:hover .b-shot img { transform: scale(1.03); filter: brightness(.92); }
+.bl.bl-gallery.ls-masonry .b-body, .bl.bl-gallery.ls-masonry-stagger .b-body { align-self: auto; max-width: none; padding: .65rem .2rem 0; }
+.bl.bl-gallery.ls-masonry .b-title, .bl.bl-gallery.ls-masonry-stagger .b-title { color: var(--fg); font-size: 1rem; line-height: 1.42; }
+.bl.bl-gallery.ls-masonry .b-lede, .bl.bl-gallery.ls-masonry-stagger .b-lede { display: none; }
+.bl.bl-gallery.ls-masonry .b-date, .bl.bl-gallery.ls-masonry-stagger .b-date { position: static; display: block;
+  padding: 0 .2rem; margin-top: .3rem; font-size: .72rem; color: var(--fg-3); }
+.bl.bl-gallery.ls-masonry-stagger .b-shot { aspect-ratio: var(--ar, 4 / 5); }
+.bl.bl-gallery.ls-masonry-stagger > li:nth-child(5n+2) .b-shot { --ar: 1 / 1; }
+.bl.bl-gallery.ls-masonry-stagger > li:nth-child(5n+3) .b-shot { --ar: 3 / 4; }
+.bl.bl-gallery.ls-masonry-stagger > li:nth-child(5n+4) .b-shot { --ar: 16 / 10; }
+.bl.bl-gallery.ls-masonry-stagger > li:nth-child(5n) .b-shot { --ar: 2 / 3; }
+/* 표지 없는 글 — 옅은 판에 제목과 첫 문단을 담은 글 카드 */
+.bl.bl-gallery.ls-masonry .b-shot:empty, .bl.bl-gallery.ls-masonry-stagger .b-shot:empty { display: none; }
+.bl.bl-gallery.ls-masonry a:has(.b-shot:empty), .bl.bl-gallery.ls-masonry-stagger a:has(.b-shot:empty) {
+  background: var(--bg-2); border-radius: 14px; padding: 1.2rem 1rem 1rem; }
+.bl.bl-gallery.ls-masonry a:has(.b-shot:empty) .b-body, .bl.bl-gallery.ls-masonry-stagger a:has(.b-shot:empty) .b-body { padding-top: 0; }
+.bl.bl-gallery.ls-masonry a:has(.b-shot:empty) .b-title, .bl.bl-gallery.ls-masonry-stagger a:has(.b-shot:empty) .b-title { font-size: 1.15rem; }
+.bl.bl-gallery.ls-masonry a:has(.b-shot:empty) .b-lede, .bl.bl-gallery.ls-masonry-stagger a:has(.b-shot:empty) .b-lede {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden;
+  margin-top: .5rem; color: var(--fg-2); font-size: .88rem; line-height: 1.6; }
+
+/* 움직임을 줄여 달라는 기기 — 올렸을 때 들리고 기울던 카드는 제자리에 둡니다(압정의 기울기는 장식이라 남깁니다) */
+@media (prefers-reduced-motion: reduce) {
+  .bl.bl-cards.ls-paper a:hover, .bl.bl-cards.ls-folder a:hover { transform: none; }
+  .bl.bl-cards.ls-paper.ld-pin a:hover { transform: rotate(var(--tilt, 0deg)); }
 }
 
 /* ── 움직임을 줄여 달라는 기기 — 전환·확대 전부 끕니다(상태는 즉시 바뀝니다) ─────────── */

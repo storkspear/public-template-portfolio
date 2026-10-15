@@ -27,7 +27,7 @@
     "check:routes": "node tools/check-routes.mjs",
     "check-refs": "node tools/check-refs.mjs"
   },
-  "description": "정적 포트폴리오 + 글 쓰는 블로그. 방문자에게 JS 0바이트.",
+  "description": "정적 포트폴리오 + 글 쓰는 블로그. 방문자에게 스크립트 없이(내 글 링크가 있는 글만 예외).",
   "devDependencies": {
     "lucide-static": "^1.47.0",
     "simple-icons": "^16.31.0"

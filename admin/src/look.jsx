@@ -20,16 +20,17 @@ import { CAT_STRIP_STYLES,
   MENU_PLACES, ALIGNS, HEAD_WIDTHS, SIDEBARS, DRAWER_W, NAV_STYLES, DRAWER_STYLES, NAV_LINKS, FAVICONS, BUILTIN_FAVICON, inkOn, HEAD_SIZES, mainStart,
   ITEM_SIZES, ITEM_LINKS, SECTION_KINDS, TEMPLATE_ITEM_IDS, SHOT_KNOBS, SHOT_MAX, SAMPLE_SHOTS, STAGE_H, STAGE_W, BODY_W, HEAD_H, HEAD_SCALE, isExternal,
   FOOT_KINDS, FOOT_KNOBS, FOOT_SIZES, FOOT_H, FOOT_ICON, SERVICE_ICONS, ICON_OF, footStart, footerContrast,
-  blogLookOf,
+  blogLookOf, DECK_STYLES, PAPER_DECOS,
 } from '../../shared/site-vocab.mjs'
 import { autoSlug, CATEGORY_LABEL_MAX, CATEGORY_MAX, DEFAULT_LABEL, newCategoryId, slugProblem } from '../../shared/category.mjs'
 import { MENU_ICONS, MENU_ICON_GROUPS } from '../../shared/menu-icons.mjs'
-import { emitInitial, headVars, knobVars, lhVars, menuVars, outlineVars, tocVars, themeVars } from '../../shared/site-css.mjs'
+import { deckVars, emitInitial, headVars, knobVars, lhVars, menuVars, outlineVars, tocVars, themeVars } from '../../shared/site-css.mjs'
 
 import { attachStage, STACK_MQ } from './stage-editor.js'
 import { ALIGN_OPS, ColorField, FontPick, IconApply, IconPic, IconUndo, ItemName, MenuIcon,
   MINE_ICON, NumField, Pick, SelPanel, Shape, iconLabel } from './fields.jsx'
 import { useToast } from './toast.js'
+import { useSlow } from './wait.js'
 /* 사진 업로드는 무드보드와 같은 모듈을 씁니다. 한 장마다 원본(2000px)과 썸네일(720px)을
    브라우저에서 만들고, 한 장이 실패해도 나머지를 계속 업로드합니다 */
 import { uploadMood, uploadFavicon, ACCEPT, FAVICON_ACCEPT } from './mood.js'
@@ -135,6 +136,12 @@ const layoutOf = (m) => JSON.stringify(deepNormalized({
   * 마지막 생성 결과(<style data-head>)가 그대로 적용돼 「따르기」를 눌러도 이전 색이 남습니다.
   * code 모드 화면에는 테마를 적용하지 않습니다 — 생성기의 pageStyle 과 같은 규칙입니다.
   */
+/**
+ * 갈래 밑의 모양 — 다시 굽기 키에 씁니다. 종이 색은 CSS 변수라 iframe 에는 바로 먹지만 **넣습니다**:
+ * 빼 두면 디스크의 미리보기에 옛 색이 남아 「새 탭에서 확인」이 옛 색을 엽니다(링크 잠금이 못 잡습니다)
+ */
+const deckShape = (d) => (d ? [d.cards, d.deco, d.paper, d.issue, d.thumb, d.gallery].join('/') : '')
+
 const liveCss = (conf, pageKey) => {
   const t = conf.theme
   /* 설정은 늘 여섯 키가 정규화돼 오지만, 한 키라도 빠진 응답에 화면 전체가 죽지는 않게 합니다 */
@@ -147,6 +154,8 @@ const liveCss = (conf, pageKey) => {
     + emitInitial(themeVars(t, pg.font))
     + emitInitial(knobVars(conf.portfolio?.knobs))
     + emitInitial(outlineVars(conf.blog?.outline))
+    /* 종이 카드의 바탕색 — 색이라 다시 굽지 않고 여기서 바로 갈아 끼웁니다 */
+    + emitInitial(deckVars(conf.blog?.deck))
     /* 문단 바로가기 표식 색 — 미리보기가 글 상세일 때만 쓰이지만, 변수는 늘 냅니다.
        `emitInitial` 이라 비우면 `initial` 로 나가 CSS 폴백(사이트의 먹)이 살아납니다 */
     + emitInitial(tocVars(conf.blog?.toc))
@@ -235,6 +244,20 @@ export function Look({ onWorks, onCats }) {
   const [commonPath, setCommonPath] = useState('/blog/')
   const { note, setNote, err, setErr, say, fail, hold, release } = useToast()
   const [busy, setBusy] = useState('')
+  /**
+   * 미리보기가 지금 설정보다 뒤처져 있는가. 설정을 바꾼 **그 순간** 켜고, 다시 구운 화면이
+   * iframe 에 다 그려진 뒤에 끕니다. `busy === 'draw'` 로는 모자랍니다 — 그것은 400ms 를
+   * 기다리는 동안엔 아직 안 켜졌고, 굽기 응답이 오면 iframe 이 새 화면을 불러오기도 전에
+   * 꺼집니다. 그 틈에 「새 탭에서 확인」을 누르면 옛 화면이 열렸습니다(주인 지적).
+   * `staleSeq` 는 바꾼 횟수, `loadFor` 는 「이 번호의 굽기가 끝나 iframe 을 갈아 끼웠다」입니다.
+   */
+  const [stale, setStale] = useState(false)
+  const staleSeq = useRef(0)
+  const loadFor = useRef(0)
+  /* 지금 서버에서 굽는 중인 번호(없으면 0) */
+  const flying = useRef(0)
+  /* 막대와 옅어짐은 200ms 를 넘길 때만 — 링크 잠금은 즉시입니다 */
+  const staleSlow = useSlow(stale)
   /* 생성기가 보내는 경고. 차단하지는 않지만 알아야 할 것들입니다(예: 헤더가 둘).
      미리보기를 생성할 때마다 새로 받으므로 원인을 해결하면 다음 생성에서 사라집니다 */
   const [warn, setWarn] = useState([])
@@ -622,13 +645,15 @@ export function Look({ onWorks, onCats }) {
     /* 카드 갈래의 테마 — 목록에 클래스 한 장이 붙습니다. 색·모서리는 CSS 변수라 여기 없습니다
        (넣으면 색칸을 만질 때마다 사이트를 다시 굽습니다) */
     conf.blog.outline.skin,
+    /* 갈래 밑의 모양과 종이 장식 — 클래스 한 장씩이라 마크업입니다. 종이 색도 넣습니다(deckShape 주석) */
+    deckShape(conf.blog.deck),
     /* 카테고리 — 줄·페이지·드로어 하위 항목이 전부 마크업입니다. 모양 여섯 중 마크업인 것
        (갈래·공통헤더·타이틀·바로가기·카드 테마)도 카테고리마다 따로 봅니다. 색은 여기 없습니다 */
     /* 줄 모양도 **마크업**입니다 — `<nav>` 에 클래스 한 장이 붙습니다. 여기 없으면 눌러도
        미리보기가 안 바뀝니다(CSS 변수가 아니라 클래스라 즉시 반영이 안 됩니다). 실제로 그랬습니다 */
     conf.blog.catStrip,
     (conf.blog.categories || []).map((c) => [c.id, c.label, c.slug, c.show, c.look.template, c.look.chrome,
-      headMarkup(c.look.head), c.look.toc.show, c.look.toc.skin, c.look.outline.skin].join(':')).join('|'),
+      headMarkup(c.look.head), c.look.toc.show, c.look.toc.skin, c.look.outline.skin, deckShape(c.look.deck)].join(':')).join('|'),
     /* 탭 이름과 파비콘. 둘 다 <head> 로 나가므로 마크업입니다.
        파비콘 색도 여기 있어야 합니다 — 색을 고르면 굽기가 그림을 다시 그려 data: 주소로 박으므로
        CSS 변수처럼 iframe 에 바로 먹지 않습니다(빼 두면 색만 바꿀 때 미리보기가 안 바뀝니다) */
@@ -657,11 +682,23 @@ export function Look({ onWorks, onCats }) {
    */
   const lastShape = useRef(null)
   useEffect(() => {
-    if (!conf || !themeOk) return
-    if (lastShape.current === shape) return
+    /* 대비가 모자라 못 구우면 잠금도 풉니다 — 안 그러면 막대가 끝없이 달립니다(이유 문구는 따로 섭니다) */
+    if (!conf || !themeOk) { setStale(false); return }
+    /* 바꿨다가 400ms 안에 되돌린 경우 — 구울 것이 없으니 잠금을 풉니다. 같은 모양을 굽는 중이면
+       그 굽기가 끝나 iframe 이 갈린 뒤에 풀리게, 기다리는 번호를 그 굽기의 번호로 맞춥니다 */
+    if (lastShape.current === shape) {
+      if (flying.current) staleSeq.current = flying.current
+      else setStale(false)
+      return
+    }
     const first = lastShape.current === null
-    lastShape.current = shape
+    const mine = ++staleSeq.current
+    setStale(true)
     const id = setTimeout(async () => {
+      /* 「구웠다」는 표시는 실제로 보낼 때 남깁니다. 바꾼 순간 남기면, 400ms 안에 대비가 모자라
+         타이머가 지워진 뒤 색을 되돌렸을 때 같은 모양이라며 건너뛰어 끝내 안 굽습니다 */
+      lastShape.current = shape
+      flying.current = mine
       setBusy('draw')
       try {
         /* 한 요청에 키를 전부 전송합니다. 미리보기 생성은 사이트 한 벌을 통째로 만드는
@@ -681,8 +718,13 @@ export function Look({ onWorks, onCats }) {
         /* iframe 이 교체되기 직전에 편집 중이던 글자와 드래그 위치를 확정합니다.
            안 하면 새 iframe 이 로드되면서 사라집니다 */
         editor.current?.api.flush?.()
+        loadFor.current = mine
         setBust((n) => n + 1)
-      } catch (e) { fail(e) } finally { setBusy('') }
+      } catch (e) {
+        /* 굽기가 실패하면 미리보기는 옛 화면 그대로입니다 — 잠가 둔 채 두면 링크가 영영 안 풀립니다 */
+        if (mine === staleSeq.current) setStale(false)
+        fail(e)
+      } finally { flying.current = 0; setBusy('') }
     }, first ? 0 : 400)
     return () => clearTimeout(id)
   }, [shape])
@@ -786,6 +828,8 @@ export function Look({ onWorks, onCats }) {
   }
   /* 카드 갈래의 손잡이. 색칸이 「비우면 무엇을 따르나」를 보여 주려면 지금 테마를 알아야 합니다 */
   const setOutline = (patch) => setBlogLook({ outline: { ...blogLook.outline, ...patch } })
+  /* 갈래 밑의 모양 · 종이 장식 · 종이 색. 갈래마다 제 칸이라 다른 갈래의 고른 값은 그대로 남습니다 */
+  const setDeck = (patch) => setBlogLook({ deck: { ...blogLook.deck, ...patch } })
   /* 고르면 미리보기를 첫 글로 보냅니다 — 표식은 글 상세에만 있어서 목록에 서 있으면
      바뀐 것이 안 보입니다.
      모양은 `shape` 에 들어갑니다(클래스라 다시 구워야 합니다). 색은 CSS 변수라 안 들어가고
@@ -2231,6 +2275,42 @@ export function Look({ onWorks, onCats }) {
                 {' '}테마를 바꾸면 글꼴 칸도 그 테마의 짝으로 바뀝니다.</p>
             </>)}
 
+            {/* ── 갈래 밑의 모양 ──
+                 참고서 카드·호수·사진 행·이미지 넷에만 있습니다. 고른 갈래일 때만 냅니다
+                 (카드 테마와 같은 까닭). 고르면 클래스 한 장이 바뀌어 미리보기를 다시 굽습니다 */}
+            {tab === 'blog' && DECK_STYLES[blogLook.template] && (<>
+              <h3>{{ thumb: '사진 자리', gallery: '이미지 테마' }[blogLook.template] || '모양'}</h3>
+              <div className="lkPick lkShapes">
+                {DECK_STYLES[blogLook.template].map((o) => (
+                  <button key={o.value} type="button"
+                          aria-pressed={blogLook.deck[blogLook.template] === o.value}
+                          onClick={() => setDeck({ [blogLook.template]: o.value })}>
+                    {o.icon && <Shape cells={o.icon} />}
+                    <b>{o.label}</b><em>{o.hint}</em>
+                  </button>
+                ))}
+              </div>
+              {blogLook.template === 'cards' && blogLook.deck.cards === 'paper' && (<>
+                <h3>종이 장식</h3>
+                <div className="lkPick">
+                  {PAPER_DECOS.map((o) => (
+                    <button key={o.value} type="button" aria-pressed={blogLook.deck.deco === o.value}
+                            onClick={() => setDeck({ deco: o.value })}>
+                      <b>{o.label}</b><em>{o.hint}</em>
+                    </button>
+                  ))}
+                </div>
+                <div className="lkRow">
+                  <ColorField id="bc-paper" label="종이 색" hint=""
+                              value={blogLook.deck.paper}
+                              shown={blogLook.deck.paper || '#f7f3ea'}
+                              onPick={(v) => setDeck({ paper: v })}
+                              followLabel="기본 미색으로" />
+                </div>
+                <p className="lkHint">글자는 밝은 종이에 맞춘 먹색이라, 옅은 색을 고르면 잘 읽힙니다.</p>
+              </>)}
+            </>)}
+
             {/* ── 블로그: 글 상세 ──
                  여기까지는 글 목록, 아래는 열린 글의 모양입니다. 같은 탭에 섞여 있어
                  어디부터 상세인지 안 보이므로 포트폴리오와 같은 선으로 끊습니다 */}
@@ -2520,7 +2600,7 @@ export function Look({ onWorks, onCats }) {
           </div>
         </section>
 
-        <section className="lkPreview">
+        <section className="lkPreview" aria-busy={staleSlow}>
           <div className="lkPreviewBar">
             {tab === 'common' ? (
               <span className="lkPages" role="group" aria-label="어느 화면으로 볼까">
@@ -2542,14 +2622,18 @@ export function Look({ onWorks, onCats }) {
             )}
             {/* 두 벌을 둘 다 내줍니다. 더미는 판짜기를 고르라고 있는 것이고, 실제는
                  방문자가 볼 바로 그 화면입니다. 어느 쪽을 보고 있는지 헷갈리면 둘 다 신뢰할 수 없습니다 */}
+            {/* 다시 굽는 동안은 잠급니다 — 열리는 것이 방금 바꾼 설정이 아니라 그 앞의 화면이라서입니다.
+                 주소를 떼면(`href` 없음) 눌러도 아무 데도 안 갑니다. 주소 없는 `<a>` 는 역할이 사라져
+                 `aria-disabled` 를 안 읽으므로 `role="link"` 를 붙입니다 */}
             <span className="lkOpen">
-              <a href={`${PREVIEW.real}${here.path}`} target="_blank" rel="noopener">새 탭에서 실제 데이터로 확인</a>
-              <a href={`${PREVIEW.dummy}${here.path}`} target="_blank" rel="noopener">새 탭에서 더미 데이터로 확인</a>
+              {[['real', '실제'], ['dummy', '더미']].map(([k, w]) => (stale
+                ? <a key={k} role="link" aria-disabled="true" title="미리보기를 다시 굽는 중입니다">{w} 데이터 굽는 중…</a>
+                : <a key={k} href={`${PREVIEW[k]}${here.path}`} target="_blank" rel="noopener">새 탭에서 {w} 데이터로 확인</a>))}
             </span>
           </div>
           <div className="lkPreviewWrap" ref={shrink}>
             <iframe ref={frame} key={`${tab}-${here.path}-${bust}`} title={`${here.label} 미리보기`}
-                    onLoad={paint}
+                    onLoad={() => { paint(); if (loadFor.current === staleSeq.current) setStale(false) }}
                     src={`${PREVIEW.dummy}${here.path}?v=${bust}`} />
           </div>
         </section>

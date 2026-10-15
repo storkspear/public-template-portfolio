@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { PostEditor, EMPTY_TITLE } from '@storkspear/post-editor-react'
 import { CENTERED_WIDTH } from '@storkspear/post-editor-core/proseWidth'
 
@@ -249,7 +249,7 @@ const dateOf = (v) => String(v).slice(0, 10).replace(/-/g, '.')
  */
 function lossOf(p) {
   const also = []
-  if (p.published_at && p.has_draft) also.push('고치던 초안')
+  if (p.published_at && p.has_draft) also.push('저장된 수정본')
   if (p.attachment_count > 0) also.push(`올린 사진 ${p.attachment_count}장`)
   const what = (p.published_at ? '해당 게시글' : '해당 초안') + (also.length ? `과 ${also.join(', ')}` : '')
   return `${what}을 삭제하면 되돌릴 수 없습니다.`
@@ -265,7 +265,7 @@ function DelButton({ ref, p, asking, busy, onToggle }) {
             aria-expanded={asking ? 'true' : 'false'}
             aria-controls={asking ? `ask-${p.id}` : undefined}
             aria-label={p.published_at ? '이 글 삭제' : '이 초안 삭제'}
-            title={asking ? '지금 묻는 중 — 누르면 닫습니다'
+            title={asking ? '취소'
                           : p.published_at ? '이 글 삭제' : '이 초안 삭제'}
             onClick={(e) => { e.stopPropagation(); onToggle() }}>
       <Trash />
@@ -315,9 +315,10 @@ function PickBox({ p, picked, onPick }) {
   /* 편집 모드가 아니면 `onPick` 이 안 옵니다 — 평소 목록에는 칸이 아예 없습니다.
      늘 세워 두면 「고르면 무엇이 되는가」가 안 보이는 채로 자리만 차지합니다(사용자 지적) */
   if (!onPick) return null
+  /* 줄 전체가 「선택」이라 칸은 제 클릭만 삼키고 같은 일을 합니다. Shift 를 읽으려고 `onClick` 에서 넘깁니다 */
   return (
-    <input type="checkbox" className="pick" checked={picked} aria-label={`${p.title || '제목 없음'} 고르기`}
-           onClick={(e) => e.stopPropagation()} onChange={onPick} />
+    <input type="checkbox" className="pick" checked={picked} aria-label={`${p.title || '제목 없음'} 선택`}
+           onClick={(e) => { e.stopPropagation(); onPick(e) }} onChange={() => {}} />
   )
 }
 /**
@@ -325,18 +326,18 @@ function PickBox({ p, picked, onPick }) {
  * 칩이 아무 말도 못 합니다. 하나라도 만들면 그때부터 「기본」도 뜻이 생기므로 옅게 답니다
  * (어느 글이 아직 분류 전인지가 목록에서 바로 보여야 합니다).
  */
-const Chip = ({ label, muted = false }) =>
-  (label ? <span className="cat" data-muted={muted ? '' : undefined}>{label}</span> : null)
+const Chip = ({ label, muted = false, changed = false }) =>
+  (label ? <span className="cat" data-muted={muted ? '' : undefined} data-changed={changed ? '' : undefined}>{label}</span> : null)
 
-function DraftRow({ p, busy, asking, onOpen, onAsk, onNo, onYes, chip = '', chipMuted = false, picked = false, onPick = null }) {
+function DraftRow({ p, busy, asking, onOpen, onAsk, onNo, onYes, chip = '', chipMuted = false, chipChanged = false, picked = false, onPick = null }) {
   const delRef = useRef(null)
   const cancel = () => { onNo(); delRef.current?.focus() }   // 취소하면 초점은 누른 자리로
   return (
     <li>
       <div className="row draft" data-asking={asking ? '' : undefined} data-picked={picked ? '' : undefined}
-           onClick={() => onOpen(p.slug)}>
-        <span className="pen" title="초안"><PickBox p={p} picked={picked} onPick={onPick} /><Pencil /></span>
-        <span className="ti">{p.title || '제목 없음'}<Chip label={chip} muted={chipMuted} /></span>
+           data-edit={onPick ? '' : undefined} onClick={(e) => (onPick ? onPick(e) : onOpen(p.slug))}>
+        <span className="pen" title="초안">{onPick ? <PickBox p={p} picked={picked} onPick={onPick} /> : <Pencil />}</span>
+        <span className="ti">{p.title || '제목 없음'}<Chip label={chip} muted={chipMuted} changed={chipChanged} /></span>
         {/* 조작은 한 칸에 모입니다 — 오른쪽 끝이 세 종류 줄에서 같은 x 에 섭니다 */}
         <span className="ops">
           <DelButton ref={delRef} p={p} asking={asking} busy={busy} onToggle={asking ? cancel : onAsk} />
@@ -350,7 +351,7 @@ function DraftRow({ p, busy, asking, onOpen, onAsk, onNo, onYes, chip = '', chip
 
 /** 발행·숨김 줄 — live 는 published_at 이 항상 있습니다. 숨김은 눈(감은 눈)과 줄 색이 말합니다 — 글자 칩은 안 답니다
     (테두리 친 「숨김」이 눈 옆에 생기면 누를 수 있는 버튼으로 읽혔습니다) */
-function Row({ p, i, busy, asking, onOpen, onVis, onAsk, onNo, onYes, chip = '', chipMuted = false, picked = false, onPick = null }) {
+function Row({ p, i, busy, asking, onOpen, onVis, onAsk, onNo, onYes, chip = '', chipMuted = false, chipChanged = false, picked = false, onPick = null }) {
   /* 작업은 제목만 보고 못 고릅니다 — 커버(제목 배너)를 줄 앞에 작게 겁니다 */
   const thumb = p.kind === 'work' && (
     <span className="thumb">{p.cover ? <img src={p.cover} alt="" loading="lazy" /> : null}</span>
@@ -360,21 +361,23 @@ function Row({ p, i, busy, asking, onOpen, onVis, onAsk, onNo, onYes, chip = '',
   return (
     <li>
       <div className="row" data-hidden={p.hidden ? '' : undefined}
-           data-asking={asking ? '' : undefined} data-picked={picked ? '' : undefined} onClick={() => onOpen(p.slug)}>
-        <span className="no"><PickBox p={p} picked={picked} onPick={onPick} />{String(i + 1).padStart(2, '0')}</span>
+           data-asking={asking ? '' : undefined} data-picked={picked ? '' : undefined}
+           data-edit={onPick ? '' : undefined} onClick={(e) => (onPick ? onPick(e) : onOpen(p.slug))}>
+        {/* 편집 중에는 고르기 칸이 번호 자리에 섭니다 — 둘을 나란히 두면 2.6rem 을 넘쳐 번호가 제목에 붙습니다 */}
+        <span className="no">{onPick ? <PickBox p={p} picked={picked} onPick={onPick} /> : String(i + 1).padStart(2, '0')}</span>
         {thumb}
         <span className="body">
-          <span className="ti">{p.title}<Chip label={chip} muted={chipMuted} /></span>
+          <span className="ti">{p.title}<Chip label={chip} muted={chipMuted} changed={chipChanged} /></span>
           {/* 나간 글과 따로 고치던 초안이 있습니다 — 공개면은 아직 옛 글입니다 */}
-          {p.has_draft && <span className="wip" title="고치던 초안이 있습니다">수정 중</span>}
+          {p.has_draft && <span className="wip" title="저장된 수정본이 있습니다">수정 중</span>}
           <span className="sl">/{p.kind === 'work' ? 'portfolio' : 'blog'}/{p.slug}/</span>
         </span>
         {/* 줄 전체가 「열기」라 여기서는 클릭이 위로 안 올라가게 막습니다 */}
         <span className="ops">
           <button type="button" className="vis" disabled={busy}
                   aria-pressed={p.hidden ? 'true' : 'false'}
-                  aria-label={p.hidden ? '공개 페이지에 다시 올리기' : '공개 페이지에서 내리기'}
-                  title={p.hidden ? '지금 숨김 — 누르면 다시 보입니다' : '지금 보임 — 누르면 숨깁니다'}
+                  aria-label={p.hidden ? '다시 공개' : '숨기기'}
+                  title={p.hidden ? '다시 공개' : '숨기기'}
                   onClick={(e) => { e.stopPropagation(); onVis() }}>
             <Eye off={p.hidden} />
           </button>
@@ -393,8 +396,8 @@ function List({ kind, onNew, onOpen, reloadKey, worksLive = true, cats = [] }) {
   /* 글과 작업은 같은 표·같은 화면을 씁니다 — 다른 건 말과 카드 그림뿐입니다 */
   const isWork = kind === 'work'
   const W = isWork
-    ? { one: '포트폴리오', add: '작업 올리기', none: '아직 올린 작업이 없습니다.' }
-    : { one: '블로그',     add: '글쓰기',      none: '아직 발행한 글이 없습니다.' }
+    ? { one: '포트폴리오', add: '작업 올리기', none: '올린 작업이 없습니다.' }
+    : { one: '블로그',     add: '글쓰기',      none: '발행한 글이 없습니다.' }
   const [posts, setPosts] = useState(null)
   const [err, setErr] = useState('')
   /* 지운 결과. 목록 안에 끼우지 않습니다 — 줄 위에 글자를 한 줄 더하면 아래가 통째로
@@ -423,7 +426,12 @@ function List({ kind, onNew, onOpen, reloadKey, worksLive = true, cats = [] }) {
   const [edit, setEdit] = useState(false)
   /* 여러 편을 골라 카테고리를 한 번에 — 고른 글의 주소들. 목록을 다시 받으면 비웁니다 */
   const [picked, setPicked] = useState(() => new Set())
-  const [bulkCat, setBulkCat] = useState('')
+  /* Shift+클릭의 한쪽 끝 — 직전에 누른 줄. 「전체 선택」 칸의 반쯤 찬 표시는 DOM 속성이라 ref 로 겁니다 */
+  const lastPick = useRef(null)
+  const allRef = useRef(null)
+  /* 옮기기로 정해 둔 것 — 주소 → 카테고리. 「완료」를 눌러야 서버에 적습니다: 메뉴를 잘못 눌러도
+     그 자리에서 나간 글이 다시 구워지지 않고, 「취소」로 통째로 버릴 수 있습니다 */
+  const [pending, setPending] = useState(() => new Map())
   const labelOfCat = (id) => cats.find((c) => c.id === id)?.label || ''
   /* 초안 그룹을 접어 두면 다음에도 접힌 채로 — 글이 쌓이면 초안이 목록 위쪽을 다 차지합니다 */
   const [openDraft, setOpenDraft] = useState(() => {
@@ -435,7 +443,7 @@ function List({ kind, onNew, onOpen, reloadKey, worksLive = true, cats = [] }) {
   }
 
   useEffect(() => {
-    setPicked(new Set())
+    setPicked(new Set()); setPending(new Map())
     api(`/posts?kind=${kind}`).then((d) => setPosts(d.posts))
       /* 이 경로만 사라지는 타이머가 없었습니다 — 다른 자리와 맞춥니다 */
       .catch((e) => { setErr(e.message); setTimeout(() => setErr(''), 5000) })
@@ -444,27 +452,55 @@ function List({ kind, onNew, onOpen, reloadKey, worksLive = true, cats = [] }) {
   /** 이 글의 카테고리 식별자 — 목록이 받은 `meta` 는 `coalesce(draft_meta, meta)` 라 고치던 초안이 먼저입니다 */
   const catOf = (p) => (typeof p.meta?.category === 'string' ? p.meta.category : '')
   const inFilter = (p) => filter === 'all' || catOf(p) === filter
-  const togglePick = (slug) => setPicked((set) => {
-    const next = new Set(set)
-    if (next.has(slug)) next.delete(slug); else next.add(slug)
-    return next
-  })
+  /** Shift 를 누른 채면 직전에 누른 줄부터 이 줄까지(보이는 순서) 한 번에 고릅니다 */
+  const togglePick = (slug, shift, order) => {
+    const from = shift && lastPick.current ? order.indexOf(lastPick.current) : -1
+    const to = order.indexOf(slug)
+    lastPick.current = slug
+    setPicked((set) => {
+      const next = new Set(set)
+      if (from >= 0 && to >= 0) for (const s of order.slice(Math.min(from, to), Math.max(from, to) + 1)) next.add(s)
+      else if (next.has(slug)) next.delete(slug); else next.add(slug)
+      return next
+    })
+  }
+
+  /** 고른 글의 갈 곳을 정해 둡니다 — 아직 안 적습니다. 지금 카테고리와 같으면 바꿀 것이 없으니 뺍니다 */
+  const stage = (category) => {
+    setPending((map) => {
+      const next = new Map(map)
+      for (const p of posts) {
+        if (!picked.has(p.slug)) continue
+        if (catOf(p) === category) next.delete(p.slug); else next.set(p.slug, category)
+      }
+      return next
+    })
+    setPicked(new Set())
+  }
   /**
-   * 고른 글에 카테고리를 한 번에 — `POST /api/posts/category`. 서버가 `meta`·`draft_meta` 둘 다 고치고
+   * 정해 둔 것을 적습니다 — `POST /api/posts/category` 를 갈 곳마다 한 번씩. 서버가 `meta`·`draft_meta` 둘 다 고치고
    * 발행 글이 섞여 있으면 다시 굽습니다. 화면은 돌려받은 값으로 그 자리에서 바꿉니다(새로고침 전까지
-   * 눈앞과 DB 가 다르면 안 됩니다).
+   * 눈앞과 DB 가 다르면 안 됩니다). 중간에 실패하면 적힌 데까지만 반영하고 편집을 안 닫습니다 — 남은 것이 그대로 보입니다.
    */
-  const assign = async () => {
-    if (!picked.size) return
+  const save = async () => {
+    if (!pending.size) { closeEdit(); return }
     setErr(''); setBusy('bulk')
+    const groups = new Map()
+    for (const [slug, cat] of pending) groups.set(cat, [...(groups.get(cat) || []), slug])
+    let count = 0, bakeError = ''
     try {
-      const slugs = [...picked]
-      const d = await api('/posts/category', { method: 'POST', body: JSON.stringify({ slugs, category: bulkCat }) })
-      setPosts((list) => list.map((x) => (picked.has(x.slug)
-        ? { ...x, meta: { ...(x.meta || {}), category: d.category } } : x)))
-      setPicked(new Set())
-      say(d.category ? `${d.count}편을 「${labelOfCat(d.category)}」에 넣었습니다` : `${d.count}편을 카테고리에서 뺐습니다`)
-      if (d?.bakeError) { setErr('바꿨지만 페이지를 굽지 못했습니다: ' + d.bakeError); setTimeout(() => setErr(''), 3000) }
+      for (const [category, slugs] of groups) {
+        const d = await api('/posts/category', { method: 'POST', body: JSON.stringify({ slugs, category }) })
+        const done = new Set(slugs)
+        setPosts((list) => list.map((x) => (done.has(x.slug)
+          ? { ...x, meta: { ...(x.meta || {}), category: d.category } } : x)))
+        setPending((map) => { const next = new Map(map); for (const s of slugs) next.delete(s); return next })
+        count += d.count
+        if (d?.bakeError) bakeError = d.bakeError
+      }
+      say(`${count}개 글의 카테고리를 변경했습니다`)
+      if (bakeError) { setErr('변경은 저장됐지만 사이트 반영에 실패했습니다: ' + bakeError); setTimeout(() => setErr(''), 3000) }
+      closeEdit()
     } catch (e) { setErr(e.message); setTimeout(() => setErr(''), 3000) }
     finally { setBusy(null) }
   }
@@ -478,7 +514,7 @@ function List({ kind, onNew, onOpen, reloadKey, worksLive = true, cats = [] }) {
     try {
       const d = await api(`/posts/${encodeURIComponent(p.slug)}/visibility`,
         { method: 'POST', body: JSON.stringify({ hidden: !p.hidden }) })
-      if (d?.bakeError) throw new Error('바꿨지만 페이지를 굽지 못했습니다: ' + d.bakeError)
+      if (d?.bakeError) throw new Error('변경은 저장됐지만 사이트 반영에 실패했습니다: ' + d.bakeError)
       setPosts((list) => list.map((x) => (x.slug === p.slug ? { ...x, hidden: d.post.hidden } : x)))
     } catch (e) { setErr(e.message); setTimeout(() => setErr(''), 3000) }
     finally { setBusy(null) }
@@ -501,7 +537,7 @@ function List({ kind, onNew, onOpen, reloadKey, worksLive = true, cats = [] }) {
       /* 무엇을 지웠는지는 줄이 사라진 것이 이미 말합니다. 제목을 다시 읊으면 말이 겹칩니다 */
       say('삭제했습니다')
       if (d?.bakeError) {
-        setErr('지웠지만 페이지를 굽지 못했습니다: ' + d.bakeError)
+        setErr('삭제됐지만 사이트 반영에 실패했습니다: ' + d.bakeError)
         setTimeout(() => setErr(''), 3000)
       }
     } catch (e) { setErr(e.message); setTimeout(() => setErr(''), 3000) }   // 띠는 열린 채 — 다시 누르거나 취소
@@ -547,24 +583,29 @@ function List({ kind, onNew, onOpen, reloadKey, worksLive = true, cats = [] }) {
     }
   }
 
-  /* 편집을 끄면 고른 것도 풉니다 — 칸이 사라진 뒤에도 선택이 남아 있으면 다시 켤 때
-     모르는 글이 골라져 있습니다 */
-  const toggleEdit = () => setEdit((v) => { if (v) setPicked(new Set()); return !v })
+  /* 편집을 끄면 고른 것도, 정해 둔 것도 풉니다 — 칸이 사라진 뒤에도 남아 있으면 다시 켤 때
+     모르는 글이 골라져 있습니다. 지우기를 묻던 띠도 닫습니다(편집 중에는 휴지통이 안 보여 닫을 자리가 없습니다) */
+  const openEdit = () => { setAsking(null); setEdit(true) }
+  const closeEdit = () => { lastPick.current = null; setPicked(new Set()); setPending(new Map()); setEdit(false) }
 
+  /* 칩이 보여 줄 카테고리 — 옮기기로 정해 둔 것이 있으면 그쪽(아직 저장 전) */
+  const nowCat = (p) => (pending.has(p.slug) ? pending.get(p.slug) : catOf(p))
   const rowProps = (p) => ({
     busy: busy === p.slug, asking: asking === p.slug, onOpen,
     onAsk: () => ask(p.slug), onNo: () => setAsking(null), onYes: () => remove(p),
     /* 글에만 — 카테고리 칩과 고르기 칸. 작업은 카드라 이 줄을 안 씁니다.
        칩은 카테고리를 만든 사이트에서만 뜨고, 분류 안 한 글에는 「기본」이 옅게 붙습니다 */
-    chip: isWork || !cats.length ? '' : (labelOfCat(catOf(p)) || DEFAULT_LABEL),
-    chipMuted: !isWork && cats.length > 0 && !labelOfCat(catOf(p)),
+    chip: isWork || !cats.length ? '' : (labelOfCat(nowCat(p)) || DEFAULT_LABEL),
+    chipMuted: !isWork && cats.length > 0 && !labelOfCat(nowCat(p)),
+    chipChanged: pending.has(p.slug),
     /* 고르기 칸은 편집 모드에서만 — `onPick` 이 없으면 `PickBox` 가 아무것도 안 그립니다 */
     picked: picked.has(p.slug),
-    onPick: isWork || !edit ? null : () => togglePick(p.slug),
+    onPick: isWork || !edit ? null : (e) => togglePick(p.slug, !!e?.shiftKey, shown.map((x) => x.slug)),
   })
-  /* 거른 결과 전부(초안 포함) — 「모두 고르기」의 대상 */
+  /* 거른 결과 전부(초안 포함) — 「전체 선택」의 대상 */
   const shown = [...drafts, ...live]
   const allPicked = shown.length > 0 && shown.every((p) => picked.has(p.slug))
+  useEffect(() => { if (allRef.current) allRef.current.indeterminate = picked.size > 0 && !allPicked })
 
   return (
     <section>
@@ -573,7 +614,7 @@ function List({ kind, onNew, onOpen, reloadKey, worksLive = true, cats = [] }) {
       {drafts.length > 0 && (
         <div className="tray">
           <button type="button" className="bar" aria-expanded={openDraft} aria-controls="drafts"
-                  title={openDraft ? '지금 펼침 — 누르면 접습니다' : '지금 접힘 — 누르면 펼칩니다'}
+                  title={openDraft ? '접기' : '펼치기'}
                   onClick={() => foldDraft(!openDraft)}>
             <span className="chev"><Chev /></span>
             <span className="lb">초안 <span className="cnt">{drafts.length}</span></span>
@@ -589,57 +630,63 @@ function List({ kind, onNew, onOpen, reloadKey, worksLive = true, cats = [] }) {
       {/* 페이지 — 제목은 하나. 드로어가 있든 없든, 열렸든 닫혔든 위 여백이 같습니다 */}
       <div className="head">
         <h2>{W.one} {live.length > 0 && <span className="cnt">{live.length}</span>}</h2>
-        {/* 편집 — 카테고리를 하나라도 만든 블로그에만. 옮길 데가 없으면 고르는 뜻도 없습니다 */}
-        {!isWork && cats.length > 0 && (
-          <button type="button" className="headEdit" aria-pressed={edit} onClick={toggleEdit}>
-            {edit ? '편집 중' : '편집'}
-          </button>
-        )}
-        <button className="primary" onClick={onNew}>{W.add}</button>
+        {/* 편집 — 카테고리를 하나라도 만든 블로그에만. 옮길 데가 없으면 고르는 뜻도 없습니다.
+            편집 중에는 「취소 · 완료」 한 쌍만 남습니다: 옮긴 것은 「완료」에서 저장됩니다 */}
+        {edit
+          ? <>
+              <button type="button" className="headEdit" disabled={busy === 'bulk'} onClick={closeEdit}>취소</button>
+              <button type="button" className="primary" disabled={busy === 'bulk'} onClick={save}>
+                {busy === 'bulk' ? '저장 중' : '완료'}</button>
+            </>
+          : <>
+              {!isWork && cats.length > 0 && <button type="button" className="headEdit" onClick={openEdit}>편집</button>}
+              <button className="primary" onClick={onNew}>{W.add}</button>
+            </>}
       </div>
       {/* 작업물은 모드와 무관하게 쌓입니다 — 다만 지금 나가는지는 말해 줍니다.
           직접 디자인인 동안 미리 쌓아 두었다가 템플릿으로 바꾸면 한꺼번에 나갑니다. */}
       {isWork && !worksLive && (
         <p className="lsNote">
-          지금 포트폴리오는 <b>직접 디자인</b>이라, 여기 쌓은 작업물은 사이트에 안 나옵니다.
-          {' '}미리 쌓아 두셔도 됩니다 — <b>홈디자인 → 포트폴리오 → 템플릿</b> 으로 바꾸면 한꺼번에 나갑니다.
+          지금 포트폴리오는 <b>직접 디자인</b>이라 여기 올린 작업물은 사이트에 표시되지 않습니다.
+          {' '}<b>홈디자인 → 포트폴리오 → 템플릿</b>으로 바꾸면 표시됩니다.
         </p>
       )}
-      {/* 카테고리로 거르기 + 여러 편 한 번에 앉히기. 카테고리를 하나도 안 만든 사이트에는 안 나옵니다 —
-          고를 것이 「카테고리 없음」뿐이면 거르는 뜻이 없습니다 */}
+      {/* 카테고리로 거르기. 카테고리를 하나도 안 만든 사이트에는 안 나옵니다 —
+          고를 것이 「기본」뿐이면 거르는 뜻이 없습니다 */}
       {!isWork && cats.length > 0 && (
         <div className="flt" role="group" aria-label="카테고리로 거르기">
-          {[['all', '모두'], ['', '카테고리 없음'], ...cats.map((c) => [c.id, c.label])].map(([v, label]) => (
+          {[['all', '전체'], ['', DEFAULT_LABEL], ...cats.map((c) => [c.id, c.label])].map(([v, label]) => (
             <button key={v} type="button" className="chip" aria-pressed={filter === v}
                     onClick={() => setFilter(v)}>{label}</button>
           ))}
-          {edit && (
-            <label className="pickAll">
-              <input type="checkbox" checked={allPicked}
-                     onChange={() => setPicked(allPicked ? new Set() : new Set(shown.map((p) => p.slug)))} />
-              모두 고르기
-            </label>
-          )}
-        </div>
-      )}
-      {/* 편집 모드면 늘 보입니다. 고른 것이 없을 때도 띄우는 까닭: 체크 칸만 서 있고 아무 말이 없으면
-          「골라서 무엇을 하는가」를 알 수 없습니다 — 고르기 전에 먼저 말해 둡니다 */}
-      {!isWork && edit && cats.length > 0 && (
-        <div className="bulk" role="group" aria-label="고른 글의 카테고리">
-          <span className="bulkN">
-            {picked.size ? <><b>{picked.size}</b>편 고름</> : '옮길 글을 고르세요'}
-          </span>
-          <Picker title="카테고리" className="lkPicker bulkPick" width={220} value={bulkCat}
-                  items={[{ value: '', label: `${DEFAULT_LABEL} (카테고리에서 빼기)` },
-                    ...cats.map((c) => ({ value: c.id, label: c.label + (c.show ? '' : ' (비공개)') }))]}
-                  onPick={setBulkCat} />
-          <button type="button" className="primary" disabled={!picked.size || busy === 'bulk'} onClick={assign}>
-            {busy === 'bulk' ? '지정 중' : '카테고리 지정'}</button>
-          {picked.size > 0 && <button type="button" onClick={() => setPicked(new Set())}>고른 것 풀기</button>}
         </div>
       )}
       {/* 오류는 눈을 누른 자리(목록) 바로 위에 — 드로어는 헤더에 붙어 있어야 합니다 */}
       {err && <p className="err">{err}</p>}
+      {/* 선택 막대 — 목록 첫 줄 바로 위에 줄과 같은 척추로 섭니다(고르기 칸이 같은 x).
+          카테고리를 고르면 줄의 칩만 바뀌고, 저장은 머리의 「완료」가 합니다 */}
+      {!isWork && edit && cats.length > 0 && (
+        <div className="bulk" role="group" aria-label="선택한 글">
+          <label className="bulkAll">
+            <span className="no">
+              <input ref={allRef} type="checkbox" className="pick" checked={allPicked}
+                     onChange={() => setPicked(allPicked ? new Set() : new Set(shown.map((p) => p.slug)))} />
+            </span>
+            <span className="bulkN">{picked.size ? `${picked.size}개 선택` : '전체 선택'}</span>
+          </label>
+          <span className="bulkMid">
+            {picked.size > 0 && <button type="button" className="bulkClear" onClick={() => setPicked(new Set())}>선택 해제</button>}
+            {picked.size === 0 && pending.size > 0 && <span className="bulkPend">저장 전 변경 {pending.size}개</span>}
+          </span>
+          {picked.size > 0 && busy !== 'bulk'
+            /* `value` 는 어느 항목과도 안 맞는 값 — 이 메뉴는 「지금 값」이 없는 동작 목록입니다 */
+            ? <Picker title="카테고리 이동" className="lkPicker bulkPick" width={220} value={null} align="right"
+                      items={[{ value: '', label: DEFAULT_LABEL },
+                        ...cats.map((c) => ({ value: c.id, label: c.label + (c.show ? '' : ' (비공개)') }))]}
+                      onPick={stage}>카테고리 이동</Picker>
+            : <button type="button" className="lkPicker bulkPick" disabled>카테고리 이동</button>}
+        </div>
+      )}
       {/* 작업은 제목이 아니라 그림으로 고릅니다 — 줄 목록에 썸네일을 끼우는 대신
           카드 격자로 냅니다. 공개면 목록과 같은 결이라 무엇을 고치는 중인지 바로 보입니다.
           순서는 끌어서 바꿉니다(공개면 카드 차례가 이것입니다). */}
@@ -662,7 +709,7 @@ function List({ kind, onNew, onOpen, reloadKey, worksLive = true, cats = [] }) {
                   <span className="fo-ops">
                     <button type="button" className="vis" disabled={busy === p.slug}
                             aria-label={p.hidden ? '다시 올리기' : '내려두기'}
-                            title={p.hidden ? '지금 내려둠 — 누르면 올립니다' : '지금 보임 — 누르면 내립니다'}
+                            title={p.hidden ? '다시 올리기' : '내려두기'}
                             onClick={(e) => { e.stopPropagation(); toggle(p) }}><Eye off={p.hidden} /></button>
                     <DelButton p={p} asking={asking === p.slug} busy={busy === p.slug}
                                onToggle={asking === p.slug ? () => setAsking(null) : () => ask(p.slug)} />
@@ -734,6 +781,39 @@ export function Editor({ slug: openSlug, kind = 'post', cats = [], onBack, onDir
      'measure'(38rem)로 두면 가운데폭이 눌린 것처럼 보이는데 실제 글줄은 더 좁습니다. */
   const [width, setWidth] = useState(CENTERED_WIDTH)
   const [slug, setSlug] = useState(openSlug || '')
+  /**
+   * 링크 창의 「내 글」이 쓸 찾기.
+   *
+   * 목록은 글 화면이 쓰는 그 API(`GET /api/posts`)를 **한 번** 받아 제목으로 거릅니다 — 본문 없이
+   * 가벼운 줄만 오고, 치는 글자마다 서버를 부르면 한글 조합 중에 답이 뒤섞입니다.
+   * 주소는 사이트 루트 기준(`/blog/31/`)으로 저장합니다. 오리진을 박으면 주소를 옮기는 날 링크가 다 죽습니다.
+   * 공개되지 않은 글도 고를 수 있습니다(미리 걸어 두고 나중에 발행하는 일이 흔합니다). 다만 그 사실은
+   * 줄에 적습니다 — 굽기는 그런 링크를 풀어 글자만 내보냅니다.
+   */
+  const postLinks = useMemo(() => {
+    if (isWork) return undefined
+    let all = null
+    const load = () => (all ||= api('/posts?kind=post').then((d) => d.posts, (e) => { all = null; throw e }))
+    const when = (p) => p.published_at || p.created_at
+    return {
+      search: async (q) => {
+        const key = q.toLowerCase()
+        return (await load())
+          .filter((p) => p.slug !== slug && (p.title || '').toLowerCase().includes(key))
+          .sort((a, b) => (Date.parse(when(b)) || 0) - (Date.parse(when(a)) || 0))
+          .slice(0, 40)
+          .map((p) => {
+            const cat = cats.find((c) => c.id === p.meta?.category)
+            return {
+              slug: p.slug, title: p.title || '제목 없음', url: `/blog/${encodeURIComponent(p.slug)}/`,
+              category: cat ? cat.label : cats.length ? DEFAULT_LABEL : undefined,
+              date: dateOf(when(p)),
+              note: !p.published_at ? '초안' : p.hidden ? '숨긴 글' : cat && !cat.show ? '비공개 카테고리' : undefined,
+            }
+          })
+      },
+    }
+  }, [isWork, slug, cats])
   /* 어느 단추가 도는 중인가 — 'draft' | 'publish' | null. 둘을 갈라야 도는 쪽만 켜집니다 */
   const [act, setAct] = useState(null)
   /**
@@ -874,6 +954,14 @@ export function Editor({ slug: openSlug, kind = 'post', cats = [], onBack, onDir
       if (d?.post?.slug) setSlug(d.post.slug)   /* 주소는 서버가 자동으로 만듭니다 */
       /* 굽기가 실패하면 발행은 됐어도 공개 페이지에는 안 보입니다 — 조용히 넘기지 않습니다 */
       if (d?.bakeError) throw new Error('발행은 됐지만 페이지를 굽지 못했습니다: ' + d.bakeError)
+      /* 굽기가 풀어 버린 「내 글」 링크를 알립니다 — 공개되지 않은 글을 가리키면 글자만 나갑니다.
+         말없이 넘기면 걸어 둔 링크가 공개면에서 사라진 것을 한참 뒤에야 압니다. 이 글의 것만 추립니다
+         (굽기의 경고에는 다른 글·다른 화면의 것도 섞여 옵니다) */
+      const mine = d?.post?.slug ? (d?.baked?.warn || []).filter((w) => w.startsWith(`글 ${d.post.slug} 의 링크가 `)) : []
+      if (mine.length) {
+        setErr(`발행했습니다. 공개되지 않은 글로 가는 링크 ${mine.length}개는 글자만 나갔습니다. 그 글을 발행하면 링크가 살아납니다.`)
+        setTimeout(() => setErr(''), 8000)
+      }
       /* 관리자를 떠나지 않습니다. 발행 뒤 공개 사이트로 보내면 뒤로 가기가
          관리자가 아니라 공개 사이트 안에서 움직입니다. 「정말 써졌나」는
          상태 칸에 남는 「글 보기 ↗」(새 탭)가 답합니다. */
@@ -1026,6 +1114,9 @@ export function Editor({ slug: openSlug, kind = 'post', cats = [], onBack, onDir
           <PostEditor
             title={title}
             onTitleChange={setTitle}
+            /* 작성 일시 — 발행 페이지가 제목 뒤에 붙이는 것과 같은 자리·같은 모양입니다(bake.mjs).
+               아직 안 나간 글은 오늘 날짜로 보여 줍니다. 발행하면 그날이 됩니다. */
+            titleTail={<time className="b-when" style={{ textAlign: title.align || 'left' }}>{ymd(pubAt || new Date().toISOString())}</time>}
             /* `doc` 이 없으면 본문 HTML 로 엽니다. `value` 는 JSON 도 HTML 문자열도 받고,
                노드들이 `data-*` 로 왕복하도록 돼 있어 표·인용·다이어그램까지 살아납니다.
                이게 없으면 `doc` 이 빈 글(시드로 심은 글, 옮겨 온 글)이 빈 화면으로 열려
@@ -1036,6 +1127,7 @@ export function Editor({ slug: openSlug, kind = 'post', cats = [], onBack, onDir
             onWidthChange={setWidth}
             bleed="viewport"
             stickyTop={headH}
+            postLinks={postLinks}
             autofocus
           />
         </main>

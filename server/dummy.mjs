@@ -46,8 +46,9 @@ const SHOT_ART = [
     mark: "<path d='M420 760l260-330 210 250 170-160 220 240'/><circle cx='1180' cy='330' r='86'/>" },
 ]
 
-/* 카드에 걸리는 그림 — 격자에서는 비율이 같아야 줄이 맞습니다(4:3) */
-const card = (i) => {
+/* 카드에 걸리는 그림 — 격자에서는 비율이 같아야 줄이 맞습니다(4:3).
+   `w`·`h` 를 주면 그 비율로 그립니다 — 견본 글 넷째부터는 일부러 비율을 섞습니다(아래) */
+const card = (i, w = 1200, h = 900) => {
   const art = [
     ['#e7e4de', '#b9b1a4', "<circle cx='600' cy='450' r='150'/>"],
     ['#e1e5e4', '#a9b4b1', "<rect x='420' y='270' width='360' height='360'/>"],
@@ -56,14 +57,14 @@ const card = (i) => {
     ['#e9e6dd', '#bdb69f', "<circle cx='500' cy='450' r='120'/><circle cx='720' cy='450' r='120'/>"],
     ['#e2e4e0', '#adb3a6', "<rect x='400' y='300' width='400' height='300'/><path d='M400 450h400'/>"],
   ][i % 6]
-  return draw(1200, 900, art[0], art[1], art[2])
+  return draw(w, h, art[0], art[1], art[2])
 }
 
 /** 며칠 전 — 견본에 박힌 날짜가 늘 같으면 「멈춘 사이트」로 보입니다 */
 const daysAgo = (n) => new Date(Date.now() - n * 864e5).toISOString()
 
 const WORK_TITLES = ['겨울 편지', '목련 스튜디오', '밤의 지도', '한글 실험', '종이와 빛', '여백 연습']
-const POST_TITLES = ['작업을 시작하는 법', '글자 사이의 공기', '다시 손으로']
+const POST_TITLES = ['작업을 시작하는 법', '글자 사이의 공기', '다시 손으로', '오래 보는 사진', '작은 책 만들기', '여름의 색']
 
 /**
  * 견본 작업 여섯. 격자를 2·3·4·6칸 어디에 두어도 줄이 비지 않는 가장 작은 수입니다.
@@ -76,13 +77,22 @@ export const DUMMY_WORKS = WORK_TITLES.map((title, i) => ({
   ).slice(0, 2 + (i % 2)),
 }))
 
-/** 견본 글 셋 — 메인의 글 목록이 `limit 3` 이라 그만큼만 있으면 됩니다 */
+/**
+ * 견본 글 여섯. 메인의 글 목록은 셋만 씁니다(`limit 3`). 블로그 목록은 여섯을 다 씁니다 —
+ * 셋으로는 3열 격자가 한 줄로 끝나고, 사진 판(이미지)의 모양이 다채롭게 안 보였습니다(주인 지적).
+ * 넷째부터는 표지 비율을 세로·정사각·가로로 섞습니다 — 메이슨리가 비율대로 엇갈리는지는
+ * 비율이 달라야 보입니다. 앞의 셋은 예전 그대로입니다(굽기 골든이 이 셋을 씁니다).
+ */
+const POST_COVER = [null, null, null, [900, 1200], [1000, 1000], [1600, 900]]
 export const DUMMY_POSTS = POST_TITLES.map((title, i) => ({
-  slug: `d-${i + 1}`, no: i + 1, title, published_at: daysAgo(i * 6 + 2), cover: card(i + 3),
+  slug: `d-${i + 1}`, no: i + 1, title, published_at: daysAgo(i * 6 + 2),
+  cover: POST_COVER[i] ? card(i + 3, ...POST_COVER[i]) : card(i + 3),
   width: null, title_doc: null, attachments: [],
+  /* 태그 칩을 켜는 갈래(카드)의 미리보기에 칩이 서도록 — 셋째 글은 비워 「태그 없는 글」의 모양도 같이 봅니다 */
+  meta: { tags: [['작업', '기록'], ['타이포그래피'], [], ['사진'], ['여백', '기록'], []][i] },
   /* `posts.body` 는 HTML 문자열입니다(sql/schema.sql). 편집기 문서 객체를 넣으면
-     `readMinutes`·`summarize`·`toPublishedHtml` 이 `[object Object]` 를 받아,
-     견본 글이 전부 「1분」에 본문이 깨진 채로 생성합니다 */
+     `summarize`·`toPublishedHtml` 이 `[object Object]` 를 받아,
+     견본 글이 전부 본문이 깨진 채로 생성합니다 */
   /* 절 제목이 있어야 「문단 바로가기」를 켰을 때 미리보기에 목록이 뜹니다. 없으면 켜도
      화면이 그대로라 켜진 건지 알 수 없습니다. h3 를 한 칸 섞어 들여쓰기까지 보입니다 */
   body: '<p>견본 글입니다. 고르는 중인 판짜기가 실제 글에서 어떻게 보이는지 가늠하려고 세워 둔 것이라, '

@@ -1,11 +1,13 @@
 # template-portfolio-blog
 
-A static portfolio plus a blog you actually write in. **Zero JavaScript for visitors.**
+A static portfolio plus a blog you actually write in. **No JavaScript for visitors**, with one exception noted below.
 
 > 한국어: [README.md](README.md) — the code and UI are in Korean.
 
 Syntax highlighting, diagrams, and fonts are all **baked into static HTML at publish
-time**. A reader's browser downloads no scripts at all. The writing side, on the other
+time**. A reader's browser downloads no scripts. The one exception is a small file
+(`public/assets/peek.js`) shipped only on posts that link to another post of yours and open it
+in a side panel; the link still opens without it. The writing side, on the other
 hand, is a real editor: tables, code blocks, Mermaid and draw.io diagrams, images, and
 styled title banners.
 
@@ -218,7 +220,7 @@ npm run check
 
 | | |
 |---|---|
-| `check-public.mjs` | 8 checks that no JavaScript leaked into public pages |
+| `check-public.mjs` | 8 checks that no unexpected JavaScript leaked into public pages |
 | `check-summary.mjs` | 18 checks that list-page excerpting still behaves |
 | `check-fonts.mjs` | 7 checks that every shipped font is **legal to redistribute** |
 

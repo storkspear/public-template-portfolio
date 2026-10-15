@@ -70,6 +70,19 @@
 .prose h2:first-child, .prose h3:first-child, .prose h4:first-child { margin-top: 0; }
 
 .prose a { color: var(--accent); text-underline-offset: 3px; }
+/* 내 글 링크 — 바깥 링크와 달리 글자색을 그대로 두고 점선 밑줄 + 옅은 바탕, 끝에 「곁에 뜬다」 표식.
+   표식은 마크업이 아니라 여기서 그린다: 저장된 글자에 아이콘이 섞이면 왕복이 깨지고 요약에도 딸려 간다 */
+.prose a[data-post] {
+  color: inherit; font-weight: 600;
+  text-decoration: underline dotted; text-decoration-thickness: 1.5px; text-underline-offset: 4px;
+  background: linear-gradient(transparent 62%, color-mix(in srgb, var(--accent) 16%, transparent) 0);
+}
+.prose a[data-post]::after {
+  content: ''; display: inline-block; width: 0.95em; height: 0.95em; margin-left: 0.28em; vertical-align: -0.12em;
+  background: var(--accent);
+  -webkit-mask: var(--post-link-mark) center / contain no-repeat; mask: var(--post-link-mark) center / contain no-repeat;
+}
+.prose { --post-link-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M3 1.8h10A2.2 2.2 0 0 1 15.2 4v8a2.2 2.2 0 0 1-2.2 2.2H3A2.2 2.2 0 0 1 .8 12V4A2.2 2.2 0 0 1 3 1.8Zm0 1.4a.8.8 0 0 0-.8.8v8c0 .44.36.8.8.8h5.3V3.2H3Z'/%3E%3C/svg%3E"); }
 .prose strong { font-weight: 700; }
 .prose mark {
   background: #fff2a8; padding: 0.05em 0.15em; border-radius: 2px;
@@ -472,16 +485,11 @@
    구조: header.post-head > (div.post-cover > img)? + h1.post-title
    편집 전용(버튼·배지·안내문)은 전부 [data-ui] + absolute 라 기하에 영향이 0 이다.
 
-   **머리는 종이 위에 선다.** 배너는 제목 위에 놓이는 사진이지 제목의 배경이 아니다.
-   예전에는 제목을 배너 위에 흰 글자로 얹고 고정 스크림(가운데 α .45)으로 대비를 만들었다.
-   순백 사진 기준 3.4:1 로 큰 글자 AA 는 넘지만, **비율이 문제가 아니었다** — 배너에
-   제 글자가 있는 그림(작성자가 실제로 고른 것)이면 어둡게 덮어도 두 글자가 같은 자리에서
-   회색으로 겹칠 뿐이다. 2026-09-14 실측: 제목이 서는 왼쪽 1/3 에서 픽셀의 24.6% 가 L>0.5,
-   인접 픽셀 휘도차가 다른 구역의 1.6배. 제목이 이기려면 α≈0.8 이고 그때 그림이 사라진다.
-   종이 위의 제목은 언제나 19.5:1 이다.
-
-   이 결정이 나머지를 전부 없앤다 — 흰 글자·스크림·세로 가운데 정렬이 사라지고,
-   소비자가 날짜를 덧붙여도 제목의 형제로 보통 흐름에 놓여 저절로 한 덩어리가 된다.
+   배너가 있으면 제목은 두 가지로 놓인다 — `data-overlay` 가 가른다.
+   - `1`(기본): 사진이 제목의 **배경**이다. 제목과 그 뒤의 형제(소비자가 덧붙이는 날짜)가
+     사진 위에 얹히고, `data-place` 가 세로 자리를, 제목의 `text-align` 이 가로 자리를 정한다.
+   - `0`: 사진은 제목 **위에** 놓이고 제목은 그 아래 종이 위에 선다. 글자가 든 사진처럼
+     어디에 얹어도 제목이 묻히는 경우에 쓴다. 배너가 없는 글도 이 규칙으로 그려진다.
 
    `.post-head` 는 `.prose` **밖**에 놓일 수 있어서(발행 페이지가 본문 앞에 따로 둔다)
    `--measure` 가 아니라 `--measure-override` 를 직접 읽는다. */
@@ -507,7 +515,8 @@
   word-break: keep-all; overflow-wrap: anywhere; white-space: pre-wrap;
 }
 
-/* ── 배너 — 흐름 안의 상자 ──
+/* ── 배너 ──
+   제목을 얹지 않을 때는 흐름 안의 상자이고, 얹을 때는 header 뒤에 깔린다(아래 절).
    비율·최소 높이는 vocab 의 BANNER_RATIO · BANNER_MIN_HEIGHT 와 같은 값이다.
    모서리는 둥글리지 않는다 — 화면 끝에 닿은 모서리를 깎으면 잘린 것처럼 보인다. */
 .post-cover {
@@ -526,6 +535,99 @@
 .post-head[data-banner='1'][data-bleed='viewport'] .post-cover {
   width: 100vw; margin-inline: calc(50% - 50vw);
 }
+
+/* ── 사진 위에 얹은 제목 (`data-overlay='1'`) ──
+   header 는 **열 폭 그대로** 두고 사진만 뒤에 깐다. header 를 화면 폭으로 넓히면 제목과
+   날짜를 다시 열 안으로 모아야 하는데, 소비자가 무엇을 덧붙일지 라이브러리는 모른다.
+
+   높이는 **최소값**이다 — 좁은 화면에서 긴 제목이 세 줄이 되면 사진이 그만큼 늘어난다.
+   고정하면 글자가 사진 밖으로 넘치거나 잘린다.
+
+   `min-height` 를 px 로 적지 않는다. 적으면 `aspect-ratio` 가 주는 「내용만큼은 늘어난다」가
+   꺼져서, 비율로 정해진 높이보다 긴 제목이 사진 밖으로 넘친다. 그래서 담긴 상자 안에서는
+   200px 바닥(BANNER_MIN_HEIGHT)이 없고 비율과 내용 중 큰 쪽이 높이다. */
+.post-head[data-banner='1'][data-overlay='1'] {
+  display: flex; flex-direction: column; justify-content: flex-end;
+  box-sizing: border-box; aspect-ratio: 21 / 5; min-height: auto;
+  --ph-pad-y: clamp(1.25rem, 3vw, 2rem); --ph-pad-x: clamp(1rem, 3vw, 2rem);
+  padding: var(--ph-pad-y) var(--ph-pad-x);
+  border-bottom: 0;
+}
+.post-head[data-banner='1'][data-overlay='1'][data-place='top'] { justify-content: flex-start; }
+.post-head[data-banner='1'][data-overlay='1'][data-place='middle'] { justify-content: center; }
+/* 화면 끝까지 펴면 비율의 기준이 header(열) 폭이 아니라 화면 폭이다. 화면 폭은 식으로 쓸 수 있어
+   바닥 200px 을 같이 둔다 — `aspect-ratio` 를 끄므로 내용이 길면 그대로 늘어난다.
+   글줄은 본문 열의 가장자리에 맞춘다 — 좌우 안쪽 여백을 주면 본문보다 들어가 보인다. */
+.post-head[data-banner='1'][data-overlay='1'][data-bleed='viewport'] {
+  aspect-ratio: auto; min-height: max(200px, calc(100vw * 5 / 21));
+  --ph-pad-x: 0px;
+}
+.post-head[data-banner='1'][data-overlay='1'] .post-cover {
+  position: absolute; top: 0; left: 0; height: 100%;
+  aspect-ratio: auto; min-height: 0; margin-bottom: 0;
+}
+/* 그늘 — 글자가 놓인 쪽에만 깐다. 가운데는 기댈 가장자리가 없어 전체를 옅게 덮는다.
+   편집 단추([data-ui])는 header 의 자식이라 이 그늘 위에 뜬다. */
+.post-head[data-banner='1'][data-overlay='1'] .post-cover::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to top, rgba(0,0,0,.72) 0%, rgba(0,0,0,.42) 38%, rgba(0,0,0,0) 78%);
+}
+.post-head[data-banner='1'][data-overlay='1'][data-place='top'] .post-cover::after {
+  background: linear-gradient(to bottom, rgba(0,0,0,.72) 0%, rgba(0,0,0,.42) 38%, rgba(0,0,0,0) 78%);
+}
+.post-head[data-banner='1'][data-overlay='1'][data-place='middle'] .post-cover::after { background: rgba(0,0,0,.45); }
+/* 어두운 글자에는 밝은 그늘 — 같은 모양을 흰색으로 */
+.post-head[data-banner='1'][data-overlay='1'][data-ink='dark'] .post-cover::after {
+  background: linear-gradient(to top, rgba(255,255,255,.8) 0%, rgba(255,255,255,.5) 38%, rgba(255,255,255,0) 78%);
+}
+.post-head[data-banner='1'][data-overlay='1'][data-ink='dark'][data-place='top'] .post-cover::after {
+  background: linear-gradient(to bottom, rgba(255,255,255,.8) 0%, rgba(255,255,255,.5) 38%, rgba(255,255,255,0) 78%);
+}
+.post-head[data-banner='1'][data-overlay='1'][data-ink='dark'][data-place='middle'] .post-cover::after { background: rgba(255,255,255,.55); }
+/* 좁은 화면에서는 제목이 두세 줄로 접혀 사진 높이를 거의 다 쓴다 — 옅어지다 끝나는 그늘로는
+   첫 줄이 그늘 밖에 놓인다. 끝까지 덮되 글자가 없는 쪽을 옅게 둔다. */
+@media (max-width: 640px) {
+  .post-head[data-banner='1'][data-overlay='1'] .post-cover::after {
+    background: linear-gradient(to top, rgba(0,0,0,.72) 0%, rgba(0,0,0,.5) 50%, rgba(0,0,0,.3) 100%);
+  }
+  .post-head[data-banner='1'][data-overlay='1'][data-place='top'] .post-cover::after {
+    background: linear-gradient(to bottom, rgba(0,0,0,.72) 0%, rgba(0,0,0,.5) 50%, rgba(0,0,0,.3) 100%);
+  }
+  .post-head[data-banner='1'][data-overlay='1'][data-place='middle'] .post-cover::after { background: rgba(0,0,0,.45); }
+  .post-head[data-banner='1'][data-overlay='1'][data-ink='dark'] .post-cover::after {
+    background: linear-gradient(to top, rgba(255,255,255,.8) 0%, rgba(255,255,255,.6) 50%, rgba(255,255,255,.4) 100%);
+  }
+  .post-head[data-banner='1'][data-overlay='1'][data-ink='dark'][data-place='top'] .post-cover::after {
+    background: linear-gradient(to bottom, rgba(255,255,255,.8) 0%, rgba(255,255,255,.6) 50%, rgba(255,255,255,.4) 100%);
+  }
+  .post-head[data-banner='1'][data-overlay='1'][data-ink='dark'][data-place='middle'] .post-cover::after { background: rgba(255,255,255,.55); }
+}
+
+/* 글자색은 header 가 갖고 자식이 **물려받는다** — 소비자가 덧붙인 날짜도 같이 바뀐다.
+   소비자의 색 규칙보다 선택자가 길어서 이쪽이 이긴다. */
+.post-head[data-banner='1'][data-overlay='1'] { color: #fff; }
+.post-head[data-banner='1'][data-overlay='1'][data-ink='dark'] { color: #1a1a1a; }
+.post-head[data-banner='1'][data-overlay='1'] > :not(.post-cover):not([data-ui]) {
+  position: relative; z-index: 1; color: inherit;
+}
+/* 덧붙는 줄을 모서리에 따로 둔다(`data-tail`). 제목과 떨어져 그늘이 없는 쪽에 놓일 수 있어
+   글자에 그림자를 준다. 소비자가 준 위 여백·정렬은 제목 아래에 붙을 때의 것이라 여기서 지운다. */
+.post-head[data-banner='1'][data-overlay='1']:not([data-tail='title']) > :not(.post-cover):not(.post-title):not([data-ui]) {
+  position: absolute; margin: 0; width: auto; text-shadow: 0 1px 8px rgba(0,0,0,.5);
+}
+.post-head[data-banner='1'][data-overlay='1'][data-ink='dark']:not([data-tail='title']) > :not(.post-cover):not(.post-title):not([data-ui]) {
+  text-shadow: 0 1px 8px rgba(255,255,255,.7);
+}
+.post-head[data-banner='1'][data-overlay='1'][data-tail^='top-'] > :not(.post-cover):not(.post-title):not([data-ui]) { top: var(--ph-pad-y); }
+.post-head[data-banner='1'][data-overlay='1'][data-tail^='bottom-'] > :not(.post-cover):not(.post-title):not([data-ui]) { bottom: var(--ph-pad-y); }
+.post-head[data-banner='1'][data-overlay='1'][data-tail$='-left'] > :not(.post-cover):not(.post-title):not([data-ui]) { left: var(--ph-pad-x); }
+.post-head[data-banner='1'][data-overlay='1'][data-tail$='-right'] > :not(.post-cover):not(.post-title):not([data-ui]) { right: var(--ph-pad-x); }
+/* 제목과 같은 쪽(위·아래) 모서리에 두면 둘이 같은 자리에 선다 — 제목 쪽 안여백을 한 줄만큼 늘려
+   제목이 그 줄 위(아래)로 비켜서게 한다. 좌우가 달라도 긴 제목은 끝까지 가므로 늘 비킨다. */
+.post-head[data-banner='1'][data-overlay='1'][data-place='bottom'][data-tail^='bottom-'] { padding-bottom: calc(var(--ph-pad-y) + 2rem); }
+.post-head[data-banner='1'][data-overlay='1'][data-place='top'][data-tail^='top-'] { padding-top: calc(var(--ph-pad-y) + 2rem); }
+.post-head[data-banner='1'][data-overlay='1'] .post-title { padding-top: 0; text-shadow: 0 1px 14px rgba(0,0,0,.35); }
+.post-head[data-banner='1'][data-overlay='1'][data-ink='dark'] .post-title { text-shadow: 0 1px 14px rgba(255,255,255,.5); }
 
 /* ══ 표 ══
    선 색·굵기·종류는 커스텀 프로퍼티로 상속시킨다 — 셀마다 속성을 두면 왕복이 지저분해진다.

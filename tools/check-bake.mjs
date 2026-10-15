@@ -35,8 +35,10 @@ const TMP = await mkdtemp(join(tmpdir(), 'bake-golden-'))
 process.env.BLOG_DIR = join(TMP, 'blog')
 process.env.PAGES_DIR = join(TMP, 'www')
 
-const { bakePages, blogPages, listPage, postPage, themeStyle, headStyle, SITE_DEFAULTS } = await import('../server/bake.mjs')
-const { DUMMY_POSTS } = await import('../server/dummy.mjs')
+const { bakePages, blogPages, listPage, postPage, sweepUnpublished, themeStyle, headStyle, SITE_DEFAULTS } = await import('../server/bake.mjs')
+/* 견본 글은 미리보기용으로 여섯이지만, 골든은 앞의 셋으로 봅니다 — 벌마다 글이 늘면 차이만 커지고
+   새로 지키는 것이 없습니다 */
+const DUMMY_POSTS = (await import('../server/dummy.mjs')).DUMMY_POSTS.slice(0, 3)
 const vocab = await import('../shared/site-vocab.mjs')
 
 /** 깊은 사본 — 축을 바꿀 때 기본 설정을 훼손하지 않습니다 */
@@ -59,6 +61,20 @@ const CATS = () => [
   { id: 'cilsang', label: '일상', slug: 'ilsang', show: true, look: vocab.blogLookOf(SITE_DEFAULTS.blog) },
 ]
 const CAT_POSTS = DUMMY_POSTS.map((p, i) => ({ ...p, meta: i === 0 ? { category: 'cgaebal' } : i === 1 ? { category: 'cilsang' } : null }))
+
+/**
+ * 「내 글」 링크 벌에 쓰는 글 셋. 편집기가 저장하는 꼴 그대로(`<a href data-post>`) 본문에 넣습니다.
+ *   1번(개발) → 2번을 문단에서, 3번을 목록 안에서, 없는 글(d-9)을 문단에서 가리킵니다.
+ *   2번(일상) → 1번을 가리킵니다(판 안에 들어가는 벌에도 링크가 있어야 그 벌의 링크 처리를 봅니다).
+ *   3번        → 링크 없음. 이 글의 HTML 은 링크가 없던 때와 같아야 합니다.
+ */
+const linkTo = (slug, text) => `<a href="/blog/${slug}/" data-post="${slug}">${text}</a>`
+const PEEK_POSTS = (widths = []) => CAT_POSTS.map((p, i) => ({
+  ...p, width: widths[i] ?? p.width,
+  body: p.body + (i === 0
+    ? `<p>둘째 글은 ${linkTo('d-2', '여기')}에 있고, 없는 글은 ${linkTo('d-9', '이쪽')}입니다.</p><ul><li><p>목록 안에서 ${linkTo('d-3', '셋째 글')}</p></li></ul><p>끝 문단.</p>`
+    : i === 1 ? `<p>첫 글로 ${linkTo('d-1', '돌아가기')}.</p>` : ''),
+}))
 
 const values = (list) => vocab[list].map((x) => x.value)
 
@@ -88,6 +104,12 @@ const CASES = [
     if (k === 'shots' || k === 'slides') c.main.stage[k] = vocab.SAMPLE_SHOTS
   })),
   ...values('BLOG_TEMPLATES').map((v) => variant(`blog-${v}`, (c) => { c.blog.template = v })),
+  /* 갈래의 글꼴 짝을 실은 벌 — 목록 제목(「글」)과 카테고리 줄은 그 짝이 아니라 사이트 글꼴을
+     따라야 합니다(`--site-*`). 위 벌들은 글꼴 칸이 비어 있어 이 갈림을 못 봅니다 */
+  variant('blog-font', (c) => {
+    c.blog.template = 'magazine'; c.blog.font = { display: 'Gowun Batang', body: 'Gowun Dodum' }
+    c.blog.categories = CATS()
+  }, CAT_POSTS),
   /* 글 상세의 문단 바로가기 — 켠 벌입니다. 기본이 꺼짐이라 위의 벌들은 전부 끈 쪽을 봅니다.
      이 한 벌이 <aside> 마크업과 제목의 id 주입을 지킵니다 */
   variant('blog-toc', (c) => { c.blog.toc.show = true }),
@@ -113,6 +135,14 @@ const CASES = [
     c.blog.template = 'outline'
     Object.assign(c.blog.outline, { skin: 'terminal', ink: '#ff8800', bg: '#101014', radius: 6 })
   }),
+  /* 갈래 밑의 모양 — 첫 값은 위의 `blog-<갈래>` 가 이미 봅니다. 나머지만 봅니다.
+     클래스 한 장이 전부라 벌마다 달라지는 것은 <ul> 한 줄입니다 */
+  ...Object.entries(vocab.DECK_STYLES).flatMap(([tpl, list]) => list.slice(1)
+    .map(({ value }) => variant(`deck-${tpl}-${value}`, (c) => { c.blog.template = tpl; c.blog.deck[tpl] = value }))),
+  /* 종이 카드의 장식 둘과 바탕색 — <style data-deck> 이 실제로 나가는지 지킵니다 */
+  ...values('PAPER_DECOS').slice(1).map((v) => variant(`deck-paper-${v}`, (c) => {
+    c.blog.template = 'cards'; Object.assign(c.blog.deck, { cards: 'paper', deco: v, paper: '#eaf1f7' })
+  })),
   ...values('NAV_STYLES').map((v) => variant(`nav-${v}`, (c) => { c.header.menu = 'header'; c.header.nav.style = v })),
   /* 드로어 갈래와 사이드바 모양은 메뉴가 사이드바일 때만 마크업에 나옵니다 */
   ...values('DRAWER_STYLES').map((v) => variant(`drawer-${v}`, (c) => { c.header.menu = 'sidebar'; c.header.drawer.style = v })),
@@ -139,6 +169,15 @@ const CASES = [
       head: { ...c.blog.categories[0].look.head, name: '개발 노트' },
     })
   }, CAT_POSTS),
+
+  /* ── 내 글 링크(곁에 보는 글) ──
+     링크가 판으로 바뀌고, 판 안에 들어가는 벌(`peek/`)이 글마다 서고, 스크립트는 링크가 있는 글에만 실립니다 */
+  /* 기본 폭 + 문단 바로가기 — 목록 안의 링크는 판이 그 목록 뒤에 서고, 없는 글(d-9)은 글자만 남습니다 */
+  variant('peek-link', (c) => { c.blog.categories = CATS(); c.blog.toc.show = true }, PEEK_POSTS()),
+  /* 대상이 비공개 카테고리 — 2번이 안 나가므로 1번의 그 링크는 풀려 글자만 남고, 2번의 벌도 없습니다 */
+  variant('peek-private', (c) => { c.blog.categories = CATS(); c.blog.categories[1].show = false }, PEEK_POSTS()),
+  /* 본문 폭이 다른 글 — 비켜서는 경계가 글마다 달라집니다(1번 68rem, 2번 전체폭) */
+  variant('peek-wide', (c) => { c.blog.categories = CATS(); c.blog.toc.show = true }, PEEK_POSTS(['68rem', 'full'])),
 ]
 
 /** 비교에서 빼는 값 — 코드와 무관하게 바뀌는 것들 */
@@ -231,25 +270,81 @@ for (const { name, conf, posts } of CASES) {
   else pass++
 }
 
-/* ── 블로그 면에 JS 가 한 바이트도 안 섞였는가 ────────────────────────
-   글 페이지가 JS 를 0바이트로 나가는 것은 이 사이트의 약속입니다 — 코드 색칠도 문단 바로가기도
-   스크롤 추적도 전부 굽기나 CSS 가 합니다. 그런데 약속은 주석에만 적혀 있었습니다.
-   `<script>` 한 줄을 어디선가 템플릿에 넣어도 골든은 그걸 「바뀐 HTML」로만 보고,
-   `--update` 한 번이면 조용히 기준이 됩니다. 그래서 따로 셉니다 — 굽힌 적 없는 수입니다. */
+/* ── 블로그 면의 스크립트는 약속한 그 하나뿐인가 ────────────────────────
+   글 페이지는 스크립트 없이 나가는 것이 기본입니다 — 코드 색칠도 문단 바로가기도 스크롤 추적도
+   전부 굽기나 CSS 가 합니다. 예외는 하나, 「내 글」 링크가 있는 글에 실리는 `peek.js` 입니다
+   (판을 여러 장 세우고 읽던 자리를 붙잡는 일 — 없어도 판 한 장은 CSS 로 열립니다).
+
+   골든만으로는 못 지킵니다. `<script>` 한 줄을 어디선가 템플릿에 넣어도 골든은 「바뀐 HTML」로만
+   보고, `--update` 한 번이면 조용히 기준이 됩니다. 그래서 따로 셉니다:
+     링크가 있는 글        → 정확히 `<script src="/assets/peek.js?v=…" defer></script>` 하나
+     그 밖의 블로그 면     → 0개 (목록, 링크 없는 글, 판 안에 들어가는 벌 전부) */
 {
+  const PEEK_JS = /^<script src="\/assets\/peek\.js\?v=[0-9a-zA-Z]+" defer><\/script>$/
   const jsIn = []
-  let 센면 = 0
+  let 센면 = 0, 실린면 = 0
   for (const [name, files] of baked) {
     for (const [rel, html] of files) {
       if (!rel.startsWith('blog/')) continue
       센면++
-      const n = (html.match(/<script\b/gi) || []).length
-      if (n) jsIn.push(`${name}/${rel} — <script> ${n}개`)
+      const tags = html.match(/<script\b[^>]*>[\s\S]*?<\/script>|<script\b[^>]*>/gi) || []
+      const linked = /class="[^"]*\bpeek-link\b[^"]*"[^>]*href="#peek-|href="#peek-\d+"/.test(html) && !rel.endsWith('/peek/index.html')
+      if (linked) {
+        실린면++
+        if (tags.length !== 1 || !PEEK_JS.test(tags[0])) jsIn.push(`${name}/${rel} — 내 글 링크가 있는 글인데 스크립트가 peek.js 하나가 아닙니다 (${tags.length}개)`)
+      } else if (tags.length) jsIn.push(`${name}/${rel} — <script> ${tags.length}개`)
     }
   }
   if (!센면) fails.push('블로그 면을 한 장도 못 찾았습니다 — JS 검사가 죽었습니다')
-  else if (jsIn.length) fails.push(`블로그 면에 JS 가 들어갔습니다\n${jsIn.map((x) => `    ${x}`).join('\n')}`)
-  else console.log(`블로그 면 ${센면}장 — <script> 0개`)
+  else if (!실린면) fails.push('내 글 링크가 있는 글을 한 장도 못 찾았습니다 — peek.js 검사가 죽었습니다')
+  else if (jsIn.length) fails.push(`블로그 면의 스크립트가 약속과 다릅니다\n${jsIn.map((x) => `    ${x}`).join('\n')}`)
+  else console.log(`블로그 면 ${센면}장 — 스크립트는 내 글 링크가 있는 ${실린면}장에 peek.js 하나씩, 나머지 0개`)
+}
+
+/* ── 공개되지 않은 글로 가는 링크는 풀리고, 알려지는가 ──────────────────
+   숨긴 글·비공개 카테고리 글·없는 글을 가리키는 링크가 판으로 나가면 404 가 뜨거나(운이 좋을 때)
+   숨긴 글의 본문이 읽힙니다(벌이 남아 있을 때). 골든은 「지금 HTML」만 보므로 따로 못 박습니다 */
+{
+  const conf = clone(SITE_DEFAULTS); conf.blog.categories = CATS(); conf.blog.categories[1].show = false
+  const warn = []
+  const pages = new Map(blogPages(PEEK_POSTS(), themeStyle(conf.theme) + headStyle(conf.header, conf.theme), conf, { warn }))
+  const one = pages.get('blog/d-1/index.html') || ''
+  const bad = []
+  if (pages.has('blog/d-2/peek/index.html') || pages.has('blog/d-2/index.html')) bad.push('비공개 카테고리 글(d-2)이 구워졌습니다')
+  if (/\/blog\/d-2\//.test(one)) bad.push('1번 글에 비공개 글(d-2)의 주소가 남았습니다')
+  if (/\/blog\/d-9\//.test(one)) bad.push('1번 글에 없는 글(d-9)의 주소가 남았습니다')
+  if (!/<iframe[^>]*src="\/blog\/d-3\/peek\/"/.test(one)) bad.push('공개 글(d-3)로 가는 판이 없습니다')
+  if (warn.filter((w) => /d-2|d-9/.test(w)).length !== 2) bad.push(`경고가 둘이어야 합니다(d-2, d-9) — ${warn.length}건`)
+  /* 맨 위 단계에 맨몸으로 놓인 링크(문단에 안 싸인 것)도 같은 길을 타야 합니다 */
+  const bare = PEEK_POSTS().map((p, i) => (i === 2 ? { ...p, body: `${linkTo('d-9', '없는 글')}${linkTo('d-1', '첫 글')}${p.body}` } : p))
+  const bareWarn = []
+  const three = new Map(blogPages(bare, themeStyle(conf.theme) + headStyle(conf.header, conf.theme), conf, { warn: bareWarn })).get('blog/d-3/index.html') || ''
+  if (/\/blog\/d-9\//.test(three)) bad.push('맨 위 단계 링크: 없는 글(d-9)의 주소가 남았습니다')
+  if (!/<iframe[^>]*src="\/blog\/d-1\/peek\/"/.test(three)) bad.push('맨 위 단계 링크: 공개 글(d-1)로 가는 판이 없습니다')
+  if (!bareWarn.some((w) => /글 d-3 .*d-9/.test(w))) bad.push('맨 위 단계 링크: 경고가 없습니다')
+  if (bad.length) fails.push(`내 글 링크의 공개 여부 처리가 틀렸습니다\n${bad.map((x) => `    ${x}`).join('\n')}`)
+  else console.log('내 글 링크 — 공개되지 않은 대상은 풀리고 경고가 섭니다')
+}
+
+/* ── 내린 글의 구운 페이지가 정말 지워지는가 ────────────────────────────
+   위 검사는 「이번에 무엇을 굽는가」만 봅니다. 지난번에 구워 디스크에 남은 것은 못 봅니다 — 글을 숨긴 뒤에도
+   `/blog/<번호>/peek/` 가 살아 있으면 숨긴 글의 본문이 그대로 읽힙니다. 굽기가 쓰는 그 함수를 직접 부릅니다 */
+{
+  const dir = join(TMP, 'sweep')
+  for (const s of ['hidden', 'orphan', 'alive']) {
+    await put(join(dir, s, 'index.html'), 'x'); await put(join(dir, s, 'peek/index.html'), 'x'); await put(join(dir, s, 'photo.webp'), 'x')
+  }
+  await sweepUnpublished(dir, new Map([['hidden', false], ['orphan', true], ['alive', true]]), new Set(['orphan']))
+  const has = (rel) => existsSync(join(dir, rel))
+  const bad = []
+  for (const s of ['hidden', 'orphan']) {
+    if (has(`${s}/index.html`)) bad.push(`${s}: index.html 이 남았습니다`)
+    if (has(`${s}/peek/index.html`)) bad.push(`${s}: peek/index.html 이 남았습니다 — 내린 글의 본문이 계속 읽힙니다`)
+    if (!has(`${s}/photo.webp`)) bad.push(`${s}: 올린 사진까지 지웠습니다`)
+  }
+  if (!has('alive/index.html') || !has('alive/peek/index.html')) bad.push('alive: 공개 중인 글의 페이지를 지웠습니다')
+  if (bad.length) fails.push(`내린 글 치우기가 틀렸습니다\n${bad.map((x) => `    ${x}`).join('\n')}`)
+  else console.log('내린 글 — index.html 과 peek/ 가 함께 지워지고 사진은 남습니다')
 }
 
 await rm(TMP, { recursive: true, force: true })

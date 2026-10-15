@@ -1,6 +1,20 @@
 import { toHtml } from 'hast-util-to-html';
-import { BLOCK_ALIGNS, FOCUS_DEFAULT, FOCUS_MAX, FOCUS_MIN, FONT_VALUES, TITLE_SIZES, TITLE_SIZE_DEFAULT, TITLE_TEXT_MAX, colorOf, imageSrc, oneOf, } from './vocab.js';
+import { BANNER_INKS, BANNER_INK_DEFAULT, BANNER_PLACES, BANNER_PLACE_DEFAULT, BANNER_TAIL_DEFAULT, BANNER_TAIL_PLACES, BLOCK_ALIGNS, FOCUS_DEFAULT, FOCUS_MAX, FOCUS_MIN, FONT_VALUES, TITLE_SIZES, TITLE_SIZE_DEFAULT, TITLE_TEXT_MAX, colorOf, imageSrc, oneOf, } from './vocab.js';
 import { idOf, isRef, resolveSrc } from './attachments.js';
+/**
+ * 새로 넣는 배너의 값 — 편집기가 사진을 올린 직후에 쓴다.
+ * 기본값을 두 곳에 적으면 `normalizeTitle` 과 갈라지므로 여기 한 곳에서 만든다.
+ */
+export function newBanner(src) {
+    return {
+        src, focusX: FOCUS_DEFAULT, focusY: FOCUS_DEFAULT, cover: true,
+        overlay: true, place: BANNER_PLACE_DEFAULT, ink: BANNER_INK_DEFAULT, tailAt: BANNER_TAIL_DEFAULT,
+    };
+}
+/** 제목이 지금 사진 위에 얹혀 있는가 — CSS·서식줄·인라인 색이 모두 이 한 판정을 본다 */
+export function isOverlaid(t) {
+    return !!t.banner && t.banner.overlay;
+}
 export const EMPTY_TITLE = {
     text: '', font: null, size: TITLE_SIZE_DEFAULT, align: 'left', color: null, banner: null,
 };
@@ -29,8 +43,16 @@ export function normalizeTitle(v) {
         align: oneOf(BLOCK_ALIGNS, o.align, 'left'),
         color: colorOf(typeof o.color === 'string' ? o.color : null),
         // src 가 어휘 밖(javascript: 등)이면 배너를 **통째로** 버린다 — 반쪽짜리 배너는 없다
+        // 얹기·자리·글자색은 값이 없으면 기본값이다 — 이 셋이 없던 때에 저장된 배너도 얹힌 모습으로 열린다
         banner: src
-            ? { src, focusX: focus(b.focusX), focusY: focus(b.focusY), cover: typeof b.cover === 'boolean' ? b.cover : true }
+            ? {
+                src, focusX: focus(b.focusX), focusY: focus(b.focusY),
+                cover: typeof b.cover === 'boolean' ? b.cover : true,
+                overlay: typeof b.overlay === 'boolean' ? b.overlay : true,
+                place: oneOf(BANNER_PLACES, b.place, BANNER_PLACE_DEFAULT),
+                ink: oneOf(BANNER_INKS, b.ink, BANNER_INK_DEFAULT),
+                tailAt: oneOf(BANNER_TAIL_PLACES, b.tailAt, BANNER_TAIL_DEFAULT),
+            }
             : null,
     };
 }
@@ -40,14 +62,29 @@ export function normalizeTitle(v) {
  */
 export function titleInlineStyle(t) {
     const out = [`font-family:${t.font || 'var(--font-body)'}`, `font-size:${t.size}px`, `text-align:${t.align}`];
-    // 제목은 배너 유무와 상관없이 **종이 위에** 선다(prose.css). 그래서 고른 색이 늘 산다.
-    if (t.color)
+    // 사진 위에 얹힌 제목의 색은 `banner.ink` 가 정한다(prose.css). 인라인 색을 같이 쓰면
+    // 인라인이 이겨서 흰 그늘 위에 흰 글자 같은 조합이 생긴다.
+    if (t.color && !isOverlaid(t))
         out.push(`color:${t.color}`);
     return out.join(';');
 }
 /** 배너 사진의 `object-position`. 50·50 이어도 **항상** 쓴다 — 생략/출력을 섞지 않는다. */
 export function bannerPosition(b) {
     return `${b.focusX}% ${b.focusY}%`;
+}
+/**
+ * `header.post-head` 의 data 속성 — 편집(React)과 발행(hast)이 **같은 값**을 단다.
+ * 배너가 없어도 전부 출력한다(`data-overlay='0'`). 속성이 있다 없다 하면 CSS 선택자가 갈린다.
+ */
+export function headData(t, bleed) {
+    return {
+        'data-banner': t.banner ? '1' : '0',
+        'data-bleed': bleed,
+        'data-overlay': isOverlaid(t) ? '1' : '0',
+        'data-place': t.banner?.place ?? BANNER_PLACE_DEFAULT,
+        'data-ink': t.banner?.ink ?? BANNER_INK_DEFAULT,
+        'data-tail': t.banner?.tailAt ?? BANNER_TAIL_DEFAULT,
+    };
 }
 /**
  * 발행 페이지의 제목 덩어리. 정적 생성기가 `renderPostHead(title) + toPublishedHtml(body_html)`
@@ -74,8 +111,7 @@ export function renderPostHead(t, bleed = 'container') {
     const head = {
         type: 'element', tagName: 'header',
         // 기본값도 항상 출력한다 — 생략/출력을 섞으면 첫 왕복에서 문자열이 달라진다
-        // 기본값도 항상 출력한다 — 생략/출력을 섞으면 첫 왕복에서 문자열이 달라진다
-        properties: { className: ['post-head'], 'data-banner': t.banner ? '1' : '0', 'data-bleed': bleed },
+        properties: { className: ['post-head'], ...headData(t, bleed) },
         children: kids,
     };
     return toHtml(head);

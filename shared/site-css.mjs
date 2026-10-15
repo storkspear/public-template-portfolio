@@ -59,6 +59,11 @@ export const themeVars = (t, font = {}) => [
   ['line-2', `color-mix(in srgb, ${t.ink} 24%, ${t.paper})`],
   ['display', fontStack(font.display || t.display, 'display')],
   ['sans', fontStack(font.body || t.body, 'sans')],
+  /* 사이트 글꼴 그 자체 — 화면별 글꼴(`font`)이 위 둘을 덮어도 이 둘은 안 바뀝니다.
+     목록 제목(「글」)과 카테고리 줄이 읽습니다: 갈래를 바꿀 때마다 그 둘의 서체까지 따라
+     바뀌면 사이트의 결이 화면마다 흔들립니다. 공통헤더의 `--hd-font` 와 같은 까닭입니다 */
+  ['site-display', fontStack(t.display, 'display')],
+  ['site-sans', fontStack(t.body, 'sans')],
   ['body-w', bodyW(t)],
   ['foot-w', footW(t)],
 ]
@@ -147,6 +152,14 @@ export const outlineVars = (o = {}) => [
  */
 export const tocVars = (t = {}) => [
   ['bj-ink', t?.ink || ''],
+]
+
+/**
+ * 종이 카드의 바탕색. 비우면 아무것도 안 내 CSS 폴백(미색)이 삽니다(`outlineVars` 와 같은 규약).
+ * 이름을 작은따옴표 리터럴로 적습니다 — `check-contract` ①이 읽을 수 있게.
+ */
+export const deckVars = (d = {}) => [
+  ['bc-paper', d?.paper || ''],
 ]
 
 /** 목록 제목(.lh)의 모양. 블로그와 포트폴리오가 값을 따로 갖습니다 */

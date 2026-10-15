@@ -6,7 +6,7 @@
  */
 import { SERVICE_ICONS, ICON_OF } from './site-icons.mjs'
 import { MENU_ICONS } from './menu-icons.mjs'
-import { CATEGORY_ID, CATEGORY_LABEL_MAX, CATEGORY_MAX, DEFAULT_LABEL, slugProblem } from './category.mjs'
+import { ALL_LABEL, CATEGORY_ID, CATEGORY_LABEL_MAX, CATEGORY_MAX, DEFAULT_LABEL, slugProblem } from './category.mjs'
 
 /* 아이콘은 굽기와 관리자가 같이 렌더링합니다 — 어휘를 지나가게 해서 들여오는 곳을 하나로 둡니다 */
 export { SERVICE_ICONS, ICON_OF }
@@ -461,6 +461,11 @@ export const BLOG_TEMPLATES = [
   { value: 'issue', label: '호수', hint: '큰 번호가 표지가 됩니다. 사진이 없어도 됩니다',
     font: { display: 'Black Han Sans', body: 'Noto Sans KR' },
     icon: [[0,0,11,0.7,1],[0,1.8,6.5,6.2,1],[0,9.4,9,1.7,1],[0,11.9,7,1,0],[13,0,11,0.7,1],[13,1.8,6.5,6.2,1],[13,9.4,9,1.7,1],[13,11.9,7,1,0]] },
+  /* 사진이 주인공인 판. 모양 여섯 벌(`GALLERY_STYLES`)을 이 한 갈래 밑에 둡니다.
+     글꼴 짝을 비워 둡니다 — 사진이 분위기를 정하는 판이라 사이트 글꼴을 그대로 씁니다 */
+  { value: 'gallery', label: '이미지', hint: '사진이 주인공. 배너·그리드·메이슨리 중에서 고릅니다',
+    font: { display: '', body: '' },
+    icon: [[0,0,24,8,1],[2,5,10,1.4,2],[0,9.5,11.5,8.5,1],[12.5,9.5,11.5,8.5,1]] },
 ]
 
 /**
@@ -500,6 +505,62 @@ export const OUTLINE_SKINS = [
     font: { display: 'Noto Sans KR', body: 'Nanum Gothic' },
     chip: ['#ffe97f', '#e0d26a', '#3b3524'] },
 ]
+
+/**
+ * 목록 갈래 밑의 **모양** — 갈래 하나에 어휘 하나씩입니다(`OUTLINE_SKINS` 의 까닭과 같습니다:
+ * 갈래마다 「그 갈래다운 변형」이 다르고, 한 목록을 돌려쓰면 호수에 테이프 같은 조합이 열립니다).
+ *
+ * 마크업은 그대로이고 목록에 클래스 `ls-<value>` 한 장만 붙습니다. **첫 값은 클래스를 안 답니다** —
+ * 그 갈래의 바탕 규칙이 첫 값이고, 그래야 쓰던 사람의 HTML 이 한 바이트도 안 바뀝니다
+ * (`check-contract` ② 도 첫 값은 건너뜁니다). 고른 값은 `blog.deck` 에 갈래별로 따로 둡니다 —
+ * 갈래를 오가도 각자 고른 값이 남습니다.
+ *
+ * `icon` 은 템플릿 고르개와 같은 규약입니다([x,y,w,h,톤], 톤 1 = 먹 · 0 = 옅음 · 2 = 테두리).
+ */
+export const CARDS_STYLES = [
+  { value: 'plain', label: '기본', hint: '먹선 · 각진 모서리 · 올리면 반전',
+    icon: [[0,0,11,1,1],[0,1,11,7.5,2],[13,0,11,1,1],[13,1,11,7.5,2],[0,9.5,11,1,1],[0,10.5,11,7.5,2],[13,9.5,11,1,1],[13,10.5,11,7.5,2]] },
+  { value: 'paper', label: '종이', hint: '미색 종이 · 그림자 · 올리면 살짝 들림',
+    icon: [[0,0,11,8.5,2],[1,1,9,4.5,1],[13,0,11,8.5,2],[14,1,9,4.5,1],[0,9.5,11,8.5,2],[1,10.5,9,4.5,1],[13,9.5,11,8.5,2],[14,10.5,9,4.5,1]] },
+  { value: 'side', label: '옆 견출지', hint: '카드 오른쪽에 세로 탭. 높이가 카드마다 엇갈립니다',
+    icon: [[0,0,10,8.5,2],[10,1,1.5,3,1],[13,0,10,8.5,2],[23,3.5,1,3,1],[0,9.5,10,8.5,2],[10,12.5,1.5,3,1],[13,9.5,10,8.5,2],[23,10.5,1,3,1]] },
+  { value: 'folder', label: '서류 폴더', hint: '탭과 몸통이 한 색인 폴더. 색이 카드마다 돌아갑니다',
+    icon: [[0,0,4.5,1.6,0],[0,1.6,11,7,0],[1,2.6,9,3.5,1],[13,0,4.5,1.6,0],[13,1.6,11,7,0],[14,2.6,9,3.5,1],[0,10,4.5,1.6,0],[0,11.6,11,6.4,0],[13,10,4.5,1.6,0],[13,11.6,11,6.4,0]] },
+]
+/** 종이 카드의 장식. 종이를 고른 때만 읽힙니다 */
+export const PAPER_DECOS = [
+  { value: 'none', label: '없음', hint: '장식 없이 종이만' },
+  { value: 'tape', label: '테이프', hint: '가운데 위에 마스킹테이프 한 장' },
+  { value: 'pin', label: '압정', hint: '가운데 위 압정. 카드가 조금씩 기웁니다' },
+]
+export const ISSUE_STYLES = [
+  { value: 'plain', label: '기본', hint: '윤곽선 번호 아래 사진',
+    icon: [[0,0,11,0.7,1],[0,1.8,6.5,6.2,1],[0,9.4,9,1.7,1],[13,0,11,0.7,1],[13,1.8,6.5,6.2,1],[13,9.4,9,1.7,1]] },
+  { value: 'cover', label: '표지', hint: '세로 사진 위에 번호가 흰 윤곽으로',
+    icon: [[0,0,11,12,1],[1,8.5,5,2.5,2],[0,13.2,9,1.7,1],[0,15.9,7,1,0],[13,0,11,12,1],[14,8.5,5,2.5,2],[13,13.2,9,1.7,1],[13,15.9,7,1,0]] },
+]
+export const THUMB_SIDES = [
+  { value: 'right', label: '오른쪽', hint: '사진이 줄 끝에',
+    icon: [[0,1,13,1.8,1],[0,3.6,10,1,0],[17.5,0,6.5,5.5,1],[0,8,13,1.8,1],[0,10.6,10,1,0],[17.5,7,6.5,5.5,1],[0,15,13,1.8,1],[17.5,14,6.5,4,1]] },
+  { value: 'left', label: '왼쪽', hint: '사진이 줄 앞에',
+    icon: [[0,0,6.5,5.5,1],[9,1,13,1.8,1],[9,3.6,10,1,0],[0,7,6.5,5.5,1],[9,8,13,1.8,1],[9,10.6,10,1,0],[0,14,6.5,4,1],[9,15,13,1.8,1]] },
+]
+export const GALLERY_STYLES = [
+  { value: 'banner', label: '배너 리스트', hint: '모든 글을 21:9 배너로 한 줄씩. 제목은 사진 위에',
+    icon: [[0,0,24,5.5,1],[1.5,3.2,10,1.2,2],[0,6.5,24,5.5,1],[1.5,9.7,8,1.2,2],[0,13,24,5,1],[1.5,15.8,11,1.2,2]] },
+  { value: 'banner-split', label: '히어로 배너', hint: '첫 글만 크게, 나머지는 두 칸',
+    icon: [[0,0,24,8,1],[1.5,5.5,12,1.4,2],[0,9.2,11.5,8.8,1],[1,15.5,7,1.2,2],[12.5,9.2,11.5,8.8,1],[13.5,15.5,7,1.2,2]] },
+  { value: 'grid', label: '그리드', hint: '정사각 3열. 올리면 제목이 덮개로',
+    icon: [[0,0,7.7,7.7,1],[8.15,0,7.7,7.7,1],[16.3,0,7.7,7.7,1],[0,8.15,7.7,7.7,1],[8.15,8.15,7.7,7.7,0],[16.3,8.15,7.7,7.7,1]] },
+  { value: 'grid-caption', label: '그리드 텍스트', hint: '정사각 3열. 제목을 사진 아래쪽 띠로 늘 보입니다',
+    icon: [[0,0,7.7,7.7,1],[1,5.6,5,1,2],[8.15,0,7.7,7.7,1],[9.15,5.6,5,1,2],[16.3,0,7.7,7.7,1],[17.3,5.6,5,1,2],[0,8.15,7.7,7.7,1],[1,13.75,5,1,2],[8.15,8.15,7.7,7.7,1],[9.15,13.75,5,1,2],[16.3,8.15,7.7,7.7,1],[17.3,13.75,5,1,2]] },
+  { value: 'masonry', label: '메이슨리', hint: '사진 비율 그대로 엇갈려 쌓기. 제목은 사진 아래',
+    icon: [[0,0,7.5,5,1],[0,6,6,1,0],[0,8.5,7.5,6,1],[8.25,0,7.5,7,1],[8.25,8,6,1,0],[8.25,10.5,7.5,5,1],[16.5,0,7.5,4.5,1],[16.5,5.5,6,1,0],[16.5,8,7.5,7,1]] },
+  { value: 'masonry-stagger', label: '메이슨리 교차', hint: '표지 비율이 같아도 칸 높이를 돌려 늘 엇갈립니다',
+    icon: [[0,0,7.5,9,1],[0,10,6,1,0],[8.25,0,7.5,6,1],[8.25,7,6,1,0],[8.25,9.5,7.5,8,1],[16.5,0,7.5,10.5,1],[16.5,11.5,6,1,0],[0,12.5,7.5,5.5,1]] },
+]
+/** 모양 어휘가 붙는 갈래 — 관리자 고르개와 굽기의 클래스가 이 표 하나를 봅니다 */
+export const DECK_STYLES = { cards: CARDS_STYLES, issue: ISSUE_STYLES, thumb: THUMB_SIDES, gallery: GALLERY_STYLES }
 
 /**
  * 블로그 목록 위에 서는 **카테고리 줄**의 모양.
@@ -1148,7 +1209,7 @@ export const normalizeMain = (v, fonts = []) => {
  * `where` 는 문제 문장의 머리입니다 — 기본은 「블로그」, 카테고리는 「카테고리 「개발」」.
  * 카테고리가 여럿이면 어느 것의 글꼴이 틀렸는지 머리가 없이는 알 수 없습니다.
  */
-export const BLOG_LOOK_KEYS = ['chrome', 'template', 'font', 'head', 'toc', 'outline']
+export const BLOG_LOOK_KEYS = ['chrome', 'template', 'font', 'head', 'toc', 'outline', 'deck']
 const normBlogLook = (v, fonts, problems, where) => {
   const src = asObject(v, problems, where)
   const w = (s) => (s ? `${where} ${s}` : where)
@@ -1202,6 +1263,19 @@ const normBlogLook = (v, fonts, problems, where) => {
       bg: pickColor(src.outline?.bg, problems, w('카드 배경색')),
       radius: pickNum(src.outline?.radius, 0, 32, '', problems, w('카드 모서리')),
     },
+    /**
+     * 갈래 밑의 모양(`DECK_STYLES`)과 종이 카드의 장식·색. 갈래마다 칸이 따로라, 다른 갈래를
+     * 골라도 고른 값이 잠자코 남습니다(`outline` 과 같은 규칙). 기본은 전부 첫 값이고 종이 색은
+     * 비웁니다 — 비우면 CSS 폴백(미색)이 살고, 골든이 안 흔들립니다.
+     */
+    deck: {
+      cards: pickOne(src.deck?.cards, CARDS_STYLES, CARDS_STYLES[0].value, problems, w('참고서 카드 모양')),
+      deco: pickOne(src.deck?.deco, PAPER_DECOS, PAPER_DECOS[0].value, problems, w('종이 카드 장식')),
+      paper: pickColor(src.deck?.paper, problems, w('종이 카드 바탕색')),
+      issue: pickOne(src.deck?.issue, ISSUE_STYLES, ISSUE_STYLES[0].value, problems, w('호수 모양')),
+      thumb: pickOne(src.deck?.thumb, THUMB_SIDES, THUMB_SIDES[0].value, problems, w('사진 행 사진 자리')),
+      gallery: pickOne(src.deck?.gallery, GALLERY_STYLES, GALLERY_STYLES[0].value, problems, w('이미지 테마')),
+    },
   }
 }
 
@@ -1240,8 +1314,8 @@ const normCategories = (src, fonts, problems) => {
     const label = plainText(one.label, CATEGORY_LABEL_MAX, problems, '카테고리 이름')
     const where = `카테고리 「${label || id}」`
     if (!label) problems.push(`${where}: 이름을 적어 주세요`)
-    /* 「기본」은 `/blog/` 의 이름입니다 — 같은 이름이 줄에 둘 서면 어느 쪽이 어디로 가는지 모릅니다 */
-    if (label === DEFAULT_LABEL) problems.push(`${where}: 「${DEFAULT_LABEL}」은 /blog/ 의 이름이라 쓸 수 없습니다`)
+    /* 「기본」(관리자)과 「전체」(공개 줄)는 `/blog/` 의 이름입니다 — 같은 이름이 줄에 둘 서면 어느 쪽이 어디로 가는지 모릅니다 */
+    if (label === DEFAULT_LABEL || label === ALL_LABEL) problems.push(`${where}: /blog/ 의 이름(「${DEFAULT_LABEL}」·「${ALL_LABEL}」)은 쓸 수 없습니다`)
     /* 주소는 받은 그대로 봅니다 — 조용히 다듬어 저장하면 적은 주소와 나가는 주소가 달라집니다 */
     const slug = asText(one.slug, problems, `${where} 주소`)
     const bad = slugProblem(slug)

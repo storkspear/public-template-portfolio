@@ -204,6 +204,26 @@ export const BANNER_MIN_HEIGHT = 200;
 export const FOCUS_MIN = 0;
 export const FOCUS_MAX = 100;
 export const FOCUS_DEFAULT = 50;
+/**
+ * 제목을 배너 위에 얹을 때의 세로 자리. 가로는 제목의 정렬(`align`)이 정한다.
+ * 기본은 `bottom` — 사진의 위쪽이 가려지지 않아 그림이 가장 많이 보인다.
+ */
+export const BANNER_PLACES = ['top', 'middle', 'bottom'];
+export const BANNER_PLACE_DEFAULT = 'bottom';
+/**
+ * 배너 위 글자색은 **둘뿐이다** — 밝은 글자(흰색)와 어두운 글자(검정).
+ * 사진 위에서는 글자가 읽히는지가 전부라, 색을 고르게 하면 읽히지 않는 조합만 늘어난다.
+ * 그늘도 이 값을 따라 반대색으로 깔린다(prose.css).
+ */
+export const BANNER_INKS = ['light', 'dark'];
+export const BANNER_INK_DEFAULT = 'light';
+/**
+ * 제목 뒤에 덧붙는 줄(소비자가 넣는 작성 일시 등)을 사진 위 어디에 둘지.
+ * `title` 은 제목 바로 아래에 붙어 같이 움직이고, 나머지 넷은 사진의 네 모서리다 —
+ * 제목이 어디에 있든 따로 놓인다.
+ */
+export const BANNER_TAIL_PLACES = ['title', 'top-left', 'top-right', 'bottom-left', 'bottom-right'];
+export const BANNER_TAIL_DEFAULT = 'title';
 /** 일정 카드의 벽시계 기준. 표기는 저장하지 않고 이 상수로 렌더한다. */
 export const TIME_ZONE = 'Asia/Seoul';
 /**
