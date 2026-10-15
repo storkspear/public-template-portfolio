@@ -765,10 +765,11 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
   .bl.bl-cards.ls-side > li { padding-top: 1.45rem; }
   .bl.bl-cards.ls-side a { min-height: 0; }
   .bl.bl-cards.ls-side .b-no { writing-mode: horizontal-tb; top: auto; bottom: 100%; right: var(--tr, 1rem); width: auto;
-    padding: .28rem .75rem .22rem; border-radius: 6px 6px 0 0; margin-bottom: 1px; }
-  .bl.bl-cards.ls-side > li:nth-child(4n+2) .b-no { --tr: 4.4rem; }
-  .bl.bl-cards.ls-side > li:nth-child(4n+3) .b-no { --tr: 7.8rem; }
-  .bl.bl-cards.ls-side > li:nth-child(4n) .b-no { --tr: 11.2rem; }
+    padding: .28rem .75rem .22rem; border-radius: 6px 6px 0 0; margin-bottom: 1px; white-space: nowrap; }
+  /* 엇갈림은 카드 폭의 % 로 — 두 단(카드 폭 200px 안팎)에서 고정 길이면 견출지가 카드 밖으로 밀려나 번호가 꺾였습니다 */
+  .bl.bl-cards.ls-side > li:nth-child(4n+2) .b-no { --tr: calc(1rem + 22%); }
+  .bl.bl-cards.ls-side > li:nth-child(4n+3) .b-no { --tr: calc(1rem + 44%); }
+  .bl.bl-cards.ls-side > li:nth-child(4n) .b-no { --tr: calc(1rem + 66%); }
 }
 
 /* ── 참고서 카드 · 서류 폴더 ──
