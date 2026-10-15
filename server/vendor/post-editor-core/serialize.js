@@ -4,6 +4,7 @@ import { safeSvg } from './svg.js';
 import { langLabel, normalizeLang, parseRanges, tokens, parseNotes } from './highlight.js';
 import { isRef, resolveSrc } from './attachments.js';
 import { migrateCode } from './vocab.js';
+import { blockWidth } from './proseWidth.js';
 /**
  * 발행용 HTML 보정 — editor.getHTML() 결과를 "편집 화면과 같은 DOM" 으로 맞춘다.
  *
@@ -41,7 +42,7 @@ function transformChildren(children, parent = null) {
     return children.map((node) => {
         if (!isElement(node))
             return node;
-        const next = { ...node, children: transformChildren(node.children, node) };
+        const next = fitWidth({ ...node, children: transformChildren(node.children, node) });
         if (next.tagName === 'details' && next.properties?.['dataCode'] !== undefined)
             return bakeCode(next);
         if (next.tagName === 'figure' && next.properties?.['dataDiagram'] !== undefined)
@@ -88,6 +89,27 @@ function wrapTable(node, parent) {
         },
         children: [table],
     };
+}
+/**
+ * 사진·사진 행·도면의 인라인 폭을 `data-width` 로 다시 쓴다.
+ *
+ * 폭의 정본은 `data-width` 이고(다시 열 때도 이것만 읽는다) `style` 은 보여 주기용이다.
+ * 옛 글은 `width:58%` 로 저장돼 있어 본문 열이 아니라 부모 대비로 풀리고, 천장에 걸려
+ * 줄인 폭이 안 보인다(`blockWidth` 머리말). 편집기에서 다시 저장하지 않아도 굽는 순간
+ * 새 기준을 타도록 여기서 맞춘다. 같은 값을 다시 쓰므로 멱등이다.
+ */
+function fitWidth(node) {
+    const p = node.properties ?? {};
+    const sized = (node.tagName === 'figure' && (p['dataFigure'] !== undefined || p['dataDiagram'] !== undefined))
+        || (node.tagName === 'div' && p['dataImageRow'] !== undefined);
+    if (!sized || p['dataWidth'] === undefined)
+        return node;
+    const n = Number(p['dataWidth']);
+    if (!Number.isFinite(n))
+        return node;
+    const rest = String(p['style'] ?? '').split(';').map((d) => d.trim())
+        .filter((d) => d && !/^width\s*:/.test(d));
+    return { ...node, properties: { ...p, style: [`width:${blockWidth(n)}`, ...rest].join(';') } };
 }
 /** 하위 트리의 글자를 모은다 */
 function textOf(node) {

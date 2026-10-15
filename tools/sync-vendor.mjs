@@ -3,7 +3,7 @@
  * 굽기가 쓰는 편집기 라이브러리 조각을 `server/vendor/` 로 복사합니다.
  *
  * 왜 vendor 인가: 서버(`server/`)는 제 `package.json` 으로 도는 별개 구역이고, 편집기는
- * 관리자 화면 쪽 의존성입니다. 서버가 굽기에 필요한 조각 여섯 개만 커밋해서 git 이력에
+ * 관리자 화면 쪽 의존성입니다. 서버가 굽기에 필요한 조각 일곱 개만 커밋해서 git 이력에
  * 남깁니다 — 그러면 배포가 `git pull` 하나로 끝나고, 사본이 갈라지면 diff 에 보입니다.
  *
  * `index.js` 는 복사하지 않습니다 — Tiptap 을 통째로 끌어옵니다. 서버에는 편집기가 필요 없습니다.
@@ -23,7 +23,7 @@ const SRC = join(ROOT, 'node_modules/@storkspear/post-editor-core')
 const OUT = join(ROOT, 'server/vendor/post-editor-core')
 
 /** 굽기가 실제로 부르는 것과 그 전이 의존만 */
-const FILES = ['title.js', 'attachments.js', 'vocab.js', 'serialize.js', 'highlight.js', 'svg.js']
+const FILES = ['title.js', 'attachments.js', 'vocab.js', 'serialize.js', 'highlight.js', 'svg.js', 'proseWidth.js']
 
 const pkg = JSON.parse(await readFile(join(SRC, 'package.json'), 'utf8'))
 await mkdir(OUT, { recursive: true })
