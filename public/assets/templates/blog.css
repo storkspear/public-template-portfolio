@@ -291,8 +291,9 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
   box-shadow: inset 0 0 0 0 var(--fg); transition: box-shadow var(--t); }
 .bl.bl-thumb a:hover { box-shadow: inset 0 2px 0 0 var(--fg); }    /* 윗선이 두꺼워집니다 — 시프트 0 */
 .bl.bl-thumb .b-no { display: none; }
-.bl.bl-thumb .b-date { grid-column: 1; grid-row: 1; font-size: .72rem; letter-spacing: .08em; margin-bottom: .45rem; }
-.bl.bl-thumb .b-body { grid-column: 1; grid-row: 2; }
+/* 날짜는 제목·요약 아래에 섭니다 — 읽는 순서가 제목부터입니다 */
+.bl.bl-thumb .b-body { grid-column: 1; grid-row: 1; }
+.bl.bl-thumb .b-date { grid-column: 1; grid-row: 2; font-size: .72rem; letter-spacing: .08em; margin: .55rem 0 0; }
 .bl.bl-thumb .b-shot { grid-column: 2; grid-row: 1 / 3; display: block; aspect-ratio: 4 / 3;
   overflow: hidden; background: var(--bg-2); }
 .bl.bl-thumb .b-shot:empty { background: none; }                 /* 표지 없는 글 — 칸은 지키되 회색 상자는 세우지 않습니다 */
