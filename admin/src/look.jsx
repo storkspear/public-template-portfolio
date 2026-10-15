@@ -2346,7 +2346,7 @@ export function Look({ onWorks, onCats }) {
                    켠 사람에게만 냅니다. 꺼 둔 채로 모양을 고르게 하면 눌러도 아무 데도
                    안 나가는 칸이 열립니다(카드 테마와 같은 규칙) */}
               {blogLook.toc.show && (<>
-                <h3>지금 읽는 자리 표식</h3>
+                <h3>상세 인덱스 UI</h3>
                 <div className="lkPick lkSkins lkTocPick">
                   {TOC_SKINS.map((o) => (
                     <button key={o.value} type="button"

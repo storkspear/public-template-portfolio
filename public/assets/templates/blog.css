@@ -1015,12 +1015,12 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
 .b-cmts-empty { margin: 0; padding: 1.4rem 0; color: var(--fg-3); font-size: .9rem; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .b-cmts-empty[hidden] { display: none; }
 .b-cmt-del { display: flex; gap: .45rem; align-items: center; flex-wrap: wrap; margin-top: .7rem; }
-.b-cmt-del .b-in { flex: 1 1 10rem; }
+.b-cmt-del .b-pw { flex: 1 1 10rem; }
 .b-cmt-form { position: relative; display: grid; gap: .55rem; margin-top: 1.6rem; }
 .b-cmt-form[hidden], .b-cmt-open[hidden] { display: none; }
 .b-cmt-open { margin-top: 1.4rem; }
 .b-cmt-row { display: flex; gap: .55rem; }
-.b-cmt-row .b-in { flex: 1 1 0; min-width: 0; }
+.b-cmt-row > .b-in, .b-cmt-row > .b-pw { flex: 1 1 0; min-width: 0; }
 .b-in { box-sizing: border-box; width: 100%; padding: .65rem .8rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
   color: var(--fg); font: inherit; font-size: .9rem; }
 .b-in::placeholder { color: var(--fg-3); }
@@ -1030,5 +1030,15 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
   font: inherit; font-size: .88rem; font-weight: 600; cursor: pointer; }
 .b-btn:disabled { opacity: .5; cursor: progress; }
 .b-btn-quiet { background: transparent; color: var(--fg); border-color: var(--line); font-weight: 500; }
+.b-pw { position: relative; display: block; }
+.b-pw .b-in { padding-right: 2.6rem; }
+/* 비밀번호 보기 — 칸 안 오른쪽 눈 단추. 누르면 친 글자가 보이고(눈에 빗금), 다시 누르면 가립니다 */
+.b-pw-eye { position: absolute; top: 50%; right: .4rem; width: 2rem; height: 2rem; margin-top: -1rem; padding: 0; border: 0; border-radius: 6px;
+  background: none; color: var(--fg-3); cursor: pointer; }
+.b-pw-eye::before { content: ''; position: absolute; inset: .4rem; background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.6%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M2%2012s3.6-7%2010-7%2010%207%2010%207-3.6%207-10%207S2%2012%202%2012z%27/%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%273%27/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.6%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M2%2012s3.6-7%2010-7%2010%207%2010%207-3.6%207-10%207S2%2012%202%2012z%27/%3E%3Ccircle%20cx%3D%2712%27%20cy%3D%2712%27%20r%3D%273%27/%3E%3C/svg%3E") center / contain no-repeat; }
+.b-pw-eye[aria-pressed="true"]::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.6%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M10.6%205.1A10.7%2010.7%200%200%201%2012%205c6.4%200%2010%207%2010%207a17%2017%200%200%201-2.6%203.5M6.6%206.6C3.7%208.4%202%2012%202%2012s3.6%207%2010%207a9.6%209.6%200%200%200%205.4-1.6%27/%3E%3Cpath%20d%3D%27M9.9%209.9a3%203%200%200%200%204.2%204.2%27/%3E%3Cpath%20d%3D%27M3%203l18%2018%27/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.6%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M10.6%205.1A10.7%2010.7%200%200%201%2012%205c6.4%200%2010%207%2010%207a17%2017%200%200%201-2.6%203.5M6.6%206.6C3.7%208.4%202%2012%202%2012s3.6%207%2010%207a9.6%209.6%200%200%200%205.4-1.6%27/%3E%3Cpath%20d%3D%27M9.9%209.9a3%203%200%200%200%204.2%204.2%27/%3E%3Cpath%20d%3D%27M3%203l18%2018%27/%3E%3C/svg%3E"); }
+.b-pw-eye:hover, .b-pw-eye[aria-pressed="true"] { color: var(--fg); }
+.b-pw-eye:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .b-trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
-@media (max-width: 640px) { .b-cmt-row { flex-wrap: wrap; } .b-cmt-row .b-in { flex: 1 1 100%; } .b-cmt-row .b-btn { flex: 1 1 100%; } }
+@media (max-width: 640px) { .b-cmt-row { flex-wrap: wrap; } .b-cmt-row > .b-in, .b-cmt-row > .b-pw { flex: 1 1 100%; } .b-cmt-row .b-btn { flex: 1 1 100%; } }

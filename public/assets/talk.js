@@ -52,6 +52,23 @@
     return { ok: res.ok, status: res.status, data }
   }
 
+  /**
+   * 비밀번호 칸 — 안쪽 오른쪽에 눈 단추. 누르면 친 글자가 보이고, 다시 누르면 가립니다.
+   * 단추는 칸 밖으로 포커스가 새지 않게 같은 감싸개 안에 둡니다. 모양은 blog.css 의 `.b-pw`
+   */
+  const pwField = (attrs) => {
+    const input = h('input', { class: 'b-in', type: 'password', maxlength: '32', autocomplete: 'off', ...attrs })
+    const eye = h('button', { type: 'button', class: 'b-pw-eye', 'aria-label': '비밀번호 보기', 'aria-pressed': 'false' })
+    eye.addEventListener('click', () => {
+      const show = input.type === 'password'
+      input.type = show ? 'text' : 'password'
+      eye.setAttribute('aria-pressed', String(show))
+      eye.setAttribute('aria-label', show ? '비밀번호 숨기기' : '비밀번호 보기')
+      input.focus()
+    })
+    return { input, wrap: h('span', { class: 'b-pw' }, input, eye) }
+  }
+
   /* 닉네임은 이 브라우저에만 기억합니다 — 다음 댓글에서 다시 안 치게. 비밀번호는 기억하지 않습니다 */
   const NICK = 'b-talk-nick'
   const remembered = () => { try { return localStorage.getItem(NICK) || '' } catch { return '' } }
@@ -115,10 +132,10 @@
 
   const delForm = (c, li) => {
     const old = li.querySelector('.b-cmt-del'); if (old) { old.remove(); return }
-    const pw = h('input', { type: 'password', class: 'b-in', placeholder: '쓸 때 정한 비밀번호', autocomplete: 'off', maxlength: '32', 'aria-label': '비밀번호' })
+    const { input: pw, wrap: pwWrap } = pwField({ placeholder: '쓸 때 정한 비밀번호', 'aria-label': '비밀번호' })
     const msg = h('span', { class: 'b-form-msg', role: 'status' })
     const go = h('button', { type: 'submit', class: 'b-btn', text: '지우기' })
-    const f = h('form', { class: 'b-cmt-del' }, pw, go,
+    const f = h('form', { class: 'b-cmt-del' }, pwWrap, go,
       h('button', { type: 'button', class: 'b-btn b-btn-quiet', text: '닫기', onclick: () => f.remove() }), msg)
     f.addEventListener('submit', async (e) => {
       e.preventDefault()
@@ -152,7 +169,8 @@
   /* ── 쓰기 ───────────────────────────────────────────────── */
   const body = h('textarea', { class: 'b-in b-in-body', rows: '3', maxlength: '1000', placeholder: '댓글을 남겨 주세요', 'aria-label': '댓글 내용', required: true })
   const nick = h('input', { class: 'b-in', maxlength: '20', placeholder: `닉네임 (${ANON})`, 'aria-label': '닉네임', autocomplete: 'nickname', value: remembered() })
-  const pw = h('input', { class: 'b-in', type: 'password', maxlength: '32', minlength: '4', placeholder: '비밀번호 (삭제 시 필요)', 'aria-label': '비밀번호', autocomplete: 'new-password', required: true })
+  const { input: pw, wrap: pwWrap } = pwField({ minlength: '4', placeholder: '비밀번호 (삭제 시 필요)', 'aria-label': '비밀번호', autocomplete: 'new-password', required: true })
+  const { input: pw2, wrap: pw2Wrap } = pwField({ minlength: '4', placeholder: '비밀번호 확인', 'aria-label': '비밀번호 확인', autocomplete: 'new-password', required: true })
   /* 사람은 못 보는 칸 — 봇이 채우면 서버가 받은 척만 합니다 */
   const trap = h('input', { name: 'website', tabindex: '-1', autocomplete: 'off', 'aria-hidden': 'true', class: 'b-trap' })
   const send = h('button', { type: 'submit', class: 'b-btn', text: '등록' })
@@ -161,7 +179,7 @@
   const openBtn = h('button', { type: 'button', class: 'b-btn b-btn-quiet b-cmt-open', text: '댓글 쓰기', 'aria-expanded': 'false' })
   const close = h('button', { type: 'button', class: 'b-btn b-btn-quiet', text: '닫기' })
   const form = h('form', { class: 'b-cmt-form', hidden: true },
-    body, h('div', { class: 'b-cmt-row' }, nick, pw, close, send), trap, formMsg)
+    body, h('div', { class: 'b-cmt-row' }, nick, pwWrap, pw2Wrap, close, send), trap, formMsg)
   const setOpen = (on) => {
     form.hidden = !on; openBtn.hidden = on
     openBtn.setAttribute('aria-expanded', String(on))
@@ -173,12 +191,13 @@
     e.preventDefault()
     if (!body.value.trim()) return note(formMsg, '내용을 적어 주세요')
     if (pw.value.length < 4) return note(formMsg, '비밀번호는 4자 이상입니다')
+    if (pw.value !== pw2.value) { note(formMsg, '비밀번호가 서로 다릅니다'); pw2.select(); return }
     send.disabled = true
     const r = await call('POST', `/posts/${no}/comments`, { body: body.value, nickname: nick.value, password: pw.value, website: trap.value })
     send.disabled = false
     if (!r.ok) return note(formMsg, r.data.error)
     remember(nick.value.trim())
-    body.value = ''; pw.value = ''
+    body.value = ''; pw.value = ''; pw2.value = ''
     if (r.data.comments) { state = { ...state, ...r.data }; paintList(); paintLike() }
     setOpen(false)
     list.lastElementChild?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
