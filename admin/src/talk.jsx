@@ -4,11 +4,11 @@ import { api } from './api.js'
 /**
  * 댓글 — 방문자가 글 아래에 남긴 것을 보고, 지우고, 되살립니다.
  *
- * 지우기는 소프트 딜리트입니다(행은 남고 지운 시각만 찍힘). 그래서 「지운 것」 칸에서 언제든
+ * 지우기는 소프트 딜리트입니다(행은 남고 지운 시각만 찍힘). 그래서 「삭제 댓글」 칸에서 언제든
  * 되살릴 수 있습니다. 누가 지웠는지도 남습니다 — 쓴 사람이 비밀번호로(작성자) / 여기서(관리자).
  * IP 는 화면과 같은 앞 두 자리뿐입니다. 서버는 원래 IP 를 저장하지 않습니다(server/talk.mjs).
  */
-const SHOW = [['live', '보이는 것'], ['only', '지운 것'], ['all', '전체']]
+const SHOW = [['all', '전체 댓글'], ['live', '활성 댓글'], ['only', '삭제 댓글']]
 const BY = { author: '작성자가 지움', admin: '관리자가 지움' }
 
 const when = (iso) => {
@@ -18,7 +18,7 @@ const when = (iso) => {
 }
 
 export function Comments() {
-  const [show, setShow] = useState('live')
+  const [show, setShow] = useState('all')
   const [rows, setRows] = useState(null)
   const [anon, setAnon] = useState('익명의 누군가')
   const [busy, setBusy] = useState('')
@@ -51,7 +51,7 @@ export function Comments() {
       </div>
       {err && <p className="err">{err}</p>}
       {rows && rows.length === 0 && (
-        <p className="empty">{show === 'only' ? '지운 댓글이 없습니다.' : '아직 댓글이 없습니다.'}</p>
+        <p className="empty">{show === 'only' ? '삭제한 댓글이 없습니다.' : '아직 댓글이 없습니다.'}</p>
       )}
       {rows && rows.length > 0 && (
         <ul className="cmList">

@@ -1508,3 +1508,6 @@ body{margin:0;background:var(--bg);color:var(--fg)}
 .adm .cmPost:hover{text-decoration:underline}
 .adm .cmFoot button{flex:none;padding:.3rem .8rem;font-size:.8rem}
 .adm .cmFoot .cmDel:hover{color:#b42318;border-color:#b42318}
+
+/* 홈디자인 › 블로그 › 상세페이지 — 「좋아요·댓글」은 문단 바로가기와 다른 일이라 사이를 띄웁니다 */
+.lk .lkTalkRow{margin-top:2rem}

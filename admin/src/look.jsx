@@ -2334,7 +2334,7 @@ export function Look({ onWorks, onCats }) {
 
               {/* 좋아요·댓글 — 카테고리 바깥, 사이트에 한 벌입니다(카테고리를 골라 둔 채여도 모든 글에 섭니다).
                    방문자가 쓰는 유일한 길이라 기본은 꺼짐입니다 */}
-              <div className="lkLink lkEyeRow">
+              <div className="lkLink lkEyeRow lkTalkRow">
                 <EyeToggle shown={!!conf.blog.talk?.on} what="좋아요·댓글"
                            onToggle={() => set('blog', { talk: { on: !conf.blog.talk?.on } })} />
                 <span>좋아요·댓글</span>
