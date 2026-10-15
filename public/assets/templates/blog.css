@@ -305,9 +305,12 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
 .bl.bl-thumb .b-title { font-weight: 700; font-size: 1.18rem; line-height: 1.38; letter-spacing: -.02em; }
 .bl.bl-thumb .b-lede { display: block; margin-top: .3rem; font-size: .9rem; line-height: 1.6; max-width: 44em; }
 .bl.bl-thumb a:visited .b-title { color: var(--fg-2); }
+/* 좁은 화면 — 썸네일을 정사각으로 키우고 요약은 한 줄로 줄여, 사진과 글 칸의 높이를 맞춥니다.
+   4:3 그대로 두면 사진(60px)보다 글(제목·요약 두 줄·날짜, 130px 안팎)이 길어 사진 아래가 비었습니다 */
 @media (max-width: 640px) {
-  .bl.bl-thumb a { grid-template-columns: minmax(0, 1fr) 5rem; column-gap: 1rem; }
-  .bl.bl-thumb .b-lede { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .bl.bl-thumb a { grid-template-columns: minmax(0, 1fr) 6rem; column-gap: 1rem; }
+  .bl.bl-thumb .b-shot { aspect-ratio: 1 / 1; }
+  .bl.bl-thumb .b-lede { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; }
 }
 
 /* ── ⑧ 매거진 magazine — 피처 하나 + 2단. 경계는 둘째 글의 윗선 하나 ─────────── */
@@ -687,7 +690,7 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
 .bl.bl-thumb.ls-left:not(:has(.b-shot img)) a { grid-template-columns: minmax(0, 1fr); }
 .bl.bl-thumb.ls-left:not(:has(.b-shot img)) .b-date,
 .bl.bl-thumb.ls-left:not(:has(.b-shot img)) .b-body { grid-column: 1; }
-@media (max-width: 640px) { .bl.bl-thumb.ls-left a { grid-template-columns: 5rem minmax(0, 1fr); } }
+@media (max-width: 640px) { .bl.bl-thumb.ls-left a { grid-template-columns: 6rem minmax(0, 1fr); } }
 
 /* ── 참고서 카드 · 종이 ──
    제 종이색과 글자색을 갖습니다(카드 테마의 포스트잇과 같은 결) — 사이트 테마가 어두워도
