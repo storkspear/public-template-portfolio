@@ -1114,9 +1114,6 @@ export function Editor({ slug: openSlug, kind = 'post', cats = [], onBack, onDir
           <PostEditor
             title={title}
             onTitleChange={setTitle}
-            /* 작성 일시 — 발행 페이지가 제목 뒤에 붙이는 것과 같은 자리·같은 모양입니다(bake.mjs).
-               아직 안 나간 글은 오늘 날짜로 보여 줍니다. 발행하면 그날이 됩니다. */
-            titleTail={<time className="b-when" style={{ textAlign: title.align || 'left' }}>{ymd(pubAt || new Date().toISOString())}</time>}
             /* `doc` 이 없으면 본문 HTML 로 엽니다. `value` 는 JSON 도 HTML 문자열도 받고,
                노드들이 `data-*` 로 왕복하도록 돼 있어 표·인용·다이어그램까지 살아납니다.
                이게 없으면 `doc` 이 빈 글(시드로 심은 글, 옮겨 온 글)이 빈 화면으로 열려
