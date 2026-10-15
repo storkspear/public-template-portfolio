@@ -117,6 +117,42 @@
 .b-cats-band a + a::before { content: none; }
 .b-cats-band a { padding: .3rem .8rem; border-radius: 7px; transition: background-color var(--t), color var(--t); }
 .b-cats-band a[aria-current] { background: var(--bg); box-shadow: 0 1px 2px rgb(0 0 0 / .07); }
+/* ── 좁은 화면의 카테고리 줄 — 한 줄로 두고 옆으로 밉니다 ─────────────────────
+   줄바꿈하면 카테고리가 늘수록 두세 줄로 쌓이고, 가운뎃점·구분선이 줄 머리에 남아 깨져 보였습니다.
+   고른 줄 모양(여섯)은 그대로 두고 줄바꿈만 막습니다. PC 는 그대로입니다.
+   「옆에 더 있음」은 끝에 바탕색으로 흐려지는 막과 꺾쇠로 알립니다. 끝까지 밀면 오른쪽 꺾쇠가 지고
+   왼쪽에 섭니다(스크롤 연동 애니메이션 — 지원 안 하는 브라우저는 오른쪽 꺾쇠가 늘 보입니다).
+   꺾쇠는 SVG 가 아니라 그라디언트 선 둘입니다 — 색이 테마 글자색(--fg)을 따라야 블랙 테마에서도 보입니다.
+   막·꺾쇠는 줄 안의 한 칸(sticky)이라 모양마다 다른 항목 간격(--cg)이 한 번 더 붙습니다. 그만큼 여백에서 뺍니다.
+   밑줄 모양은 밑줄 자리 때문에 아래 여백이 커서 꺾쇠를 글자 가운데로 올립니다(--cy) */
+@media (max-width: 640px) {
+  .b-cats { --cats-bg: var(--bg); --cg: 0px; --cy: 0px; column-gap: var(--cg); flex-wrap: nowrap; overflow-x: auto;
+    scrollbar-width: none; overscroll-behavior-x: contain;
+    margin-inline: calc(-1 * clamp(1.5rem, 5vw, 2.5rem)); padding-inline: clamp(1.5rem, 5vw, 2.5rem); scroll-timeline: --cats inline; }
+  .b-cats::-webkit-scrollbar { display: none; }
+  .b-cats-pill { --cg: .4rem; }
+  .b-cats-underline { --cg: 1.6rem; --cy: -.125rem; }
+  .b-cats-bracket { --cg: 1.1rem; }
+  .b-cats-band { --cg: .25rem; --cats-bg: var(--bg-2); margin-inline: 0; padding-inline: .4rem; width: auto; }
+  .b-cats a { flex: none; white-space: nowrap; }
+  .b-cats::before, .b-cats::after { content: ''; flex: none; position: sticky; z-index: 1; align-self: stretch; width: 4rem;
+    pointer-events: none; background-repeat: no-repeat; background-size: 6px 6px, 6px 6px, 100% 100%; }
+  .b-cats::after { order: 99; right: calc(-1 * clamp(1.5rem, 5vw, 2.5rem)); margin-left: calc(-4rem - var(--cg));
+    background-image: linear-gradient(to top right, transparent calc(50% - .7px), var(--fg) calc(50% - .7px), var(--fg) calc(50% + .7px), transparent calc(50% + .7px)), linear-gradient(to bottom right, transparent calc(50% - .7px), var(--fg) calc(50% - .7px), var(--fg) calc(50% + .7px), transparent calc(50% + .7px)), linear-gradient(90deg, transparent, var(--cats-bg) 62%);
+    background-position: right 1rem top calc(50% - 3px + var(--cy)), right 1rem top calc(50% + 3px + var(--cy)), 0 0; }
+  .b-cats::before { order: -1; left: calc(-1 * clamp(1.5rem, 5vw, 2.5rem)); margin-right: calc(-4rem - var(--cg)); opacity: 0;
+    background-image: linear-gradient(to bottom right, transparent calc(50% - .7px), var(--fg) calc(50% - .7px), var(--fg) calc(50% + .7px), transparent calc(50% + .7px)), linear-gradient(to top right, transparent calc(50% - .7px), var(--fg) calc(50% - .7px), var(--fg) calc(50% + .7px), transparent calc(50% + .7px)), linear-gradient(270deg, transparent, var(--cats-bg) 62%);
+    background-position: left 1rem top calc(50% - 3px + var(--cy)), left 1rem top calc(50% + 3px + var(--cy)), 0 0; }
+  .b-cats-band::after { right: -.4rem; }
+  .b-cats-band::before { left: -.4rem; }
+  @supports (animation-timeline: scroll()) {
+    .b-cats::after { opacity: 0; animation: cats-more-end linear both; animation-timeline: --cats; }
+    .b-cats::before { animation: cats-more-start linear both; animation-timeline: --cats; }
+  }
+}
+@keyframes cats-more-end { 0%, 92% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes cats-more-start { 0% { opacity: 0; } 8%, 100% { opacity: 1; } }
+
 /* 타이틀을 숨기면 이 줄이 맨 위에 섭니다 — 목록 대신 이 줄이 상단 여백(--lh-gap)을 받습니다(header.css 의 `.bl:first-child`) */
 main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
 
