@@ -179,7 +179,7 @@
   const openBtn = h('button', { type: 'button', class: 'b-btn b-btn-quiet b-cmt-open', text: '댓글 쓰기', 'aria-expanded': 'false' })
   const close = h('button', { type: 'button', class: 'b-btn b-btn-quiet', text: '닫기' })
   const form = h('form', { class: 'b-cmt-form', hidden: true },
-    body, h('div', { class: 'b-cmt-row' }, nick, pwWrap, pw2Wrap, close, send), trap, formMsg)
+    body, h('div', { class: 'b-cmt-row' }, nick, pwWrap, pw2Wrap, send, close), trap, formMsg)
   const setOpen = (on) => {
     form.hidden = !on; openBtn.hidden = on
     openBtn.setAttribute('aria-expanded', String(on))
