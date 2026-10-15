@@ -348,6 +348,30 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
   overflow: hidden; margin-top: .25rem; font-size: .88rem; line-height: 1.55; }
 @media (max-width: 720px) { .bl.bl-magazine { grid-template-columns: 1fr; } }
 
+/* 매거진 · 히어로 — 첫 글의 제목을 사진 위에 얹습니다(이미지 테마의 히어로 배너와 같은 문법).
+   사진 아래쪽을 어둡게 눌러 흰 글자가 어떤 사진에서도 읽히게 합니다. 사진이 없는 글은 기본 썸네일
+   (`.b-auto`, 남색 바탕)이 그 자리에 앉는데, 그 안의 제목까지 서면 제목이 두 번이라 바탕만 남깁니다 */
+.bl.bl-magazine.ls-hero > li:first-child a { position: relative; display: grid; grid-template-columns: minmax(0, 1fr);
+  aspect-ratio: 21 / 9; overflow: hidden; isolation: isolate; padding: 0;
+  background: color-mix(in srgb, var(--accent) 70%, #000); color: #fff; }
+.bl.bl-magazine.ls-hero > li:first-child a:hover { background: color-mix(in srgb, var(--accent) 70%, #000); }
+.bl.bl-magazine.ls-hero > li:first-child .b-shot { position: absolute; inset: 0; z-index: -1; aspect-ratio: auto; margin: 0; }
+.bl.bl-magazine.ls-hero > li:first-child .b-shot::after { content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, .34) 0, rgba(0, 0, 0, .04) 26%, rgba(0, 0, 0, .08) 46%, rgba(0, 0, 0, .74)); }
+.bl.bl-magazine.ls-hero > li:first-child :is(.b-auto-cat, .b-auto-t) { display: none; }
+.bl.bl-magazine.ls-hero > li:first-child .b-body { align-self: end; max-width: 34em; padding: clamp(1.4rem, 3.2vw, 2.6rem); }
+.bl.bl-magazine.ls-hero > li:first-child .b-title { color: #fff; }
+.bl.bl-magazine.ls-hero > li:first-child a:is(:hover, :focus-visible) .b-title { text-decoration-color: rgba(255, 255, 255, .6); }
+.bl.bl-magazine.ls-hero > li:first-child .b-lede { color: rgba(255, 255, 255, .86);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.bl.bl-magazine.ls-hero > li:first-child .b-date { position: absolute; top: clamp(1rem, 2.4vw, 1.7rem); left: clamp(1.4rem, 3.2vw, 2.6rem);
+  margin: 0; color: rgba(255, 255, 255, .88); grid-column: auto; }
+/* 좁은 화면은 21:9 로는 글자 자리가 모자라 세로로 깁니다 */
+@media (max-width: 720px) {
+  .bl.bl-magazine.ls-hero > li:first-child a { aspect-ratio: 4 / 5; }
+  .bl.bl-magazine.ls-hero > li:first-child .b-title { font-size: clamp(1.6rem, 7.5vw, 2.2rem); }
+}
+
 /* ── ⑨ 참고서 카드 cards — 1px + 4px 먹선, 각진 모서리, 모서리 번호표, 호버 반전 ── */
 /* `auto-fit` 입니다. `auto-fill` 은 글이 없어도 칸을 만들어, 글 3편에 칸 4개가 서면
    카드가 좁아지면서 왼쪽으로 몰리고 오른쪽에 빈 칸 하나가 통째로 남습니다. `auto-fit` 은

@@ -109,6 +109,7 @@ const CLASS_OF = [
   ['SIDEBARS', (v) => `.s-drawer-${v}`, '사이드바 모양'],
   ['BLOG_TEMPLATES', (v) => `.bl-${v}`, '블로그 목록'],
   ['OUTLINE_SKINS', (v) => `.bo-${v}`, '카드 테마'],
+  ['MAGAZINE_STYLES', (v) => `.bl-magazine.ls-${v}`, '매거진 모양'],
   ['CARDS_STYLES', (v) => `.bl-cards.ls-${v}`, '참고서 카드 모양'],
   ['PAPER_DECOS', (v) => `.ld-${v}`, '종이 카드 장식'],
   ['ISSUE_STYLES', (v) => `.bl-issue.ls-${v}`, '호수 모양'],

@@ -539,6 +539,13 @@ export const ISSUE_STYLES = [
   { value: 'cover', label: '표지', hint: '세로 사진 위에 번호가 흰 윤곽으로',
     icon: [[0,0,11,12,1],[1,8.5,5,2.5,2],[0,13.2,9,1.7,1],[0,15.9,7,1,0],[13,0,11,12,1],[14,8.5,5,2.5,2],[13,13.2,9,1.7,1],[13,15.9,7,1,0]] },
 ]
+/** 매거진 첫 글 — 기본은 사진 아래 제목, 히어로는 사진(없으면 기본 썸네일) 위에 제목 */
+export const MAGAZINE_STYLES = [
+  { value: 'plain', label: '기본', hint: '첫 글 사진 아래에 제목',
+    icon: [[0,0,24,7.5,1],[0,8.6,15,2.2,1],[0,11.4,11,1,0],[0,14,11,1.5,1],[13,14,11,1.5,1],[0,16.5,8,1,0],[13,16.5,8,1,0]] },
+  { value: 'hero', label: '히어로', hint: '첫 글 사진 위에 제목을 얹습니다',
+    icon: [[0,0,24,11,1],[1.5,6.4,13,1.8,2],[1.5,8.8,9,0.9,2],[0,13,11,1.5,1],[13,13,11,1.5,1],[0,15.5,8,1,0],[13,15.5,8,1,0]] },
+]
 export const THUMB_SIDES = [
   { value: 'right', label: '오른쪽', hint: '사진이 줄 끝에',
     icon: [[0,1,13,1.8,1],[0,3.6,10,1,0],[17.5,0,6.5,5.5,1],[0,8,13,1.8,1],[0,10.6,10,1,0],[17.5,7,6.5,5.5,1],[0,15,13,1.8,1],[17.5,14,6.5,4,1]] },
@@ -560,7 +567,7 @@ export const GALLERY_STYLES = [
     icon: [[0,0,7.5,9,1],[0,10,6,1,0],[8.25,0,7.5,6,1],[8.25,7,6,1,0],[8.25,9.5,7.5,8,1],[16.5,0,7.5,10.5,1],[16.5,11.5,6,1,0],[0,12.5,7.5,5.5,1]] },
 ]
 /** 모양 어휘가 붙는 갈래 — 관리자 고르개와 굽기의 클래스가 이 표 하나를 봅니다 */
-export const DECK_STYLES = { cards: CARDS_STYLES, issue: ISSUE_STYLES, thumb: THUMB_SIDES, gallery: GALLERY_STYLES }
+export const DECK_STYLES = { magazine: MAGAZINE_STYLES, cards: CARDS_STYLES, issue: ISSUE_STYLES, thumb: THUMB_SIDES, gallery: GALLERY_STYLES }
 
 /**
  * 블로그 목록 위에 서는 **카테고리 줄**의 모양.
@@ -1272,6 +1279,7 @@ const normBlogLook = (v, fonts, problems, where) => {
       cards: pickOne(src.deck?.cards, CARDS_STYLES, CARDS_STYLES[0].value, problems, w('참고서 카드 모양')),
       deco: pickOne(src.deck?.deco, PAPER_DECOS, PAPER_DECOS[0].value, problems, w('종이 카드 장식')),
       paper: pickColor(src.deck?.paper, problems, w('종이 카드 바탕색')),
+      magazine: pickOne(src.deck?.magazine, MAGAZINE_STYLES, MAGAZINE_STYLES[0].value, problems, w('매거진 모양')),
       issue: pickOne(src.deck?.issue, ISSUE_STYLES, ISSUE_STYLES[0].value, problems, w('호수 모양')),
       thumb: pickOne(src.deck?.thumb, THUMB_SIDES, THUMB_SIDES[0].value, problems, w('사진 행 사진 자리')),
       gallery: pickOne(src.deck?.gallery, GALLERY_STYLES, GALLERY_STYLES[0].value, problems, w('이미지 테마')),

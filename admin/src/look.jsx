@@ -140,7 +140,7 @@ const layoutOf = (m) => JSON.stringify(deepNormalized({
  * 갈래 밑의 모양 — 다시 굽기 키에 씁니다. 종이 색은 CSS 변수라 iframe 에는 바로 먹지만 **넣습니다**:
  * 빼 두면 디스크의 미리보기에 옛 색이 남아 「새 탭에서 확인」이 옛 색을 엽니다(링크 잠금이 못 잡습니다)
  */
-const deckShape = (d) => (d ? [d.cards, d.deco, d.paper, d.issue, d.thumb, d.gallery].join('/') : '')
+const deckShape = (d) => (d ? [d.magazine, d.cards, d.deco, d.paper, d.issue, d.thumb, d.gallery].join('/') : '')
 
 const liveCss = (conf, pageKey) => {
   const t = conf.theme
@@ -2276,7 +2276,7 @@ export function Look({ onWorks, onCats }) {
             </>)}
 
             {/* ── 갈래 밑의 모양 ──
-                 참고서 카드·호수·사진 행·이미지 넷에만 있습니다. 고른 갈래일 때만 냅니다
+                 매거진·참고서 카드·호수·사진 행·이미지 다섯에만 있습니다. 고른 갈래일 때만 냅니다
                  (카드 테마와 같은 까닭). 고르면 클래스 한 장이 바뀌어 미리보기를 다시 굽습니다 */}
             {tab === 'blog' && DECK_STYLES[blogLook.template] && (<>
               <h3>{{ thumb: '사진 자리', gallery: '이미지 테마' }[blogLook.template] || '모양'}</h3>
