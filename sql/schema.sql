@@ -156,3 +156,41 @@ create index if not exists post_attachments_ord_idx on post_attachments (post_id
 -- 굽기와 관리자가 `meta->>'category'` 로 거릅니다 — 비공개 카테고리의 글 빼기, 카테고리별 목록,
 -- 카테고리마다 편수. 식 인덱스라 `->>` 그대로 적어야 질의가 탑니다.
 create index if not exists posts_category_idx on posts (kind, (meta->>'category'));
+
+-- ── 댓글 · 좋아요 ──────────────────────────────────────────────────────
+-- 방문자가 쓰는 첫 표입니다. 가입이 없어서 사람을 가르는 것은 IP 뿐입니다.
+--
+-- **원래 IP 는 저장하지 않습니다.** 화면에 보일 앞 두 자리(`ip_prefix`)와, 같은 사람인지 가르는
+-- 해시(`ip_hash` = HMAC(서버 비밀, 전체 IP))만 둡니다. 해시로 속도 제한·좋아요 하나·차단이 되고,
+-- DB 가 새도 누가 어디서 썼는지는 안 나갑니다.
+--
+-- 지우기는 소프트 딜리트입니다 — 행을 남기고 `deleted_at` 만 찍습니다. 실수로 지운 것을 관리자가
+-- 되살리고, 문제가 된 글은 기록이 남습니다. 화면은 `deleted_at is null` 만 봅니다.
+create table if not exists comments (
+  id            uuid primary key default gen_random_uuid(),
+  post_id       uuid not null references posts(id) on delete cascade,
+  nickname      text,                 -- 비우면 null — 화면에 「익명의 누군가」. 문구를 바꿔도 행은 그대로
+  body          text not null,
+  password_hash text not null,        -- 쓴 사람이 지울 때 맞춰 보는 값. bcrypt(crypt), 평문은 안 남깁니다
+  ip_prefix     text not null,        -- '121.134' — 화면용
+  ip_hash       text not null,
+  created_at    timestamptz not null default now(),
+  deleted_at    timestamptz,
+  deleted_by    text
+);
+do $$ begin
+  alter table comments add constraint comments_deleted_by_chk check (deleted_by in ('author', 'admin'));
+exception when duplicate_object then null; end $$;
+create index if not exists comments_post_live_idx on comments (post_id, created_at) where deleted_at is null;
+create index if not exists comments_recent_idx on comments (created_at desc);
+create index if not exists comments_ip_idx on comments (ip_hash, created_at);
+
+-- 좋아요는 「IP 당 글마다 하나」를 기본키가 보장합니다. 같은 요청이 동시에 여러 번 와도
+-- 행은 하나뿐이라 숫자가 부풀지 않습니다. 개수는 따로 세어 두지 않고 그때그때 셉니다 —
+-- 계수기 칸을 두면 올리고 내리는 사이에 어긋날 자리가 생깁니다.
+create table if not exists post_likes (
+  post_id    uuid not null references posts(id) on delete cascade,
+  ip_hash    text not null,
+  created_at timestamptz not null default now(),
+  primary key (post_id, ip_hash)
+);

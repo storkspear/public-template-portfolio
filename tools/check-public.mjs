@@ -119,10 +119,11 @@ for (const f of serverFiles) {
 // 안 섞이는 진짜 계약은 ①②와 패키지 경계가 지킵니다.
 // 그래도 숫자는 찍습니다 — 어느 날 몇 배가 되면 그건 알아야 할 일입니다.
 const INLINE_SCRIPT = /<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi
-// `public/` 의 스크립트 파일은 **하나**입니다 — 곁에 보는 글(`assets/peek.js`). 굽기가 「내 글」 링크가
-// 있는 글에만 싣습니다(그 수는 check-bake 가 셉니다). 파일이 하나 더 생기면 어디선가 그것을 부르기
-// 시작했다는 뜻이고, 예산 숫자만 조용히 커지는 것으로는 못 알아챕니다.
-const KNOWN_JS = ['assets/peek.js']
+// `public/` 의 스크립트 파일은 **둘**입니다 — 곁에 보는 글(`assets/peek.js`)과 좋아요·댓글
+// (`assets/talk.js`). peek.js 는 굽기가 「내 글」 링크가 있는 글에만, talk.js 는 댓글을 켠 사이트의
+// 글 페이지에만 싣습니다(그 수는 check-bake 가 셉니다). 파일이 하나 더 생기면 어디선가 그것을
+// 부르기 시작했다는 뜻이고, 예산 숫자만 조용히 커지는 것으로는 못 알아챕니다.
+const KNOWN_JS = ['assets/peek.js', 'assets/talk.js']
 const strayJs = files.filter((f) => extname(f) === '.js' && f.startsWith(DIST + '/') && !KNOWN_JS.includes(rel(f)))
 if (strayJs.length) fails.push(`③ public/ 에 약속하지 않은 스크립트 파일이 있습니다: ${strayJs.map(rel).join(', ')}`)
 let fileBytes = 0

@@ -28,6 +28,7 @@ import { KEYS, normalize, headerContrast, buttonContrast, footerContrast, INK_MI
 import { CATEGORY_ID } from '../shared/category.mjs'
 import { configureFonts, FONT_VALUES } from './vendor/post-editor-core/vocab.js'
 import { SITE_FONTS } from '../site.fonts.mjs'
+import { makeTalk } from './talk.mjs'
 
 /* 글꼴 어휘를 편집기와 같은 목록으로 맞춥니다 — 안 부르면 관리자에서 고를 수 있는 글꼴을
    서버가 「모르는 글꼴」로 거절합니다(굽기도 같은 이유로 같은 줄을 부릅니다) */
@@ -530,9 +531,28 @@ const orphanError = (lost, what) =>
   `${what} 「${lost.map((o) => `${o.label}」의 발행 글 ${o.n}편`).join(', 「')}이 주인을 잃습니다`
   + ' — 카테고리를 지우려면 그 줄의 × 를 쓰세요(글을 초안으로 내려 줍니다)'
 
+/**
+ * 댓글 · 좋아요(talk.mjs). 켬/끔과 비공개 카테고리는 사이트 설정에서 읽습니다 —
+ * 요청마다 설정 표를 읽지 않게 잠깐 들고 있습니다(바꾸면 늦어도 10초 뒤에 따라옵니다).
+ */
+let talkConf = { at: 0, conf: null }
+const talkConfNow = async () => {
+  if (Date.now() - talkConf.at > 10_000) talkConf = { at: Date.now(), conf: await loadConf(pool) }
+  return talkConf.conf
+}
+const talk = makeTalk({
+  pool, secret: TOKEN_SECRET,
+  isOn: async () => !!(await talkConfNow()).blog.talk?.on,
+  catHidden: async (id) => ((await talkConfNow()).blog.categories || []).some((c) => c.id === id && !c.show),
+})
+
 createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x')
   const p = url.pathname
+  /* 방문자 입구는 여기서 먼저 갈라 보냅니다. 공개 nginx 가 붙이는 `X-Public` 이 있으면
+     /api/public/ 밖은 전부 없는 경로입니다 — nginx 설정이 틀려도 관리자 경로가 안 섭니다 */
+  if (p.startsWith('/api/public/')) return talk.handlePublic(req, res, p)
+  if (req.headers['x-public']) return json(res, 404, { error: '없는 경로입니다' })
   try {
     if (req.method === 'POST' && p === '/api/login') {
       const wait = gateWait()
@@ -1361,6 +1381,11 @@ createServer(async (req, res) => {
       let bakeError = null
       try { await bake(pool) } catch (e) { bakeError = String(e.message || e); console.error(e) }
       return json(res, 200, { key, rev: ins[0].rev, value: backValue, bakeError })
+    }
+
+    if (p === '/api/comments' || p.startsWith('/api/comments/')) {
+      if (!auth(req)) return json(res, 401, { error: '로그인이 필요합니다' })
+      if (await talk.handleAdmin(req, res, p, url)) return
     }
 
     if (req.method === 'GET' && p === '/api/health') {

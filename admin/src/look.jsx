@@ -652,6 +652,8 @@ export function Look({ onWorks, onCats }) {
     /* 줄 모양도 **마크업**입니다 — `<nav>` 에 클래스 한 장이 붙습니다. 여기 없으면 눌러도
        미리보기가 안 바뀝니다(CSS 변수가 아니라 클래스라 즉시 반영이 안 됩니다). 실제로 그랬습니다 */
     conf.blog.catStrip,
+    /* 좋아요·댓글 — 글 페이지에 자리와 스크립트가 붙습니다(마크업) */
+    !!conf.blog.talk?.on,
     (conf.blog.categories || []).map((c) => [c.id, c.label, c.slug, c.show, c.look.template, c.look.chrome,
       headMarkup(c.look.head), c.look.toc.show, c.look.toc.skin, c.look.outline.skin, deckShape(c.look.deck)].join(':')).join('|'),
     /* 탭 이름과 파비콘. 둘 다 <head> 로 나가므로 마크업입니다.
@@ -2329,6 +2331,16 @@ export function Look({ onWorks, onCats }) {
               </div>
               <p className="lkHint">글 오른쪽에 절 제목을 세웁니다. 누르면 그 자리로 옮깁니다.
                 {' '}본문에 제목이 있는 글에만 나오고, 좁은 화면에서는 나오지 않습니다.</p>
+
+              {/* 좋아요·댓글 — 카테고리 바깥, 사이트에 한 벌입니다(카테고리를 골라 둔 채여도 모든 글에 섭니다).
+                   방문자가 쓰는 유일한 길이라 기본은 꺼짐입니다 */}
+              <div className="lkLink lkEyeRow">
+                <EyeToggle shown={!!conf.blog.talk?.on} what="좋아요·댓글"
+                           onToggle={() => set('blog', { talk: { on: !conf.blog.talk?.on } })} />
+                <span>좋아요·댓글</span>
+              </div>
+              <p className="lkHint">모든 글 아래에 좋아요 단추와 댓글을 세웁니다. 방문자는 가입 없이 쓰고,
+                {' '}화면에는 IP 앞 두 자리만 보입니다. 지우고 되살리기는 왼쪽 「댓글」 메뉴에서 합니다.</p>
 
               {/* ── 지금 읽는 자리 표식 ──
                    켠 사람에게만 냅니다. 꺼 둔 채로 모양을 고르게 하면 눌러도 아무 데도

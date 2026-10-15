@@ -1320,6 +1320,17 @@ export const postPage = (p, styleTag, conf = DEFAULTS, cat = null, link = null) 
    */
   const fullCls = p.width === 'full' ? ' b-full' : ''
   /**
+   * 댓글·좋아요 — 켠 사이트만. 굽지 않고 자리만 둡니다: 댓글마다 사이트를 통째로 다시 굽게 되기
+   * 때문입니다(굽기는 증분이 아닙니다). 자리를 채우는 것은 talk.js 가 공개 API(server/talk.mjs)로.
+   * 꺼져 있으면 한 바이트도 안 냅니다 — 골든이 흔들리지 않습니다.
+   */
+  const talkOn = !!conf.blog.talk?.on
+  const talk = talkOn
+    ? `\n  <section class="b-talk" data-no="${Number(p.no)}" aria-label="좋아요와 댓글">
+    <noscript><p class="b-talk-off">좋아요와 댓글은 브라우저의 스크립트를 켜야 보입니다.</p></noscript>
+  </section>`
+    : ''
+  /**
    * 제목과 배너는 라이브러리(renderPostHead)가 렌더링합니다. 여기서 직접 마크업을 작성하면
    * 편집 화면과 발행 페이지의 DOM 이 갈라져 배너 위치·글꼴·크기가 조용히 달라집니다.
    * 작성 일시는 제목과 같은 블록 안에 넣습니다 — 본문 위에 따로 한 줄로 두면 배너와 본문
@@ -1358,7 +1369,7 @@ export const postPage = (p, styleTag, conf = DEFAULTS, cat = null, link = null) 
   html { overflow-x: hidden; }
   body { overflow-x: clip; }${jump ? `\n${jumpModeCss(p.width)}\n${tocTimelineCss(items)}` : ''}${peeks ? `\n${peekModeCss(p.width, !!jump)}` : ''}
 </style>
-${peeks ? `<script src="/assets/peek.js?v=${assetVersion()}" defer></script>\n` : ''}`,
+${peeks ? `<script src="/assets/peek.js?v=${assetVersion()}" defer></script>\n` : ''}${talkOn ? `<script src="/assets/talk.js?v=${assetVersion()}" defer></script>\n` : ''}`,
     /* 갈래 이름을 안 답니다 — 글은 한 가지 모양입니다(위 postPage 주석).
        `b-post` 만으로 blog.css 가 제목·날짜·본문 여백을 정합니다 */
     /* `#peek-0` 은 닫기가 가는 곳입니다 — 화면에 붙어 있어(blog.css) 닫을 때 스크롤이 안 움직입니다.
@@ -1370,7 +1381,7 @@ ${jump}
     <div class="prose-body">
 ${body}
     </div>
-  </article>
+  </article>${talk}
 </main>`,
   })
 }

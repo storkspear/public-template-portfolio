@@ -972,3 +972,63 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
    바뀌는 것은 글이라 왜 바뀌었는지 보이지 않았습니다 — 걷어 냈습니다.
    글은 한 가지 모양입니다. 그 모양은 `public/assets/blog.css` 의 `.b-post` 가 갖습니다.
    갈래별로 다시 나누고 싶어지면 목록 값을 끌어오지 말고 상세 제 손잡이를 만드세요. */
+
+/* ── 좋아요 · 댓글 (talk.js 가 채웁니다) ─────────────────────────────────
+   댓글을 켠 사이트의 글 페이지에만 서는 자리입니다(굽기의 postPage, 서버는 server/talk.mjs).
+   폭은 본문과 같고(--measure-override), 위 구분선만 화면 좌우 끝까지 그립니다.
+   좋아요는 가운데 알약 단추 하나, 댓글은 가는 선으로만 나눕니다 — 상자를 쌓지 않는 글의 결 그대로.
+   쓰는 칸은 접혀 있고 「댓글 쓰기」로 엽니다. 색은 전부 테마 변수라 블랙 테마에서도 그대로 섭니다.
+   하트는 SVG 를 mask 로만 써서(검정 칠은 모양일 뿐) 글자색을 따릅니다 */
+.b-talk { --heart-o: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Cpath%20d%3D%27M12%2020.3s-7.6-4.6-9.2-9.4C1.6%207.2%204%204%207.3%204c2%200%203.6%201.1%204.7%202.8C13.1%205.1%2014.7%204%2016.7%204%2020%204%2022.4%207.2%2021.2%2010.9%2019.6%2015.7%2012%2020.3%2012%2020.3z%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%271.6%27%20stroke-linejoin%3D%27round%27/%3E%3C/svg%3E"); --heart-f: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Cpath%20d%3D%27M12%2020.3s-7.6-4.6-9.2-9.4C1.6%207.2%204%204%207.3%204c2%200%203.6%201.1%204.7%202.8C13.1%205.1%2014.7%204%2016.7%204%2020%204%2022.4%207.2%2021.2%2010.9%2019.6%2015.7%2012%2020.3%2012%2020.3z%27%20fill%3D%27black%27/%3E%3C/svg%3E");
+  position: relative; max-width: var(--measure-override, 38rem); margin: 4rem auto clamp(6rem, 16vh, 10rem); padding-top: 2.6rem;
+  font-family: var(--site-sans, var(--sans)); color: var(--fg); }
+.b-talk::before { content: ''; position: absolute; top: 0; left: 50%; width: 100vw; margin-left: -50vw; border-top: 1px solid var(--line); }
+.b-talk-off { color: var(--fg-3); font-size: .9rem; text-align: center; }
+.b-like-row { position: relative; display: flex; flex-direction: column; align-items: center; gap: .5rem; margin-bottom: 3rem; }
+.b-like { display: inline-flex; align-items: center; gap: .5rem; padding: .6rem 1.15rem; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--bg); color: var(--fg-2); font: inherit; font-size: .9rem; cursor: pointer; transition: border-color .2s, color .2s; }
+.b-like:hover { border-color: var(--fg); color: var(--fg); }
+.b-like:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.b-like:disabled { cursor: progress; }
+.b-like-i { width: 1.05rem; height: 1.05rem; background: currentColor; -webkit-mask: var(--heart-o) center / contain no-repeat; mask: var(--heart-o) center / contain no-repeat; }
+.b-like.is-on { border-color: var(--fg); color: var(--fg); }
+.b-like.is-on .b-like-i { -webkit-mask-image: var(--heart-f); mask-image: var(--heart-f); animation: b-like-pop .32s ease-out; }
+@keyframes b-like-pop { 40% { transform: scale(1.25); } }
+.b-like-n { font-variant-numeric: tabular-nums; font-weight: 600; }
+.b-like-note, .b-form-msg { font-size: .8rem; color: var(--fg-3); min-height: 1.1em; }
+.b-like-ask { position: absolute; top: calc(100% - .4rem); z-index: 5; width: min(17rem, 100%); padding: 1rem 1.1rem;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 30px rgb(0 0 0 / .1); text-align: center; }
+.b-like-ask[hidden] { display: none; }
+.b-like-ask p { margin: 0 0 .85rem; font-size: .92rem; }
+.b-like-ask-btns { display: flex; gap: .5rem; justify-content: center; }
+.b-talk-h { margin: 0 0 .6rem; font-size: 1rem; font-weight: 700; letter-spacing: -.01em; }
+.b-talk-n { color: var(--fg-3); font-weight: 600; margin-left: .15rem; }
+.b-cmts { list-style: none; margin: 0; padding: 0; }
+.b-cmt { padding: 1.1rem 0; border-bottom: 1px solid var(--line); }
+.b-cmt:first-child { border-top: 1px solid var(--line); }
+.b-cmt-meta { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+.b-cmt-who { font-size: .9rem; font-weight: 700; }
+.b-cmt-ip, .b-cmt-at { font-size: .74rem; color: var(--fg-3); font-variant-numeric: tabular-nums; }
+.b-cmt-x { margin-left: auto; padding: 0; border: 0; background: none; font: inherit; font-size: .74rem; color: var(--fg-3); cursor: pointer; }
+.b-cmt-x:hover { color: var(--fg); text-decoration: underline; }
+.b-cmt-body { margin: .45rem 0 0; font-size: .95rem; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--fg-2); }
+.b-cmts-empty { margin: 0; padding: 1.4rem 0; color: var(--fg-3); font-size: .9rem; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.b-cmts-empty[hidden] { display: none; }
+.b-cmt-del { display: flex; gap: .45rem; align-items: center; flex-wrap: wrap; margin-top: .7rem; }
+.b-cmt-del .b-in { flex: 1 1 10rem; }
+.b-cmt-form { position: relative; display: grid; gap: .55rem; margin-top: 1.6rem; }
+.b-cmt-form[hidden], .b-cmt-open[hidden] { display: none; }
+.b-cmt-open { margin-top: 1.4rem; }
+.b-cmt-row { display: flex; gap: .55rem; }
+.b-cmt-row .b-in { flex: 1 1 0; min-width: 0; }
+.b-in { box-sizing: border-box; width: 100%; padding: .65rem .8rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
+  color: var(--fg); font: inherit; font-size: .9rem; }
+.b-in::placeholder { color: var(--fg-3); }
+.b-in:focus { outline: none; border-color: var(--fg); }
+.b-in-body { resize: vertical; min-height: 5.5rem; line-height: 1.6; }
+.b-btn { flex: none; padding: .62rem 1.15rem; border: 1px solid var(--fg); border-radius: 8px; background: var(--fg); color: var(--bg);
+  font: inherit; font-size: .88rem; font-weight: 600; cursor: pointer; }
+.b-btn:disabled { opacity: .5; cursor: progress; }
+.b-btn-quiet { background: transparent; color: var(--fg); border-color: var(--line); font-weight: 500; }
+.b-trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+@media (max-width: 640px) { .b-cmt-row { flex-wrap: wrap; } .b-cmt-row .b-in { flex: 1 1 100%; } .b-cmt-row .b-btn { flex: 1 1 100%; } }

@@ -1365,6 +1365,9 @@ export const normalizeBlog = (v, fonts = []) => {
       ...normBlogLook(src, fonts, problems, '블로그'),
       /* 줄 모양은 **카테고리 바깥**입니다 — 위 `CAT_STRIP_STYLES` 주석의 까닭대로 한 벌뿐입니다 */
       catStrip: pickOne(src.catStrip, CAT_STRIP_STYLES, CAT_STRIP_STYLES[0].value, problems, '카테고리 줄 모양'),
+      /* 댓글·좋아요 — 방문자가 쓰는 유일한 길이라 기본은 꺼짐입니다. 켜면 글 페이지에 자리와
+         talk.js 가 붙고 공개 API(/api/public/)가 답합니다(server/talk.mjs). 카테고리 바깥, 한 벌뿐 */
+      talk: { on: pickFlag(asObject(src.talk, problems, '댓글·좋아요').on, false, problems, '댓글·좋아요 켜기') },
       categories: normCategories(src.categories, fonts, problems),
     },
     problems,

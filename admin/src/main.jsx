@@ -8,6 +8,7 @@ import '@storkspear/post-editor-react/styles.css'  // 툴바·메뉴 — 편집 
 import './styles.css'
 
 import { api, refresh, logout, setToken as setAccess, setOnExpired, tokenInfo } from './api.js'
+import { Comments } from './talk.jsx'
 import { useToast } from './toast.js'
 import { cleanSlug, ymd } from '../../shared/text.mjs'
 import { flushUploads, setPostNo, getPostNo, seedAttachments } from './attachments.js'
@@ -1154,9 +1155,11 @@ const MENU = [
   { view: { name: 'look', kind: 'post' }, label: '홈디자인' },
   { view: { name: 'list', kind: 'post' }, label: '블로그' },
   { view: { name: 'list', kind: 'work' }, label: '포트폴리오' },
+  /* 방문자가 남긴 댓글. 끈 사이트에도 둡니다 — 끄기 전에 쌓인 것을 지우고 되살릴 길이 있어야 합니다 */
+  { view: { name: 'talk', kind: 'post' }, label: '댓글' },
 ]
 /** 지금 있는 자리가 메뉴의 어느 줄인가 — 글쓰기 화면에서도 온 자리를 표시합니다 */
-const menuAt = (v) => (v.name === 'look' ? '홈디자인' : v.kind === 'work' ? '포트폴리오' : '블로그')
+const menuAt = (v) => (v.name === 'look' ? '홈디자인' : v.name === 'talk' ? '댓글' : v.kind === 'work' ? '포트폴리오' : '블로그')
 
 /**
  * 주소 → 화면. 설정을 안 봅니다 — 첫 그림이 설정보다 먼저 그려지기 때문입니다.
@@ -1168,6 +1171,7 @@ const viewOf = (path) => {
   const s = decodeURIComponent(path || '/').replace(/^\/+|\/+$/g, '')
   if (!s) return { name: 'list', kind: 'post', slug: null }
   if (s === 'look') return { name: 'look', kind: 'post', slug: null }
+  if (s === 'comments') return { name: 'talk', kind: 'post', slug: null }
   if (s === 'new') return { name: 'edit', kind: 'post', slug: null }
   if (s === 'works') return { name: 'list', kind: 'work', slug: null }
   if (s === 'works/new') return { name: 'edit', kind: 'work', slug: null }
@@ -1176,6 +1180,7 @@ const viewOf = (path) => {
 }
 const pathOf = (v) => {
   if (v.name === 'look') return '/look'
+  if (v.name === 'talk') return '/comments'
   const base = v.kind === 'work' ? '/works' : ''
   if (v.name !== 'edit') return base || '/'
   return v.slug ? `${base}/${encodeURIComponent(v.slug)}` : `${base}/new`
@@ -1373,6 +1378,8 @@ export function App() {
         <main className={view.name === 'look' ? 'lkHost' : 'wrap'}>
           {view.name === 'look'
             ? <Look onWorks={setLive} onCats={setCats} />
+            : view.name === 'talk'
+            ? <Comments />
             : <List kind={view.kind} reloadKey={reloadKey} worksLive={live} cats={cats}
                     onNew={() => go({ name: 'edit', kind: view.kind, slug: null })}
                     onOpen={(s) => go({ name: 'edit', kind: view.kind, slug: s })} />}

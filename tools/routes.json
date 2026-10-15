@@ -1,4 +1,5 @@
 [
+  "* /api/comments",
   "* /api/posts",
   "* /api/settings",
   "DELETE one",

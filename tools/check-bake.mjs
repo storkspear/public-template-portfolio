@@ -106,6 +106,8 @@ const CASES = [
   ...values('BLOG_TEMPLATES').map((v) => variant(`blog-${v}`, (c) => { c.blog.template = v })),
   /* 갈래의 글꼴 짝을 실은 벌 — 목록 제목(「글」)과 카테고리 줄은 그 짝이 아니라 사이트 글꼴을
      따라야 합니다(`--site-*`). 위 벌들은 글꼴 칸이 비어 있어 이 갈림을 못 봅니다 */
+  /* 댓글·좋아요를 켠 사이트 — 글 페이지에 자리(`section.b-talk`)와 talk.js 하나가 붙습니다 */
+  variant('talk-on', (c) => { c.blog.talk = { on: true } }),
   variant('blog-font', (c) => {
     c.blog.template = 'magazine'; c.blog.font = { display: 'Gowun Batang', body: 'Gowun Dodum' }
     c.blog.categories = CATS()
@@ -278,27 +280,34 @@ for (const { name, conf, posts } of CASES) {
    골든만으로는 못 지킵니다. `<script>` 한 줄을 어디선가 템플릿에 넣어도 골든은 「바뀐 HTML」로만
    보고, `--update` 한 번이면 조용히 기준이 됩니다. 그래서 따로 셉니다:
      링크가 있는 글        → 정확히 `<script src="/assets/peek.js?v=…" defer></script>` 하나
+     댓글을 켠 사이트의 글 → `talk.js` 하나 더(peek.js 뒤). 자리(`section.b-talk`)가 있는 면에만
      그 밖의 블로그 면     → 0개 (목록, 링크 없는 글, 판 안에 들어가는 벌 전부) */
 {
   const PEEK_JS = /^<script src="\/assets\/peek\.js\?v=[0-9a-zA-Z]+" defer><\/script>$/
+  const TALK_JS = /^<script src="\/assets\/talk\.js\?v=[0-9a-zA-Z]+" defer><\/script>$/
   const jsIn = []
-  let 센면 = 0, 실린면 = 0
+  let 센면 = 0, 실린면 = 0, 댓글면 = 0
   for (const [name, files] of baked) {
     for (const [rel, html] of files) {
       if (!rel.startsWith('blog/')) continue
       센면++
       const tags = html.match(/<script\b[^>]*>[\s\S]*?<\/script>|<script\b[^>]*>/gi) || []
       const linked = /class="[^"]*\bpeek-link\b[^"]*"[^>]*href="#peek-|href="#peek-\d+"/.test(html) && !rel.endsWith('/peek/index.html')
-      if (linked) {
-        실린면++
-        if (tags.length !== 1 || !PEEK_JS.test(tags[0])) jsIn.push(`${name}/${rel} — 내 글 링크가 있는 글인데 스크립트가 peek.js 하나가 아닙니다 (${tags.length}개)`)
-      } else if (tags.length) jsIn.push(`${name}/${rel} — <script> ${tags.length}개`)
+      const talk = /<section class="b-talk" data-no="\d+"/.test(html)
+      if (linked) 실린면++
+      if (talk) 댓글면++
+      const want = [linked && PEEK_JS, talk && TALK_JS].filter(Boolean)
+      if (tags.length !== want.length || !want.every((re, i) => re.test(tags[i]))) {
+        jsIn.push(`${name}/${rel} — 스크립트 ${tags.length}개, 약속은 ${want.length}개` +
+          `(${[linked && 'peek.js', talk && 'talk.js'].filter(Boolean).join('·') || '없음'})`)
+      }
     }
   }
   if (!센면) fails.push('블로그 면을 한 장도 못 찾았습니다 — JS 검사가 죽었습니다')
   else if (!실린면) fails.push('내 글 링크가 있는 글을 한 장도 못 찾았습니다 — peek.js 검사가 죽었습니다')
+  else if (!댓글면) fails.push('댓글 자리가 있는 글을 한 장도 못 찾았습니다 — talk.js 검사가 죽었습니다')
   else if (jsIn.length) fails.push(`블로그 면의 스크립트가 약속과 다릅니다\n${jsIn.map((x) => `    ${x}`).join('\n')}`)
-  else console.log(`블로그 면 ${센면}장 — 스크립트는 내 글 링크가 있는 ${실린면}장에 peek.js 하나씩, 나머지 0개`)
+  else console.log(`블로그 면 ${센면}장 — 스크립트는 내 글 링크가 있는 ${실린면}장에 peek.js, 댓글을 켠 ${댓글면}장에 talk.js, 나머지 0개`)
 }
 
 /* ── 공개되지 않은 글로 가는 링크는 풀리고, 알려지는가 ──────────────────

@@ -1492,3 +1492,19 @@ body{margin:0;background:var(--bg);color:var(--fg)}
   .pePanel{right:8px;left:8px;width:auto}
   .pePanelRow{grid-template-columns:1fr;align-items:start;gap:.35rem}
 }
+
+/* ── 댓글 (talk.jsx) ─────────────────────────────────────────────────
+   글 목록과 같은 머리·칩을 쓰고, 줄은 세 층(누가·무엇을·어느 글)입니다. 지운 것은 흐리게 */
+.adm .cmList{list-style:none;margin:.4rem 0 0;padding:0;border-top:1px solid var(--line)}
+.adm .cmRow{padding:1rem .2rem;border-bottom:1px solid var(--line)}
+.adm .cmRow[data-deleted]{background:#f6f7f8}
+.adm .cmRow[data-deleted] .cmBody{color:var(--fg-3)}
+.adm .cmMeta{display:flex;align-items:baseline;gap:.6rem;flex-wrap:wrap;font-size:.88rem}
+.adm .cmDim{color:var(--fg-3);font-size:.78rem;font-variant-numeric:tabular-nums}
+.adm .cmTag{margin-left:auto;font-size:.74rem;color:#9a3412;background:#fff1e6;padding:.1rem .45rem;border-radius:4px}
+.adm .cmBody{margin:.4rem 0 .55rem;font-size:.93rem;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+.adm .cmFoot{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.adm .cmPost{font-size:.8rem;color:var(--fg-2);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adm .cmPost:hover{text-decoration:underline}
+.adm .cmFoot button{flex:none;padding:.3rem .8rem;font-size:.8rem}
+.adm .cmFoot .cmDel:hover{color:#b42318;border-color:#b42318}
