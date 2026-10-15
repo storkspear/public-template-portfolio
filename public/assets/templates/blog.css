@@ -758,6 +758,18 @@ main > .b-cats:first-child { padding-top: var(--lh-gap, 0px); }
 .bl.bl-cards.ls-side a:hover .b-lede { color: var(--fg-2); }
 .bl.bl-cards.ls-side a:hover .b-date { color: var(--fg-3); }
 .bl.bl-cards.ls-side a:has(.b-shot:empty) { padding-top: 1.1rem; }
+/* 좁은 화면 — 오른쪽 바깥의 견출지 자리(1.75rem)를 비우면 카드 좌우 여백이 어긋나서,
+   견출지를 카드 윗변 위로 눕힙니다. 색과 계단식 엇갈림은 그대로 둡니다. PC 는 옆에 세운 그대로입니다 */
+@media (max-width: 640px) {
+  .bl.bl-cards.ls-side { padding-right: 0; row-gap: 2.6rem; }
+  .bl.bl-cards.ls-side > li { padding-top: 1.45rem; }
+  .bl.bl-cards.ls-side a { min-height: 0; }
+  .bl.bl-cards.ls-side .b-no { writing-mode: horizontal-tb; top: auto; bottom: 100%; right: var(--tr, 1rem); width: auto;
+    padding: .28rem .75rem .22rem; border-radius: 6px 6px 0 0; margin-bottom: 1px; }
+  .bl.bl-cards.ls-side > li:nth-child(4n+2) .b-no { --tr: 4.4rem; }
+  .bl.bl-cards.ls-side > li:nth-child(4n+3) .b-no { --tr: 7.8rem; }
+  .bl.bl-cards.ls-side > li:nth-child(4n) .b-no { --tr: 11.2rem; }
+}
 
 /* ── 참고서 카드 · 서류 폴더 ──
    탭과 몸통이 한 색. 색은 넷이 돌아갑니다(미색·연두·하늘·분홍) — 종이처럼 제 글자색을 갖습니다 */
